@@ -1,0 +1,61 @@
+{
+  "name": "expo-harmony-toolkit",
+  "version": "0.1.0",
+  "description": "Experimental Expo-to-Harmony migration toolkit with an Expo config plugin, CLI, and vendored Harmony sidecar template.",
+  "main": "app.plugin.js",
+  "types": "build/index.d.ts",
+  "bin": {
+    "expo-harmony": "bin/expo-harmony.js"
+  },
+  "files": [
+    "app.plugin.js",
+    "bin",
+    "build",
+    "templates",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rm -rf build coverage",
+    "test": "jest --runInBand",
+    "prepare": "pnpm build"
+  },
+  "keywords": [
+    "expo",
+    "expo-plugin",
+    "config-plugin",
+    "harmonyos",
+    "openharmony",
+    "react-native",
+    "rnoh"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BlackishGreen33/Expo-Harmony-Plugin.git"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "peerDependencies": {
+    "expo": "*"
+  },
+  "dependencies": {
+    "@expo/config": "^55.0.10",
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.0",
+    "semver": "^7.7.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.5.2",
+    "@types/semver": "^7.7.1",
+    "expo": "^55.0.8",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.4",
+    "typescript": "^5.9.2"
+  }
+}

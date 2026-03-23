@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Expo Harmony Fixture",
+    "slug": "expo-harmony-fixture",
+    "version": "1.0.0",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.example.expoharmonyfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.expoharmonyfixture"
+    }
+  }
+}

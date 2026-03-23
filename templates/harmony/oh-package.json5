@@ -1,0 +1,10 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "{{BUNDLE_NAME}}",
+  "version": "{{APP_VERSION}}",
+  "description": "Generated Harmony sidecar for {{APP_NAME}}",
+  "dependencies": {
+    "@react-native-oh/react-native-harmony": "{{RNOH_VERSION}}",
+    "@react-native-oh/react-native-harmony-cli": "{{RNOH_CLI_VERSION}}"
+  }
+}

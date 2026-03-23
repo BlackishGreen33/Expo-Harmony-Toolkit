@@ -1,0 +1,116 @@
+export type CompatibilityStatus = 'supported' | 'manual' | 'unknown';
+export type DependencySource =
+  | 'dependency'
+  | 'devDependency'
+  | 'peerDependency'
+  | 'expo-plugin';
+
+export interface ExpoHarmonyPluginProps {
+  bundleName?: string;
+  entryModuleName?: string;
+  templateVersion?: string;
+  overwrite?: boolean;
+}
+
+export interface CompatibilityRecord {
+  status: CompatibilityStatus;
+  note: string;
+  replacement?: string;
+  docsUrl?: string;
+}
+
+export interface PackageJson {
+  name?: string;
+  version?: string;
+  private?: boolean;
+  scripts?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
+export interface LoadedProject {
+  projectRoot: string;
+  packageJson: PackageJson;
+  expoConfig: Record<string, any>;
+  appConfigPath: string | null;
+}
+
+export interface HarmonyIdentifiers {
+  appName: string;
+  slug: string;
+  bundleName: string;
+  entryModuleName: string;
+  androidPackage: string | null;
+  iosBundleIdentifier: string | null;
+}
+
+export interface DetectedDependency {
+  name: string;
+  version: string;
+  source: DependencySource;
+  status: CompatibilityStatus;
+  note: string;
+  replacement?: string;
+  docsUrl?: string;
+}
+
+export interface DoctorSummary {
+  total: number;
+  supported: number;
+  manual: number;
+  unknown: number;
+}
+
+export interface DoctorReport {
+  generatedAt: string;
+  projectRoot: string;
+  appConfigPath: string | null;
+  toolkitVersion: string;
+  templateVersion: string;
+  rnohVersion: string;
+  rnohCliVersion: string;
+  expoSdkVersion: number | null;
+  expoConfig: {
+    name: string | null;
+    slug: string | null;
+    version: string | null;
+    androidPackage: string | null;
+    iosBundleIdentifier: string | null;
+  };
+  dependencies: DetectedDependency[];
+  summary: DoctorSummary;
+  warnings: string[];
+}
+
+export interface TemplateFileDefinition {
+  relativePath: string;
+  contents: string;
+}
+
+export interface ManagedFileRecord {
+  relativePath: string;
+  sha1: string;
+}
+
+export interface ToolkitManifest {
+  generatedAt: string;
+  templateVersion: string;
+  projectRoot: string;
+  files: ManagedFileRecord[];
+}
+
+export interface SyncResult {
+  writtenFiles: string[];
+  unchangedFiles: string[];
+  skippedFiles: string[];
+  warnings: string[];
+  manifestPath: string;
+}
+
+export interface InitResult {
+  report: DoctorReport;
+  sync: SyncResult;
+  packageWarnings: string[];
+  doctorReportPath: string;
+}

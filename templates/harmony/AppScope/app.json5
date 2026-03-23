@@ -1,0 +1,8 @@
+{
+  "app": {
+    "bundleName": "{{BUNDLE_NAME}}",
+    "vendor": "expo-harmony-toolkit",
+    "versionCode": 1,
+    "versionName": "{{APP_VERSION}}"
+  }
+}
