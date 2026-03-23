@@ -2,13 +2,14 @@
 
 `expo-harmony-toolkit` 是一個實驗性的 Expo 到 HarmonyOS 遷移工具包。
 
-它當前提供的是 `v0.1 遷移工具包` 能力，而不是「Expo 已正式支援 HarmonyOS」：
+它當前包含兩層能力：
 - Expo config plugin 根入口 `app.plugin.js`
 - CLI：`expo-harmony doctor`
 - CLI：`expo-harmony init`
 - CLI：`expo-harmony sync-template`
 - 內建 vendored `harmony/` 模板
 - Expo 模組與常見第三方依賴的相容性掃描
+- `examples/official-minimal-sample` 官方最小 sample
 
 ## 當前邊界
 - 只支援 Managed/CNG Expo 專案
@@ -32,16 +33,31 @@ expo-harmony init --project-root /path/to/app
 expo-harmony sync-template --project-root /path/to/app
 ```
 
-## 輸出內容
+## 工具輸出內容
 - `harmony/`: vendored Harmony sidecar
 - `metro.harmony.config.js`: Harmony 專用 Metro sidecar config
 - `.expo-harmony/manifest.json`: 受管檔案清單
 - `.expo-harmony/doctor-report.json`: 掃描報告
 - `.expo-harmony/toolkit-config.json`: 工具生成的側車配置
 
+## 官方最小 Sample
+
+官方 sample 位於 `examples/official-minimal-sample`。
+
+它的目標不是展示完整 Expo 生態，而是驗證最小鏈路：
+
+```bash
+cd examples/official-minimal-sample
+pnpm harmony:doctor
+pnpm harmony:init
+pnpm bundle:harmony
+```
+
+完整手動鏈路見 [docs/official-minimal-sample.md](./docs/official-minimal-sample.md)。
+
 ## 路線圖
 - `v0.1`: 遷移工具包
-- `v0.2`: 官方 sample 可打包
+- `v0.2`: 官方最小 sample 可按文檔手動打包
 - `v0.5`: 受限矩陣可打包
 - `v1.0`: 正式平台承諾
 

@@ -1,16 +1,16 @@
 {
   "string": [
     {
-      "name": "app_name",
-      "value": "{{APP_NAME}}"
-    },
-    {
       "name": "module_desc",
-      "value": "Generated Harmony sidecar module"
+      "value": "{{APP_DESCRIPTION}}"
     },
     {
-      "name": "entry_ability_desc",
-      "value": "Entry ability for {{APP_NAME}}"
+      "name": "EntryAbility_desc",
+      "value": "{{APP_DESCRIPTION}}"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "{{APP_NAME}}"
     }
   ]
 }

@@ -1,8 +1,9 @@
 import { getConfig } from '@expo/config';
 import fs from 'fs-extra';
+import crypto from 'node:crypto';
 import path from 'path';
 import semver from 'semver';
-import { BASELINE_EXPO_SDK } from './constants';
+import { DEFAULT_HVIGOR_PLUGIN_FILENAME, RNOH_CLI_VERSION, SUPPORTED_EXPO_SDKS } from './constants';
 import {
   DependencySource,
   ExpoHarmonyPluginProps,
@@ -145,15 +146,34 @@ export function getExpoSdkWarning(expoSdkVersion: number | null): string | null 
     return 'Expo SDK version could not be detected from package.json.';
   }
 
-  if (expoSdkVersion !== BASELINE_EXPO_SDK) {
-    return `Expo SDK ${expoSdkVersion} detected. v0.1 is validated only against Expo SDK ${BASELINE_EXPO_SDK} project shape.`;
+  if (!SUPPORTED_EXPO_SDKS.includes(expoSdkVersion)) {
+    return `Expo SDK ${expoSdkVersion} detected. The toolkit currently validates only against Expo SDK ${SUPPORTED_EXPO_SDKS.join(' and ')} project shapes.`;
   }
 
   return null;
 }
 
-export function createGeneratedSha(contents: string): string {
-  return require('node:crypto').createHash('sha1').update(contents).digest('hex');
+export async function resolveRnohHvigorPluginFilename(projectRoot: string): Promise<string> {
+  const harmonyCliDir = path.join(
+    projectRoot,
+    'node_modules',
+    '@react-native-oh',
+    'react-native-harmony-cli',
+    'harmony',
+  );
+
+  if (!(await fs.pathExists(harmonyCliDir))) {
+    return DEFAULT_HVIGOR_PLUGIN_FILENAME;
+  }
+
+  const entries = await fs.readdir(harmonyCliDir);
+  const tgzEntry = entries.find((entry) => entry.startsWith('rnoh-hvigor-plugin-') && entry.endsWith('.tgz'));
+
+  return tgzEntry ?? DEFAULT_HVIGOR_PLUGIN_FILENAME;
+}
+
+export function createGeneratedSha(contents: string | Buffer): string {
+  return crypto.createHash('sha1').update(contents).digest('hex');
 }
 
 async function readExpoConfig(

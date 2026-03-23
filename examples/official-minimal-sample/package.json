@@ -1,0 +1,25 @@
+{
+  "name": "official-minimal-sample",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "bundle:harmony": "node ./node_modules/react-native/cli.js bundle-harmony --dev false --entry-file \"$PWD/index.js\" --bundle-output \"$PWD/harmony/entry/src/main/resources/rawfile/bundle.harmony.js\" --assets-dest \"$PWD/harmony/entry/src/main/resources/rawfile/assets\" --config \"$PWD/metro.harmony.config.js\"",
+    "harmony:doctor": "node ../../bin/expo-harmony.js doctor --project-root .",
+    "harmony:init": "node ../../bin/expo-harmony.js init --project-root .",
+    "harmony:sync-template": "node ../../bin/expo-harmony.js sync-template --project-root .",
+    "start": "expo start"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-oh/react-native-harmony": "0.82.18",
+    "@react-native-oh/react-native-harmony-cli": "0.82.18",
+    "expo": "^55.0.8",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.2.0",
+    "react-native": "0.83.2"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^20.1.2",
+    "metro": "^0.83.1"
+  }
+}

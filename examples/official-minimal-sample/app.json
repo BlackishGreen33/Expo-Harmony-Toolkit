@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Expo Harmony Official Sample",
+    "slug": "expo-harmony-official-sample",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.expoharmonysample"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonysample"
+    }
+  }
+}

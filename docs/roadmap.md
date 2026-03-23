@@ -6,8 +6,9 @@
 - 冪等模板同步
 
 ## v0.2 可打包 Sample
-- 倉庫內官方 sample
+- 倉庫內官方最小 sample
 - 文檔化的 `doctor -> init -> bundle -> DevEco/HAP` 鏈路
+- 最小 Harmony skeleton 與 bundle 路徑驗證
 
 ## v0.5 受限平台承諾
 - 支援矩陣

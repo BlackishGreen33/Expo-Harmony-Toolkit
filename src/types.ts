@@ -85,7 +85,8 @@ export interface DoctorReport {
 
 export interface TemplateFileDefinition {
   relativePath: string;
-  contents: string;
+  contents: string | Buffer;
+  binary?: boolean;
 }
 
 export interface ManagedFileRecord {

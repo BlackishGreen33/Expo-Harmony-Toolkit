@@ -15,7 +15,7 @@ describe('doctor report', () => {
     expect(byName.get('react-native-reanimated')?.status).toBe('manual');
     expect(report.summary.unknown).toBeGreaterThan(0);
     expect(report.warnings).toContain(
-      'Unknown dependencies were detected. v0.1 can scaffold the project, but runtime portability is not guaranteed.',
+      'Unknown dependencies were detected. The toolkit can scaffold the project, but runtime portability is not guaranteed.',
     );
   });
 });

@@ -10,7 +10,6 @@ import {
   TOOLKIT_CONFIG_FILENAME,
 } from './constants';
 import {
-  ExpoHarmonyPluginProps,
   HarmonyIdentifiers,
   InitResult,
   LoadedProject,
@@ -20,10 +19,45 @@ import {
   TemplateFileDefinition,
   ToolkitManifest,
 } from '../types';
-import { createGeneratedSha, deriveHarmonyIdentifiers, loadProject } from './project';
+import {
+  createGeneratedSha,
+  deriveHarmonyIdentifiers,
+  loadProject,
+  resolveRnohHvigorPluginFilename,
+} from './project';
 import { buildDoctorReport, writeDoctorReport } from './report';
 
 const TEMPLATE_ROOT = path.resolve(__dirname, '..', '..', 'templates', 'harmony');
+
+const TEMPLATE_FILE_PATHS = [
+  'README.md',
+  'build-profile.json5',
+  'codelinter.json',
+  'hvigor/hvigor-config.json5',
+  'hvigorfile.ts',
+  'oh-package.json5',
+  'AppScope/app.json5',
+  'AppScope/resources/base/element/string.json',
+  'AppScope/resources/base/media/app_icon.png',
+  'entry/build-profile.json5',
+  'entry/hvigorfile.ts',
+  'entry/oh-package.json5',
+  'entry/src/main/module.json5',
+  'entry/src/main/cpp/CMakeLists.txt',
+  'entry/src/main/cpp/PackageProvider.cpp',
+  'entry/src/main/ets/PackageProvider.ets',
+  'entry/src/main/ets/entryability/EntryAbility.ets',
+  'entry/src/main/ets/pages/Index.ets',
+  'entry/src/main/ets/workers/RNOHWorker.ets',
+  'entry/src/main/resources/base/element/color.json',
+  'entry/src/main/resources/base/element/string.json',
+  'entry/src/main/resources/base/media/background.png',
+  'entry/src/main/resources/base/media/foreground.png',
+  'entry/src/main/resources/base/media/layered_image.json',
+  'entry/src/main/resources/base/media/startIcon.png',
+  'entry/src/main/resources/base/profile/main_pages.json',
+  'entry/src/main/resources/rawfile/.gitkeep',
+] as const;
 
 export async function initProject(projectRoot: string, force = false): Promise<InitResult> {
   const report = await buildDoctorReport(projectRoot);
@@ -62,9 +96,9 @@ export async function syncProjectTemplate(projectRoot: string, force = false): P
     );
 
     if (await fs.pathExists(targetPath)) {
-      const currentContents = await fs.readFile(targetPath, 'utf8');
+      const currentContents = await fs.readFile(targetPath);
 
-      if (currentContents === file.contents) {
+      if (contentsEqual(currentContents, file.contents, file.binary)) {
         result.unchangedFiles.push(file.relativePath);
         manifestFiles.push({ relativePath: file.relativePath, sha1: expectedHash });
         continue;
@@ -104,22 +138,20 @@ async function buildManagedFiles(
   loadedProject: LoadedProject,
   identifiers: HarmonyIdentifiers,
 ): Promise<TemplateFileDefinition[]> {
+  const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const templateFiles = await Promise.all(
-    [
-      'README.md',
-      'build-profile.json5',
-      'oh-package.json5',
-      'AppScope/app.json5',
-      'entry/src/main/module.json5',
-      'entry/src/main/resources/base/element/string.json',
-      'entry/src/main/resources/rawfile/.gitkeep',
-    ].map(async (relativePath) => {
+    TEMPLATE_FILE_PATHS.map(async (relativePath) => {
       const templatePath = path.join(TEMPLATE_ROOT, relativePath);
-      const contents = await fs.readFile(templatePath, 'utf8');
+      const binary = isBinaryTemplate(relativePath);
+      const rawContents = await fs.readFile(templatePath);
+      const contents = binary
+        ? rawContents
+        : renderTemplate(rawContents.toString('utf8'), loadedProject, identifiers, hvigorPluginFilename);
 
       return {
         relativePath: path.join('harmony', relativePath),
-        contents: renderTemplate(contents, loadedProject, identifiers),
+        contents,
+        binary,
       };
     }),
   );
@@ -134,6 +166,7 @@ async function buildManagedFiles(
       name: loadedProject.expoConfig.name ?? identifiers.appName,
       slug: loadedProject.expoConfig.slug ?? identifiers.slug,
       version: loadedProject.expoConfig.version ?? '1.0.0',
+      hvigorPluginFilename,
     },
   };
 
@@ -150,7 +183,7 @@ async function buildManagedFiles(
   ];
 }
 
-async function syncPackageScripts(projectRoot: string, force: boolean): Promise<string[]> {
+async function syncPackageScripts(projectRoot: string, _force: boolean): Promise<string[]> {
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
   const scripts = { ...(packageJson.scripts ?? {}) };
@@ -167,12 +200,6 @@ async function syncPackageScripts(projectRoot: string, force: boolean): Promise<
     }
 
     if (currentCommand === desiredCommand) {
-      continue;
-    }
-
-    if (force) {
-      scripts[scriptName] = desiredCommand;
-      didChange = true;
       continue;
     }
 
@@ -204,16 +231,20 @@ function renderTemplate(
   template: string,
   loadedProject: LoadedProject,
   identifiers: HarmonyIdentifiers,
+  hvigorPluginFilename: string,
 ): string {
+  const appDescription = `${identifiers.appName} official minimal Harmony sample`;
   const replacements: Record<string, string> = {
     APP_NAME: identifiers.appName,
     APP_SLUG: identifiers.slug,
     APP_VERSION: String(loadedProject.expoConfig.version ?? loadedProject.packageJson.version ?? '1.0.0'),
+    APP_DESCRIPTION: appDescription,
     BUNDLE_NAME: identifiers.bundleName,
     ENTRY_MODULE_NAME: identifiers.entryModuleName,
     TEMPLATE_VERSION,
     RNOH_VERSION,
     RNOH_CLI_VERSION,
+    RNOH_HVIGOR_PLUGIN_FILENAME: hvigorPluginFilename,
   };
 
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key: string) => replacements[key] ?? '');
@@ -224,13 +255,46 @@ function renderMetroConfig(identifiers: HarmonyIdentifiers): string {
 const { createHarmonyMetroConfig } = require('@react-native-oh/react-native-harmony/metro.config');
 
 const defaultConfig = getDefaultConfig(__dirname);
-
-module.exports = createHarmonyMetroConfig(defaultConfig, {
+const harmonyConfig = createHarmonyMetroConfig({
   reactNativeHarmonyPackageName: '@react-native-oh/react-native-harmony',
-  harmonyProjectPath: './harmony',
-  entryModuleName: '${identifiers.entryModuleName}',
 });
+
+module.exports = {
+  ...defaultConfig,
+  ...harmonyConfig,
+  transformer: {
+    ...(defaultConfig.transformer ?? {}),
+    ...(harmonyConfig.transformer ?? {}),
+  },
+  serializer: {
+    ...(defaultConfig.serializer ?? {}),
+    ...(harmonyConfig.serializer ?? {}),
+  },
+  resolver: {
+    ...(defaultConfig.resolver ?? {}),
+    ...(harmonyConfig.resolver ?? {}),
+    sourceExts: [
+      'harmony.ts',
+      'harmony.tsx',
+      'harmony.js',
+      'harmony.jsx',
+      ...((harmonyConfig.resolver?.sourceExts ?? defaultConfig.resolver?.sourceExts ?? ['ts', 'tsx', 'js', 'jsx', 'json'])),
+    ],
+  },
+};
 `;
+}
+
+function isBinaryTemplate(relativePath: string): boolean {
+  return ['.png'].includes(path.extname(relativePath));
+}
+
+function contentsEqual(currentContents: Buffer, nextContents: string | Buffer, binary = false): boolean {
+  if (binary || Buffer.isBuffer(nextContents)) {
+    return currentContents.equals(Buffer.isBuffer(nextContents) ? nextContents : Buffer.from(nextContents));
+  }
+
+  return currentContents.toString('utf8') === nextContents;
 }
 
 function sortRecordByKey(record: Record<string, string>): Record<string, string> {

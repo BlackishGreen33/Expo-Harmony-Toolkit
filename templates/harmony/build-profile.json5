@@ -1,17 +1,37 @@
 {
-  "apiType": "stageMode",
-  "buildOption": {
-    "strictMode": {
-      "useNormalizedOHMUrl": true
-    }
+  app: {
+    products: [
+      {
+        name: 'default',
+        signingConfig: 'default',
+        compatibleSdkVersion: '5.0.0(12)',
+        targetSdkVersion: '6.0.0(20)',
+        runtimeOS: 'HarmonyOS',
+        buildOption: {
+          nativeCompiler: 'BiSheng'
+        }
+      },
+    ],
+    buildModeSet: [
+      {
+        name: 'debug',
+      },
+      {
+        name: 'release',
+      },
+    ],
+    signingConfigs: [],
   },
-  "targets": [
+  modules: [
     {
-      "name": "default",
-      "runtimeOS": "HarmonyOS",
-      "entry": [
-        "./entry"
-      ]
-    }
-  ]
+      name: '{{ENTRY_MODULE_NAME}}',
+      srcPath: './entry',
+      targets: [
+        {
+          name: 'default',
+          applyToProducts: ['default'],
+        },
+      ],
+    },
+  ],
 }

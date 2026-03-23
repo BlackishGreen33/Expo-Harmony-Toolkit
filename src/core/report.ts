@@ -1,11 +1,11 @@
 import fs from 'fs-extra';
 import path from 'path';
 import {
-  BASELINE_EXPO_SDK,
   DOCTOR_REPORT_FILENAME,
   GENERATED_DIR,
   RNOH_CLI_VERSION,
   RNOH_VERSION,
+  SUPPORTED_EXPO_SDKS,
   TEMPLATE_VERSION,
   TOOLKIT_VERSION,
 } from './constants';
@@ -21,7 +21,7 @@ import {
 
 const DEFAULT_RECORD: CompatibilityRecord = {
   status: 'unknown',
-  note: 'This dependency is not in the v0.1 compatibility matrix yet.',
+  note: 'This dependency is not in the current compatibility matrix yet.',
 };
 
 export async function buildDoctorReport(projectRoot: string): Promise<DoctorReport> {
@@ -64,7 +64,7 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
   }
 
   if (dependencies.some((dependency) => dependency.status === 'unknown')) {
-    warnings.push('Unknown dependencies were detected. v0.1 can scaffold the project, but runtime portability is not guaranteed.');
+    warnings.push('Unknown dependencies were detected. The toolkit can scaffold the project, but runtime portability is not guaranteed.');
   }
 
   return {
@@ -113,7 +113,7 @@ export function renderDoctorReport(report: DoctorReport): string {
     `Expo Harmony doctor report`,
     `Project: ${report.projectRoot}`,
     `Config: ${report.appConfigPath ?? 'not found'}`,
-    `Expo SDK: ${report.expoSdkVersion ?? 'unknown'} (baseline ${BASELINE_EXPO_SDK})`,
+    `Expo SDK: ${report.expoSdkVersion ?? 'unknown'} (reference ${SUPPORTED_EXPO_SDKS.join(', ')})`,
     `RNOH template: ${report.templateVersion} / runtime ${report.rnohVersion}`,
     `Summary: ${report.summary.supported} supported, ${report.summary.manual} manual, ${report.summary.unknown} unknown (${report.summary.total} total)`,
     '',

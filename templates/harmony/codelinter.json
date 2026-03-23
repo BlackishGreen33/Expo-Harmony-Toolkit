@@ -1,0 +1,19 @@
+{
+  "files": ["**/*.ts", "**/*.ets"],
+  "ignore": [
+    "**/ohosTest/**/*",
+    "**/node_modules/**/*",
+    "**/hvigorfile.ts",
+    "**/oh_modules/**/*",
+    "**/build/**/*",
+    "**/.preview/**/*"
+  ],
+  "plugins": ["@typescript-eslint"],
+  "ruleSet": [],
+  "rules": {
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "warn",
+    "@typescript-eslint/no-explicit-any": "warn"
+  },
+  "overrides": []
+}

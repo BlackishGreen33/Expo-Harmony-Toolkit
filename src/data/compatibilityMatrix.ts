@@ -5,6 +5,22 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
     status: 'supported',
     note: 'Toolkit can parse Expo config and scaffold Harmony sidecar files for managed/CNG projects.',
   },
+  '@babel/runtime': {
+    status: 'supported',
+    note: 'Runtime helpers are required for offline bundling in the official minimal sample.',
+  },
+  '@react-native-community/cli': {
+    status: 'supported',
+    note: 'The React Native CLI is required to expose the bundle-harmony command in the official sample chain.',
+  },
+  '@react-native-oh/react-native-harmony': {
+    status: 'supported',
+    note: 'This is the RNOH runtime package used by the vendored Harmony sidecar template.',
+  },
+  '@react-native-oh/react-native-harmony-cli': {
+    status: 'supported',
+    note: 'This package provides the bundle-harmony command used by the official minimal sample.',
+  },
   react: {
     status: 'supported',
     note: 'React is treated as a baseline JavaScript dependency.',
@@ -12,6 +28,10 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
   'react-native': {
     status: 'supported',
     note: 'React Native is supported as managed Expo input, but runtime portability is not guaranteed.',
+  },
+  metro: {
+    status: 'supported',
+    note: 'Metro is part of the official sample bundling chain.',
   },
   'expo-asset': {
     status: 'manual',
@@ -32,6 +52,10 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
   'expo-camera': {
     status: 'unknown',
     note: 'No verified Harmony migration path is shipped in v0.1.',
+  },
+  'expo-status-bar': {
+    status: 'supported',
+    note: 'Status bar rendering stays in the JavaScript/UI layer for the official minimal sample.',
   },
   'expo-file-system': {
     status: 'unknown',
