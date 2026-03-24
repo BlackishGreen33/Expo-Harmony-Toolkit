@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Expo Harmony Router Fixture",
+    "slug": "expo-harmony-router-fixture",
+    "version": "1.0.0",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.expoharmonyrouter"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyrouter"
+    }
+  }
+}

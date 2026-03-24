@@ -7,8 +7,11 @@ import {
   RNOH_CLI_VERSION,
   RNOH_VERSION,
   TEMPLATE_VERSION,
+  TOOLKIT_VERSION,
   TOOLKIT_CONFIG_FILENAME,
 } from './constants';
+import { DEFAULT_VALIDATED_MATRIX_ID } from '../data/validatedMatrices';
+import { getManifestPath, readManifest, readToolkitConfig } from './metadata';
 import {
   HarmonyIdentifiers,
   InitResult,
@@ -17,6 +20,7 @@ import {
   PackageJson,
   SyncResult,
   TemplateFileDefinition,
+  ToolkitConfig,
   ToolkitManifest,
 } from '../types';
 import {
@@ -76,15 +80,18 @@ export async function initProject(projectRoot: string, force = false): Promise<I
 export async function syncProjectTemplate(projectRoot: string, force = false): Promise<SyncResult> {
   const loadedProject = await loadProject(projectRoot);
   const identifiers = deriveHarmonyIdentifiers(loadedProject.expoConfig, loadedProject.packageJson);
-  const desiredFiles = await buildManagedFiles(loadedProject, identifiers);
+  const previousToolkitConfig = await readToolkitConfig(loadedProject.projectRoot);
+  const desiredFiles = await buildManagedFiles(loadedProject, identifiers, previousToolkitConfig);
   const previousManifest = await readManifest(loadedProject.projectRoot);
   const result: SyncResult = {
     writtenFiles: [],
     unchangedFiles: [],
     skippedFiles: [],
     warnings: [],
-    manifestPath: path.join(loadedProject.projectRoot, GENERATED_DIR, MANIFEST_FILENAME),
+    manifestPath: getManifestPath(loadedProject.projectRoot),
   };
+
+  result.warnings.push(...collectMetadataWarnings(previousManifest, previousToolkitConfig));
 
   const manifestFiles: ManagedFileRecord[] = [];
 
@@ -125,7 +132,9 @@ export async function syncProjectTemplate(projectRoot: string, force = false): P
   await fs.ensureDir(path.dirname(result.manifestPath));
   const manifest: ToolkitManifest = {
     generatedAt: new Date().toISOString(),
+    toolkitVersion: TOOLKIT_VERSION,
     templateVersion: TEMPLATE_VERSION,
+    matrixId: DEFAULT_VALIDATED_MATRIX_ID,
     projectRoot: loadedProject.projectRoot,
     files: manifestFiles,
   };
@@ -137,6 +146,7 @@ export async function syncProjectTemplate(projectRoot: string, force = false): P
 async function buildManagedFiles(
   loadedProject: LoadedProject,
   identifiers: HarmonyIdentifiers,
+  previousToolkitConfig: ToolkitConfig | null,
 ): Promise<TemplateFileDefinition[]> {
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const templateFiles = await Promise.all(
@@ -156,8 +166,11 @@ async function buildManagedFiles(
     }),
   );
 
-  const toolkitConfig = {
+  const nextToolkitConfig: ToolkitConfig = {
+    generatedAt: new Date().toISOString(),
+    toolkitVersion: TOOLKIT_VERSION,
     templateVersion: TEMPLATE_VERSION,
+    matrixId: DEFAULT_VALIDATED_MATRIX_ID,
     rnohVersion: RNOH_VERSION,
     rnohCliVersion: RNOH_CLI_VERSION,
     bundleName: identifiers.bundleName,
@@ -169,6 +182,7 @@ async function buildManagedFiles(
       hvigorPluginFilename,
     },
   };
+  const toolkitConfig = stabilizeToolkitConfigTimestamp(previousToolkitConfig, nextToolkitConfig);
 
   return [
     ...templateFiles,
@@ -215,16 +229,6 @@ async function syncPackageScripts(projectRoot: string, _force: boolean): Promise
   }
 
   return warnings;
-}
-
-async function readManifest(projectRoot: string): Promise<ToolkitManifest | null> {
-  const manifestPath = path.join(projectRoot, GENERATED_DIR, MANIFEST_FILENAME);
-
-  if (!(await fs.pathExists(manifestPath))) {
-    return null;
-  }
-
-  return (await fs.readJson(manifestPath)) as ToolkitManifest;
 }
 
 function renderTemplate(
@@ -299,4 +303,58 @@ function contentsEqual(currentContents: Buffer, nextContents: string | Buffer, b
 
 function sortRecordByKey(record: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(record).sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function collectMetadataWarnings(
+  previousManifest: ToolkitManifest | null,
+  previousToolkitConfig: ToolkitConfig | null,
+): string[] {
+  const warnings: string[] = [];
+
+  if (previousManifest && previousManifest.templateVersion !== TEMPLATE_VERSION) {
+    warnings.push(
+      `Existing manifest template version ${previousManifest.templateVersion} does not match current template ${TEMPLATE_VERSION}. Sync will refresh managed metadata.`,
+    );
+  }
+
+  if (previousManifest && previousManifest.matrixId !== DEFAULT_VALIDATED_MATRIX_ID) {
+    warnings.push(
+      `Existing manifest matrix ${previousManifest.matrixId ?? 'unknown'} does not match current matrix ${DEFAULT_VALIDATED_MATRIX_ID}. Sync will refresh managed metadata.`,
+    );
+  }
+
+  if (previousToolkitConfig && previousToolkitConfig.templateVersion !== TEMPLATE_VERSION) {
+    warnings.push(
+      `Existing toolkit-config template version ${previousToolkitConfig.templateVersion} does not match current template ${TEMPLATE_VERSION}. Sync will refresh managed metadata.`,
+    );
+  }
+
+  if (previousToolkitConfig && previousToolkitConfig.matrixId !== DEFAULT_VALIDATED_MATRIX_ID) {
+    warnings.push(
+      `Existing toolkit-config matrix ${previousToolkitConfig.matrixId ?? 'unknown'} does not match current matrix ${DEFAULT_VALIDATED_MATRIX_ID}. Sync will refresh managed metadata.`,
+    );
+  }
+
+  return warnings;
+}
+
+function stabilizeToolkitConfigTimestamp(
+  previousToolkitConfig: ToolkitConfig | null,
+  nextToolkitConfig: ToolkitConfig,
+): ToolkitConfig {
+  if (!previousToolkitConfig) {
+    return nextToolkitConfig;
+  }
+
+  const { generatedAt: previousGeneratedAt, ...previousComparable } = previousToolkitConfig;
+  const { generatedAt: nextGeneratedAt, ...nextComparable } = nextToolkitConfig;
+
+  if (JSON.stringify(previousComparable) === JSON.stringify(nextComparable)) {
+    return {
+      ...nextToolkitConfig,
+      generatedAt: previousGeneratedAt,
+    };
+  }
+
+  return nextToolkitConfig;
 }

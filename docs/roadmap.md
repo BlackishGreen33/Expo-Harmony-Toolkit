@@ -11,9 +11,10 @@
 - 最小 Harmony skeleton 與 bundle 路徑驗證
 
 ## v0.5 受限平台承諾
-- 支援矩陣
-- 明確的 supported Expo modules 清單
-- fail-fast 規則
+- 單一驗證矩陣 `expo55-rnoh082-minimal`
+- 明確的白名單依賴與阻斷規則
+- `doctor --strict` fail-fast 準入檢查
+- 官方 sample 的 CI 驗證與手動 DevEco release gate
 
 ## v1.0 正式平台承諾
 - 更大的 Expo modules 覆蓋面

@@ -27,6 +27,7 @@ describe('official minimal sample', () => {
     const report = await buildDoctorReport(sampleRoot);
     expect(report.summary.total).toBeGreaterThan(0);
     expect(report.expoSdkVersion).toBe(55);
+    expect(report.eligibility).toBe('eligible');
 
     const initResult = await initProject(sampleRoot, true);
     expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/ets/pages/Index.ets');
@@ -56,5 +57,6 @@ describe('official minimal sample', () => {
 
     const secondInit = await initProject(sampleRoot, false);
     expect(secondInit.sync.skippedFiles).toHaveLength(0);
+    expect(secondInit.report.eligibility).toBe('eligible');
   }, 120000);
 });

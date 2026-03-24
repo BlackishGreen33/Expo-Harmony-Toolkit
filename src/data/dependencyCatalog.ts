@@ -1,17 +1,17 @@
 import { CompatibilityRecord } from '../types';
 
-export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
+export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   expo: {
     status: 'supported',
     note: 'Toolkit can parse Expo config and scaffold Harmony sidecar files for managed/CNG projects.',
   },
   '@babel/runtime': {
     status: 'supported',
-    note: 'Runtime helpers are required for offline bundling in the official minimal sample.',
+    note: 'Runtime helpers are used by the official minimal sample bundling chain.',
   },
   '@react-native-community/cli': {
     status: 'supported',
-    note: 'The React Native CLI is required to expose the bundle-harmony command in the official sample chain.',
+    note: 'The React Native CLI exposes the bundle-harmony command used by the official sample.',
   },
   '@react-native-oh/react-native-harmony': {
     status: 'supported',
@@ -27,15 +27,23 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
   },
   'react-native': {
     status: 'supported',
-    note: 'React Native is supported as managed Expo input, but runtime portability is not guaranteed.',
+    note: 'React Native is supported as managed Expo input, but runtime portability is only promised inside the validated matrix.',
   },
   metro: {
     status: 'supported',
     note: 'Metro is part of the official sample bundling chain.',
   },
+  'expo-status-bar': {
+    status: 'supported',
+    note: 'Status bar rendering stays in the JavaScript/UI layer for the official minimal sample.',
+  },
   'expo-asset': {
     status: 'manual',
     note: 'Asset handling often needs Harmony-specific verification after bundling.',
+  },
+  'expo-build-properties': {
+    status: 'manual',
+    note: 'Native property overrides should be reviewed manually because Harmony uses a separate sidecar project.',
   },
   'expo-constants': {
     status: 'manual',
@@ -48,30 +56,6 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
   'expo-router': {
     status: 'manual',
     note: 'The router can stay at the JS layer, but native navigation dependencies still need validation.',
-  },
-  'expo-camera': {
-    status: 'unknown',
-    note: 'No verified Harmony migration path is shipped in v0.1.',
-  },
-  'expo-status-bar': {
-    status: 'supported',
-    note: 'Status bar rendering stays in the JavaScript/UI layer for the official minimal sample.',
-  },
-  'expo-file-system': {
-    status: 'unknown',
-    note: 'File-system APIs need a verified Harmony implementation before they can be treated as supported.',
-  },
-  'expo-image-picker': {
-    status: 'unknown',
-    note: 'Media-picker flows need dedicated Harmony integration and testing.',
-  },
-  'expo-location': {
-    status: 'unknown',
-    note: 'Location permissions and runtime hooks are not validated in v0.1.',
-  },
-  'expo-notifications': {
-    status: 'unknown',
-    note: 'Notifications need platform-specific services that are out of scope for v0.1.',
   },
   'react-native-gesture-handler': {
     status: 'manual',
@@ -91,8 +75,24 @@ export const COMPATIBILITY_MATRIX: Record<string, CompatibilityRecord> = {
     replacement: 'react-native-oh-library/react-native-harmony-svg',
     docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-svg',
   },
-  'expo-build-properties': {
-    status: 'manual',
-    note: 'Native property overrides should be reviewed manually because Harmony uses a separate sidecar project.',
+  'expo-camera': {
+    status: 'unknown',
+    note: 'No verified Harmony migration path is shipped in v0.5.',
+  },
+  'expo-file-system': {
+    status: 'unknown',
+    note: 'File-system APIs need a verified Harmony implementation before they can be treated as supported.',
+  },
+  'expo-image-picker': {
+    status: 'unknown',
+    note: 'Media-picker flows need dedicated Harmony integration and testing.',
+  },
+  'expo-location': {
+    status: 'unknown',
+    note: 'Location permissions and runtime hooks are not validated in v0.5.',
+  },
+  'expo-notifications': {
+    status: 'unknown',
+    note: 'Notifications need platform-specific services that are out of scope for v0.5.',
   },
 };

@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import { initProject, syncProjectTemplate } from '../src/core/template';
+import { readManifest, readToolkitConfig } from '../src/core/metadata';
 
 const fixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 
@@ -18,10 +19,16 @@ describe('init project', () => {
     const firstRun = await initProject(projectRoot, false);
     const secondRun = await initProject(projectRoot, false);
     const packageJson = await fs.readJson(path.join(projectRoot, 'package.json'));
+    const manifest = await readManifest(projectRoot);
+    const toolkitConfig = await readToolkitConfig(projectRoot);
 
     expect(firstRun.sync.writtenFiles).toContain('harmony/README.md');
     expect(await fs.pathExists(path.join(projectRoot, 'metro.harmony.config.js'))).toBe(true);
     expect(packageJson.scripts['harmony:init']).toBe('expo-harmony init');
+    expect(manifest?.toolkitVersion).toBe('0.5.0');
+    expect(manifest?.matrixId).toBe('expo55-rnoh082-minimal');
+    expect(toolkitConfig?.toolkitVersion).toBe('0.5.0');
+    expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-minimal');
     expect(secondRun.sync.writtenFiles).toHaveLength(0);
     expect(secondRun.sync.skippedFiles).toHaveLength(0);
     expect(secondRun.sync.unchangedFiles.length).toBeGreaterThan(0);
@@ -41,5 +48,22 @@ describe('init project', () => {
         warning.includes('metro.harmony.config.js'),
       ),
     ).toBe(true);
+  });
+
+  it('surfaces metadata matrix drift in doctor and sync warnings', async () => {
+    const projectRoot = await createTempFixture();
+
+    await initProject(projectRoot, false);
+    const manifestPath = path.join(projectRoot, '.expo-harmony', 'manifest.json');
+    const manifest = await fs.readJson(manifestPath);
+
+    manifest.matrixId = 'legacy-v0.2';
+    await fs.writeJson(manifestPath, manifest, { spaces: 2 });
+
+    const syncResult = await syncProjectTemplate(projectRoot, false);
+
+    expect(syncResult.warnings.some((warning) => warning.includes('Existing manifest matrix legacy-v0.2'))).toBe(
+      true,
+    );
   });
 });

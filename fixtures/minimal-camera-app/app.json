@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Expo Harmony Camera Fixture",
+    "slug": "expo-harmony-camera-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.expoharmonycamera"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonycamera"
+    }
+  }
+}

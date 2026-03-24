@@ -5,6 +5,7 @@
   "scripts": {
     "bundle:harmony": "node ./node_modules/react-native/cli.js bundle-harmony --dev false --entry-file \"$PWD/index.js\" --bundle-output \"$PWD/harmony/entry/src/main/resources/rawfile/bundle.harmony.js\" --assets-dest \"$PWD/harmony/entry/src/main/resources/rawfile/assets\" --config \"$PWD/metro.harmony.config.js\"",
     "harmony:doctor": "node ../../bin/expo-harmony.js doctor --project-root .",
+    "harmony:doctor:strict": "node ../../bin/expo-harmony.js doctor --project-root . --strict",
     "harmony:init": "node ../../bin/expo-harmony.js init --project-root .",
     "harmony:sync-template": "node ../../bin/expo-harmony.js sync-template --project-root .",
     "start": "expo start"

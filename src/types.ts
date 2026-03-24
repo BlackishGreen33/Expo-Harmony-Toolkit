@@ -1,4 +1,5 @@
 export type CompatibilityStatus = 'supported' | 'manual' | 'unknown';
+export type EligibilityStatus = 'eligible' | 'ineligible';
 export type DependencySource =
   | 'dependency'
   | 'devDependency'
@@ -17,6 +18,25 @@ export interface CompatibilityRecord {
   note: string;
   replacement?: string;
   docsUrl?: string;
+}
+
+export interface BlockingIssue {
+  code: string;
+  message: string;
+  subject?: string;
+}
+
+export interface ValidatedDependencyRule {
+  version?: string;
+  required?: boolean;
+}
+
+export interface ValidatedReleaseMatrix {
+  id: string;
+  expoSdkVersion: number;
+  allowedDependencies: string[];
+  dependencyRules: Record<string, ValidatedDependencyRule>;
+  nativeIdentifierRequirement: 'android_or_ios';
 }
 
 export interface PackageJson {
@@ -50,6 +70,7 @@ export interface DetectedDependency {
   version: string;
   source: DependencySource;
   status: CompatibilityStatus;
+  blocking: boolean;
   note: string;
   replacement?: string;
   docsUrl?: string;
@@ -68,6 +89,8 @@ export interface DoctorReport {
   appConfigPath: string | null;
   toolkitVersion: string;
   templateVersion: string;
+  matrixId: string | null;
+  eligibility: EligibilityStatus;
   rnohVersion: string;
   rnohCliVersion: string;
   expoSdkVersion: number | null;
@@ -80,6 +103,8 @@ export interface DoctorReport {
   };
   dependencies: DetectedDependency[];
   summary: DoctorSummary;
+  blockingIssues: BlockingIssue[];
+  advisories: string[];
   warnings: string[];
 }
 
@@ -96,9 +121,28 @@ export interface ManagedFileRecord {
 
 export interface ToolkitManifest {
   generatedAt: string;
+  toolkitVersion: string;
   templateVersion: string;
+  matrixId: string;
   projectRoot: string;
   files: ManagedFileRecord[];
+}
+
+export interface ToolkitConfig {
+  generatedAt: string;
+  toolkitVersion: string;
+  templateVersion: string;
+  matrixId: string;
+  rnohVersion: string;
+  rnohCliVersion: string;
+  bundleName: string;
+  entryModuleName: string;
+  project: {
+    name: string;
+    slug: string;
+    version: string;
+    hvigorPluginFilename: string;
+  };
 }
 
 export interface SyncResult {

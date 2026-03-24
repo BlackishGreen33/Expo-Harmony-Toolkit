@@ -2,7 +2,7 @@
 
 這份指南只適用於倉庫內的 `examples/official-minimal-sample`。
 
-它的目標是驗證最小鏈路：
+它的目標是驗證 `v0.5` 唯一受限矩陣下的最小鏈路：
 1. `doctor`
 2. `init`
 3. `bundle:harmony`
@@ -19,7 +19,7 @@
 
 ```bash
 cd examples/official-minimal-sample
-pnpm harmony:doctor
+pnpm harmony:doctor:strict
 pnpm harmony:init
 pnpm bundle:harmony
 ```
@@ -38,6 +38,7 @@ pnpm bundle:harmony
 - Run 或 Build HAP
 
 ## 承諾邊界
-- 這份流程只對官方最小 sample 做最小鏈路驗證
+- 這份流程只對官方最小 sample 做 `v0.5` 受限矩陣驗證
 - 它不代表任意 Expo 專案都能直接打包成 HarmonyOS 應用
-- 其他 Expo modules 與第三方依賴仍需經過 `doctor` 與後續人工適配
+- 其他 Expo modules 與第三方依賴仍需經過 `doctor --strict` 與後續人工適配
+- 受限矩陣的完整條件見 [support-matrix.md](./support-matrix.md)

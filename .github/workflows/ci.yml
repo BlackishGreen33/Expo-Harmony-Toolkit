@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Strict doctor passes on official sample
+        run: node bin/expo-harmony.js doctor --project-root examples/official-minimal-sample --strict
+
+      - name: Strict doctor fails on negative fixtures
+        run: |
+          for fixture in fixtures/managed-app fixtures/minimal-camera-app fixtures/minimal-router-app fixtures/missing-identifiers-app; do
+            exit_code=0
+            node bin/expo-harmony.js doctor --project-root "$fixture" --strict || exit_code=$?
+            if [ "$exit_code" -ne 2 ]; then
+              echo "Expected exit code 2 for $fixture, got $exit_code"
+              exit 1
+            fi
+          done
+
+      - name: Official sample init and sync remain idempotent
+        run: |
+          pnpm --dir examples/official-minimal-sample run harmony:init
+          pnpm --dir examples/official-minimal-sample run harmony:sync-template
+          pnpm --dir examples/official-minimal-sample run harmony:sync-template
+
+      - name: Official sample bundle
+        run: pnpm --dir examples/official-minimal-sample run bundle:harmony
