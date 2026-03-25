@@ -16,6 +16,12 @@
 - `doctor --strict` fail-fast 準入檢查
 - 官方 sample 的 CI 驗證與手動 DevEco release gate
 
+## v0.8 App Shell 能力擴張
+- 單一驗證矩陣 `expo55-rnoh082-app-shell`
+- `expo-router`、`expo-linking`、`expo-constants` 進入承諾範圍
+- 官方 App Shell sample 與 router 邊界 fixtures
+- App Shell 級別的手動驗收，不包含完整原生 deep link 生命週期
+
 ## v1.0 正式平台承諾
 - 更大的 Expo modules 覆蓋面
 - 熱門第三方依賴替代策略
