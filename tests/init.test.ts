@@ -25,9 +25,9 @@ describe('init project', () => {
     expect(firstRun.sync.writtenFiles).toContain('harmony/README.md');
     expect(await fs.pathExists(path.join(projectRoot, 'metro.harmony.config.js'))).toBe(true);
     expect(packageJson.scripts['harmony:init']).toBe('expo-harmony init');
-    expect(manifest?.toolkitVersion).toBe('0.8.0');
+    expect(manifest?.toolkitVersion).toBe('1.0.0');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-app-shell');
-    expect(toolkitConfig?.toolkitVersion).toBe('0.8.0');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.0.0');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-app-shell');
     expect(secondRun.sync.writtenFiles).toHaveLength(0);
     expect(secondRun.sync.skippedFiles).toHaveLength(0);

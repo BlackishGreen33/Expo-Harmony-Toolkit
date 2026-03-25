@@ -1,7 +1,7 @@
 {
   "name": "expo-harmony-toolkit",
-  "version": "0.8.0",
-  "description": "Experimental Expo-to-Harmony migration toolkit with an Expo config plugin, CLI, and vendored Harmony sidecar template.",
+  "version": "1.0.0",
+  "description": "Validated Expo-to-Harmony toolkit for managed Expo app-shell projects.",
   "main": "app.plugin.js",
   "types": "build/index.d.ts",
   "bin": {
@@ -13,6 +13,8 @@
     "build",
     "templates",
     "README.md",
+    "README.en.md",
+    "LICENSE",
     "docs"
   ],
   "scripts": {
@@ -34,6 +36,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/BlackishGreen33/Expo-Harmony-Plugin.git"
+  },
+  "homepage": "https://github.com/BlackishGreen33/Expo-Harmony-Plugin#readme",
+  "bugs": {
+    "url": "https://github.com/BlackishGreen33/Expo-Harmony-Plugin/issues"
   },
   "engines": {
     "node": ">=20.0.0"

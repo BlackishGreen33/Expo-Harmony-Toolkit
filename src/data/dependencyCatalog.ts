@@ -77,7 +77,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-camera': {
     status: 'unknown',
-    note: 'No verified Harmony migration path is shipped in v0.8.',
+    note: 'No verified Harmony migration path is shipped in v1.0.',
   },
   'expo-file-system': {
     status: 'unknown',
@@ -89,10 +89,10 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-location': {
     status: 'unknown',
-    note: 'Location permissions and runtime hooks are not validated in v0.8.',
+    note: 'Location permissions and runtime hooks are not validated in v1.0.',
   },
   'expo-notifications': {
     status: 'unknown',
-    note: 'Notifications need platform-specific services that are out of scope for v0.8.',
+    note: 'Notifications need platform-specific services that are out of scope for v1.0.',
   },
 };

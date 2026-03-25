@@ -345,13 +345,13 @@ function buildWarnings(
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
     warnings.push(
-      'Neither android.package nor ios.bundleIdentifier is set in Expo config. v0.8 strict eligibility requires at least one explicit native identifier.',
+      'Neither android.package nor ios.bundleIdentifier is set in Expo config. v1.0 strict eligibility requires at least one explicit native identifier.',
     );
   }
 
   if (dependencies.some((dependency) => dependency.status === 'manual')) {
     warnings.push(
-      'Manual-review dependencies were detected. They remain outside the v0.8 validated matrix even though the toolkit can still scaffold exploratory files.',
+      'Manual-review dependencies were detected. They remain outside the v1.0 validated matrix even though the toolkit can still scaffold exploratory files.',
     );
   }
 
