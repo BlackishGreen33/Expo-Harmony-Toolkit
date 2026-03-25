@@ -46,16 +46,16 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     note: 'Native property overrides should be reviewed manually because Harmony uses a separate sidecar project.',
   },
   'expo-constants': {
-    status: 'manual',
-    note: 'Usually reachable from JavaScript, but runtime assumptions still need verification on Harmony.',
+    status: 'supported',
+    note: 'Constants reads are treated as part of the validated App Shell matrix when they stay in the JavaScript layer.',
   },
   'expo-linking': {
-    status: 'manual',
-    note: 'Deep-link integration needs Harmony-side routing and intent validation.',
+    status: 'supported',
+    note: 'URL generation and JS-layer linking are treated as part of the validated App Shell matrix.',
   },
   'expo-router': {
-    status: 'manual',
-    note: 'The router can stay at the JS layer, but native navigation dependencies still need validation.',
+    status: 'supported',
+    note: 'File-based routing is treated as part of the validated App Shell matrix when router peers, scheme, and plugin config are present.',
   },
   'react-native-gesture-handler': {
     status: 'manual',
@@ -77,7 +77,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-camera': {
     status: 'unknown',
-    note: 'No verified Harmony migration path is shipped in v0.5.',
+    note: 'No verified Harmony migration path is shipped in v0.8.',
   },
   'expo-file-system': {
     status: 'unknown',
@@ -89,10 +89,10 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-location': {
     status: 'unknown',
-    note: 'Location permissions and runtime hooks are not validated in v0.5.',
+    note: 'Location permissions and runtime hooks are not validated in v0.8.',
   },
   'expo-notifications': {
     status: 'unknown',
-    note: 'Notifications need platform-specific services that are out of scope for v0.5.',
+    note: 'Notifications need platform-specific services that are out of scope for v0.8.',
   },
 };

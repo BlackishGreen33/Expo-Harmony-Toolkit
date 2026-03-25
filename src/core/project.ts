@@ -103,6 +103,23 @@ export function collectExpoPlugins(expoConfig: Record<string, any>): string[] {
   return [...names].sort((left, right) => left.localeCompare(right));
 }
 
+export function collectExpoSchemes(expoConfig: Record<string, any>): string[] {
+  const rawScheme = expoConfig.scheme;
+
+  if (typeof rawScheme === 'string' && rawScheme.trim().length > 0) {
+    return [rawScheme.trim()];
+  }
+
+  if (Array.isArray(rawScheme)) {
+    return rawScheme
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim())
+      .sort((left, right) => left.localeCompare(right));
+  }
+
+  return [];
+}
+
 export function deriveHarmonyIdentifiers(
   expoConfig: Record<string, any>,
   packageJson?: PackageJson,

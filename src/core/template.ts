@@ -3,6 +3,9 @@ import path from 'path';
 import {
   DESIRED_PACKAGE_SCRIPTS,
   GENERATED_DIR,
+  GENERATED_SHIMS_DIR,
+  HARMONY_ROUTER_ENTRY_FILENAME,
+  HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH,
   MANIFEST_FILENAME,
   RNOH_CLI_VERSION,
   RNOH_VERSION,
@@ -148,6 +151,7 @@ async function buildManagedFiles(
   identifiers: HarmonyIdentifiers,
   previousToolkitConfig: ToolkitConfig | null,
 ): Promise<TemplateFileDefinition[]> {
+  const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const templateFiles = await Promise.all(
     TEMPLATE_FILE_PATHS.map(async (relativePath) => {
@@ -188,8 +192,28 @@ async function buildManagedFiles(
     ...templateFiles,
     {
       relativePath: 'metro.harmony.config.js',
-      contents: renderMetroConfig(identifiers),
+      contents: renderMetroConfig(),
     },
+    {
+      relativePath: path.join(GENERATED_SHIMS_DIR, 'react-native-safe-area-context', 'index.js'),
+      contents: renderReactNativeSafeAreaContextHarmonyShim(),
+    },
+    {
+      relativePath: path.join(GENERATED_SHIMS_DIR, 'expo-modules-core', 'index.js'),
+      contents: renderExpoModulesCoreHarmonyShim(loadedProject.expoConfig, identifiers),
+    },
+    {
+      relativePath: HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH,
+      contents: renderHarmonyRuntimePrelude(),
+    },
+    ...(hasExpoRouter
+      ? [
+          {
+            relativePath: HARMONY_ROUTER_ENTRY_FILENAME,
+            contents: renderRouterHarmonyEntry(identifiers),
+          } satisfies TemplateFileDefinition,
+        ]
+      : []),
     {
       relativePath: path.join(GENERATED_DIR, TOOLKIT_CONFIG_FILENAME),
       contents: JSON.stringify(toolkitConfig, null, 2) + '\n',
@@ -200,11 +224,12 @@ async function buildManagedFiles(
 async function syncPackageScripts(projectRoot: string, _force: boolean): Promise<string[]> {
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
+  const desiredScripts = buildDesiredPackageScripts(packageJson);
   const scripts = { ...(packageJson.scripts ?? {}) };
   const warnings: string[] = [];
   let didChange = false;
 
-  for (const [scriptName, desiredCommand] of Object.entries(DESIRED_PACKAGE_SCRIPTS)) {
+  for (const [scriptName, desiredCommand] of Object.entries(desiredScripts)) {
     const currentCommand = scripts[scriptName];
 
     if (!currentCommand) {
@@ -254,14 +279,85 @@ function renderTemplate(
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key: string) => replacements[key] ?? '');
 }
 
-function renderMetroConfig(identifiers: HarmonyIdentifiers): string {
-  return `const { getDefaultConfig } = require('expo/metro-config');
+function renderMetroConfig(): string {
+  return `const fs = require('fs');
+const path = require('path');
+
+process.env.EXPO_ROUTER_APP_ROOT = process.env.EXPO_ROUTER_APP_ROOT ?? 'app';
+
+const { getDefaultConfig } = require('expo/metro-config');
 const { createHarmonyMetroConfig } = require('@react-native-oh/react-native-harmony/metro.config');
 
 const defaultConfig = getDefaultConfig(__dirname);
 const harmonyConfig = createHarmonyMetroConfig({
   reactNativeHarmonyPackageName: '@react-native-oh/react-native-harmony',
 });
+const expoHarmonyShims = {
+  'expo-modules-core': path.resolve(__dirname, '.expo-harmony/shims/expo-modules-core'),
+  'react-native-safe-area-context': path.resolve(
+    __dirname,
+    '.expo-harmony/shims/react-native-safe-area-context',
+  ),
+};
+const reactNativeCompatibilityPackageMarkers = [
+  path.sep + '@react-native-oh' + path.sep + 'react-native-harmony' + path.sep,
+  path.sep + 'react-native' + path.sep,
+];
+const resolveReactNativeCompatibilityWrapper = (context, moduleName, platform) => {
+  if (platform !== 'harmony' || !context.originModulePath || !moduleName.startsWith('.')) {
+    return null;
+  }
+
+  const originModulePath = context.originModulePath;
+  const isReactNativeCompatibilityWrapper = reactNativeCompatibilityPackageMarkers.some((marker) =>
+    originModulePath.includes(marker),
+  );
+
+  if (!isReactNativeCompatibilityWrapper) {
+    return null;
+  }
+
+  const originExtension = path.extname(originModulePath);
+  const originBasename = path.basename(originModulePath, originExtension);
+  const candidateModulePath = path.resolve(path.dirname(originModulePath), moduleName);
+  const candidateModuleExtension = path.extname(candidateModulePath);
+  const candidateBasename = path.basename(candidateModulePath, candidateModuleExtension);
+
+  if (candidateBasename !== originBasename) {
+    return null;
+  }
+
+  const candidateBasePath = candidateModuleExtension
+    ? candidateModulePath.slice(0, -candidateModuleExtension.length)
+    : candidateModulePath;
+
+  for (const candidatePlatform of ['harmony', 'android', 'ios']) {
+    const candidatePath = \`\${candidateBasePath}.\${candidatePlatform}.js\`;
+
+    if (fs.existsSync(candidatePath)) {
+      return context.resolveRequest(context, candidatePath, candidatePlatform);
+    }
+  }
+
+  return null;
+};
+const resolveExpoHarmonyShim = (context, moduleName, platform) => {
+  if (moduleName in expoHarmonyShims) {
+    return context.resolveRequest(context, expoHarmonyShims[moduleName], platform);
+  }
+
+  const compatibilityWrapperResolution = resolveReactNativeCompatibilityWrapper(
+    context,
+    moduleName,
+    platform,
+  );
+
+  if (compatibilityWrapperResolution) {
+    return compatibilityWrapperResolution;
+  }
+
+  return context.resolveRequest(context, moduleName, platform);
+};
 
 module.exports = {
   ...defaultConfig,
@@ -277,6 +373,12 @@ module.exports = {
   resolver: {
     ...(defaultConfig.resolver ?? {}),
     ...(harmonyConfig.resolver ?? {}),
+    extraNodeModules: {
+      ...((defaultConfig.resolver?.extraNodeModules ?? {})),
+      ...((harmonyConfig.resolver?.extraNodeModules ?? {})),
+      ...expoHarmonyShims,
+    },
+    resolveRequest: resolveExpoHarmonyShim,
     sourceExts: [
       'harmony.ts',
       'harmony.tsx',
@@ -286,6 +388,414 @@ module.exports = {
     ],
   },
 };
+`;
+}
+
+function renderExpoModulesCoreHarmonyShim(
+  expoConfig: Record<string, any>,
+  identifiers: HarmonyIdentifiers,
+): string {
+  const embeddedExpoConfig = buildExpoConfigForShim(expoConfig, identifiers);
+  const serializedExpoConfig = JSON.stringify(embeddedExpoConfig, null, 2);
+  const primaryScheme = getPrimarySchemeForShim(embeddedExpoConfig, identifiers);
+  const linkingUri = primaryScheme ? `${primaryScheme}://` : null;
+  const serializedLinkingUri = JSON.stringify(linkingUri);
+
+  return `'use strict';
+
+const { Linking, Platform } = require('react-native');
+
+const embeddedExpoConfig = ${serializedExpoConfig};
+const nativeModules = Object.create(null);
+
+class EventSubscription {
+  constructor(remove) {
+    this._remove = remove;
+  }
+
+  remove() {
+    if (!this._remove) {
+      return;
+    }
+
+    const remove = this._remove;
+    this._remove = null;
+    remove();
+  }
+}
+
+class EventEmitter {
+  constructor() {
+    this._listeners = new Map();
+  }
+
+  addListener(eventName, listener) {
+    const listeners = this._listeners.get(eventName) ?? new Set();
+    listeners.add(listener);
+    this._listeners.set(eventName, listeners);
+
+    return new EventSubscription(() => {
+      listeners.delete(listener);
+
+      if (listeners.size === 0) {
+        this._listeners.delete(eventName);
+      }
+    });
+  }
+
+  removeAllListeners(eventName) {
+    if (typeof eventName === 'string') {
+      this._listeners.delete(eventName);
+      return;
+    }
+
+    this._listeners.clear();
+  }
+
+  emit(eventName, payload) {
+    const listeners = this._listeners.get(eventName);
+
+    if (!listeners) {
+      return;
+    }
+
+    for (const listener of listeners) {
+      listener(payload);
+    }
+  }
+}
+
+class LegacyEventEmitter extends EventEmitter {}
+
+class NativeModule extends EventEmitter {}
+
+class SharedObject {}
+
+class SharedRef extends SharedObject {}
+
+class CodedError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+    this.name = 'CodedError';
+  }
+}
+
+class UnavailabilityError extends CodedError {
+  constructor(moduleName, propertyName) {
+    super(
+      'ERR_UNAVAILABLE',
+      propertyName
+        ? moduleName + '.' + propertyName + ' is not available on Harmony.'
+        : moduleName + ' is not available on Harmony.',
+    );
+    this.name = 'UnavailabilityError';
+  }
+}
+
+class ExpoLinkingModule extends NativeModule {
+  constructor(initialUrl) {
+    super();
+    this._currentUrl = initialUrl;
+  }
+
+  getLinkingURL() {
+    return this._currentUrl;
+  }
+
+  _setCurrentUrl(url) {
+    this._currentUrl = url;
+    this.emit('onURLReceived', {
+      url,
+    });
+  }
+}
+
+const expoLinkingModule = new ExpoLinkingModule(${serializedLinkingUri});
+
+if (Linking?.addEventListener) {
+  Linking.addEventListener('url', (event) => {
+    expoLinkingModule._setCurrentUrl(event?.url ?? null);
+  });
+}
+
+nativeModules.ExpoLinking = expoLinkingModule;
+nativeModules.ExponentConstants = {
+  manifest: embeddedExpoConfig,
+  appOwnership: null,
+  executionEnvironment: 'standalone',
+  experienceUrl: ${serializedLinkingUri},
+  linkingUri: ${serializedLinkingUri},
+  statusBarHeight: 0,
+  systemVersion: 'HarmonyOS',
+  platform: {
+    android: embeddedExpoConfig.android ?? null,
+    ios: embeddedExpoConfig.ios ?? null,
+    web: null,
+  },
+};
+nativeModules.ExpoAsset = {
+  async downloadAsync(url) {
+    return url;
+  },
+};
+nativeModules.ExpoFetchModule = {
+  NativeRequest: class NativeRequest {
+    constructor(_response) {
+      this._response = _response;
+    }
+
+    async start() {
+      throw new UnavailabilityError('ExpoFetchModule', 'NativeRequest.start');
+    }
+
+    cancel() {}
+  },
+};
+
+function requireOptionalNativeModule(name) {
+  return nativeModules[name] ?? null;
+}
+
+function requireNativeModule(name) {
+  const nativeModule = requireOptionalNativeModule(name);
+
+  if (nativeModule) {
+    return nativeModule;
+  }
+
+  throw new UnavailabilityError(name);
+}
+
+function requireNativeViewManager(name) {
+  throw new UnavailabilityError(name, 'viewManager');
+}
+
+function registerWebModule() {}
+
+async function reloadAppAsync() {}
+
+function installOnUIRuntime() {}
+
+globalThis.expo = {
+  ...(globalThis.expo ?? {}),
+  EventEmitter,
+  LegacyEventEmitter,
+  NativeModule,
+  SharedObject,
+  SharedRef,
+  modules: {
+    ...(globalThis.expo?.modules ?? {}),
+    ...nativeModules,
+  },
+};
+
+module.exports = {
+  Platform,
+  CodedError,
+  UnavailabilityError,
+  EventEmitter,
+  LegacyEventEmitter,
+  NativeModule,
+  SharedObject,
+  SharedRef,
+  requireNativeModule,
+  requireOptionalNativeModule,
+  requireNativeViewManager,
+  registerWebModule,
+  reloadAppAsync,
+  installOnUIRuntime,
+};
+`;
+}
+
+function renderReactNativeSafeAreaContextHarmonyShim(): string {
+  return `'use strict';
+
+const React = require('react');
+const { Dimensions, View } = require('react-native');
+
+function getWindowMetrics() {
+  const metrics = Dimensions.get('window') ?? { width: 0, height: 0 };
+
+  return {
+    frame: {
+      x: 0,
+      y: 0,
+      width: typeof metrics.width === 'number' ? metrics.width : 0,
+      height: typeof metrics.height === 'number' ? metrics.height : 0,
+    },
+    insets: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    },
+  };
+}
+
+const initialWindowMetrics = getWindowMetrics();
+const initialWindowSafeAreaInsets = initialWindowMetrics.insets;
+const SafeAreaInsetsContext = React.createContext(initialWindowMetrics.insets);
+const SafeAreaFrameContext = React.createContext(initialWindowMetrics.frame);
+
+function SafeAreaProvider({ children, initialMetrics = initialWindowMetrics, style }) {
+  const metrics = initialMetrics ?? initialWindowMetrics;
+
+  return React.createElement(
+    SafeAreaFrameContext.Provider,
+    { value: metrics.frame },
+    React.createElement(
+      SafeAreaInsetsContext.Provider,
+      { value: metrics.insets },
+      React.createElement(View, { style: [{ flex: 1 }, style] }, children),
+    ),
+  );
+}
+
+function NativeSafeAreaProvider(props) {
+  return React.createElement(SafeAreaProvider, props);
+}
+
+function SafeAreaView({ children, style, ...rest }) {
+  return React.createElement(View, { ...rest, style }, children);
+}
+
+function SafeAreaListener({ children }) {
+  return typeof children === 'function' ? children(initialWindowMetrics) : null;
+}
+
+function useSafeAreaInsets() {
+  return React.useContext(SafeAreaInsetsContext);
+}
+
+function useSafeAreaFrame() {
+  return React.useContext(SafeAreaFrameContext);
+}
+
+function useSafeArea() {
+  return useSafeAreaInsets();
+}
+
+function withSafeAreaInsets(Component) {
+  return React.forwardRef((props, ref) =>
+    React.createElement(Component, {
+      ...props,
+      ref,
+      insets: useSafeAreaInsets(),
+    }),
+  );
+}
+
+module.exports = {
+  EdgeInsets: undefined,
+  initialWindowMetrics,
+  initialWindowSafeAreaInsets,
+  NativeSafeAreaProvider,
+  SafeAreaConsumer: SafeAreaInsetsContext.Consumer,
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+  SafeAreaListener,
+  SafeAreaProvider,
+  SafeAreaView,
+  useSafeArea,
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+  withSafeAreaInsets,
+};
+`;
+}
+
+function renderHarmonyRuntimePrelude(): string {
+  return `'use strict';
+
+require('react-native/Libraries/Core/InitializeCore');
+
+function requireReactNativeBaseViewConfigHarmony() {
+  try {
+    return require('react-native/Libraries/NativeComponent/BaseViewConfig.harmony');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function requireRnohBaseViewConfigHarmony() {
+  try {
+    return require('@react-native-oh/react-native-harmony/Libraries/NativeComponent/BaseViewConfig.harmony');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function requireReactNativeBaseViewConfig() {
+  try {
+    return require('react-native/Libraries/NativeComponent/BaseViewConfig');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function requireReactNativePlatformBaseViewConfig() {
+  try {
+    return require('react-native/Libraries/NativeComponent/PlatformBaseViewConfig');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function requireRnohBaseViewConfig() {
+  try {
+    return require('@react-native-oh/react-native-harmony/Libraries/NativeComponent/BaseViewConfig');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function requireRnohPlatformBaseViewConfig() {
+  try {
+    return require('@react-native-oh/react-native-harmony/Libraries/NativeComponent/PlatformBaseViewConfig');
+  } catch (_error) {
+    return null;
+  }
+}
+
+function patchNativeComponentViewConfigDefaults() {
+  const harmonyBaseViewConfigModule =
+    requireReactNativeBaseViewConfigHarmony() ?? requireRnohBaseViewConfigHarmony();
+  const harmonyBaseViewConfig = harmonyBaseViewConfigModule?.default ?? harmonyBaseViewConfigModule;
+
+  if (!harmonyBaseViewConfig) {
+    return;
+  }
+
+  for (const moduleExports of [
+    requireReactNativeBaseViewConfig(),
+    requireReactNativePlatformBaseViewConfig(),
+    requireRnohBaseViewConfig(),
+    requireRnohPlatformBaseViewConfig(),
+  ]) {
+    if (moduleExports && typeof moduleExports === 'object') {
+      moduleExports.default = harmonyBaseViewConfig;
+    }
+  }
+}
+
+function installGlobalIfMissing(name, factory) {
+  if (typeof globalThis[name] !== 'undefined') {
+    return;
+  }
+
+  const value = factory();
+
+  if (typeof value !== 'undefined') {
+    globalThis[name] = value;
+  }
+}
+
+patchNativeComponentViewConfigDefaults();
+installGlobalIfMissing('FormData', () => require('react-native/Libraries/Network/FormData').default);
+installGlobalIfMissing('Blob', () => require('react-native/Libraries/Blob/Blob').default);
+installGlobalIfMissing('FileReader', () => require('react-native/Libraries/Blob/FileReader').default);
 `;
 }
 
@@ -303,6 +813,137 @@ function contentsEqual(currentContents: Buffer, nextContents: string | Buffer, b
 
 function sortRecordByKey(record: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(record).sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function buildDesiredPackageScripts(packageJson: PackageJson): Record<string, string> {
+  const entryFile = usesExpoRouter(packageJson) ? HARMONY_ROUTER_ENTRY_FILENAME : 'index.js';
+
+  return {
+    ...DESIRED_PACKAGE_SCRIPTS,
+    'bundle:harmony': `EXPO_ROUTER_APP_ROOT=app react-native bundle-harmony --reset-cache --dev false --entry-file ${entryFile} --bundle-output harmony/entry/src/main/resources/rawfile/bundle.harmony.js --assets-dest harmony/entry/src/main/resources/rawfile/assets --config ./metro.harmony.config.js`,
+  };
+}
+
+function usesExpoRouter(packageJson: PackageJson): boolean {
+  return Boolean(
+    packageJson.dependencies?.['expo-router'] ||
+      packageJson.devDependencies?.['expo-router'] ||
+      packageJson.peerDependencies?.['expo-router'],
+  );
+}
+
+function renderRouterHarmonyEntry(identifiers: HarmonyIdentifiers): string {
+  return `require('./${HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH}');
+
+const React = require('react');
+const { AppRegistry } = require('react-native');
+const { registerRootComponent } = require('expo');
+const { ExpoRoot } = require('expo-router');
+
+const context = require.context('./app', true, /\\.[jt]sx?$/);
+
+function App() {
+  return React.createElement(ExpoRoot, {
+    context,
+  });
+}
+
+registerRootComponent(App);
+AppRegistry.registerComponent(${JSON.stringify(identifiers.slug)}, () => App);
+`;
+}
+
+function buildExpoConfigForShim(
+  expoConfig: Record<string, any>,
+  identifiers: HarmonyIdentifiers,
+): Record<string, unknown> {
+  const normalized = toSerializableValue(expoConfig);
+  const config =
+    normalized && typeof normalized === 'object' && !Array.isArray(normalized)
+      ? { ...normalized }
+      : {};
+
+  config.name = config.name ?? identifiers.appName;
+  config.slug = config.slug ?? identifiers.slug;
+  config.version = config.version ?? '1.0.0';
+
+  if (!config.scheme) {
+    config.scheme = getPrimarySchemeForShim(config, identifiers);
+  }
+
+  const android =
+    config.android && typeof config.android === 'object' && !Array.isArray(config.android)
+      ? { ...config.android }
+      : {};
+  const ios =
+    config.ios && typeof config.ios === 'object' && !Array.isArray(config.ios)
+      ? { ...config.ios }
+      : {};
+
+  android.package = android.package ?? identifiers.androidPackage ?? identifiers.bundleName;
+  ios.bundleIdentifier =
+    ios.bundleIdentifier ?? identifiers.iosBundleIdentifier ?? identifiers.bundleName;
+
+  config.android = android;
+  config.ios = ios;
+
+  return config;
+}
+
+function getPrimarySchemeForShim(
+  expoConfig: Record<string, unknown>,
+  identifiers: HarmonyIdentifiers,
+): string {
+  const scheme = expoConfig.scheme;
+
+  if (typeof scheme === 'string' && scheme.trim().length > 0) {
+    return scheme.trim();
+  }
+
+  if (Array.isArray(scheme)) {
+    const firstScheme = scheme.find(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0,
+    );
+
+    if (firstScheme) {
+      return firstScheme.trim();
+    }
+  }
+
+  return identifiers.androidPackage ?? identifiers.iosBundleIdentifier ?? identifiers.bundleName;
+}
+
+function toSerializableValue(value: unknown): any {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => toSerializableValue(entry))
+      .filter((entry) => entry !== undefined);
+  }
+
+  if (typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+
+    for (const [key, entry] of Object.entries(value)) {
+      const serializedEntry = toSerializableValue(entry);
+
+      if (serializedEntry !== undefined) {
+        result[key] = serializedEntry;
+      }
+    }
+
+    return result;
+  }
+
+  return undefined;
 }
 
 function collectMetadataWarnings(

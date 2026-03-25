@@ -4,6 +4,7 @@ import { STRICT_DOCTOR_EXIT_CODE } from '../src/core/constants';
 
 const managedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 const sampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
+const appShellSampleRoot = path.join(__dirname, '..', 'examples', 'official-app-shell-sample');
 
 describe('doctor command strict mode', () => {
   const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -29,6 +30,15 @@ describe('doctor command strict mode', () => {
   it('does not set an exit code when the project is eligible', async () => {
     await runDoctorCommand({
       projectRoot: sampleRoot,
+      strict: true,
+    });
+
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('does not set an exit code for the official app-shell sample either', async () => {
+    await runDoctorCommand({
+      projectRoot: appShellSampleRoot,
       strict: true,
     });
 

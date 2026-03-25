@@ -1,6 +1,6 @@
 import { ValidatedReleaseMatrix } from '../types';
 
-export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-minimal';
+export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-app-shell';
 
 export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> = {
   [DEFAULT_VALIDATED_MATRIX_ID]: {
@@ -9,6 +9,9 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
     nativeIdentifierRequirement: 'android_or_ios',
     allowedDependencies: [
       'expo',
+      'expo-constants',
+      'expo-linking',
+      'expo-router',
       'react',
       'react-native',
       'expo-status-bar',
@@ -22,6 +25,15 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
       expo: {
         required: true,
         version: '>=55.0.0 <56.0.0',
+      },
+      'expo-constants': {
+        version: '>=55.0.0 <56.0.0',
+      },
+      'expo-linking': {
+        version: '>=55.0.0 <56.0.0',
+      },
+      'expo-router': {
+        version: '>=6.0.0 <7.0.0',
       },
       react: {
         required: true,

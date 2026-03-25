@@ -28,6 +28,7 @@ describe('official minimal sample', () => {
     expect(report.summary.total).toBeGreaterThan(0);
     expect(report.expoSdkVersion).toBe(55);
     expect(report.eligibility).toBe('eligible');
+    expect(report.matrixId).toBe('expo55-rnoh082-app-shell');
 
     const initResult = await initProject(sampleRoot, true);
     expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/ets/pages/Index.ets');

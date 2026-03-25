@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Expo Harmony App Shell Sample",
+    "slug": "expo-harmony-app-shell-sample",
+    "version": "1.0.0",
+    "scheme": "expoharmonyappshell",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.expoharmonyappshell"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyappshell"
+    }
+  }
+}

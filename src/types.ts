@@ -100,6 +100,8 @@ export interface DoctorReport {
     version: string | null;
     androidPackage: string | null;
     iosBundleIdentifier: string | null;
+    schemes: string[];
+    plugins: string[];
   };
   dependencies: DetectedDependency[];
   summary: DoctorSummary;

@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { ConfigPlugin, createRunOncePlugin, withDangerousMod } from 'expo/config-plugins';
+import { DEFAULT_VALIDATED_MATRIX_ID } from './data/validatedMatrices';
 import {
   ExpoHarmonyPluginProps,
   HarmonyIdentifiers,
@@ -13,6 +14,7 @@ import {
   TOOLKIT_VERSION,
 } from './core/constants';
 import { deriveHarmonyIdentifiers } from './core/project';
+import { collectExpoPlugins, collectExpoSchemes } from './core/project';
 
 export const withExpoHarmony: ConfigPlugin<ExpoHarmonyPluginProps> = (config, props = {}) => {
   validatePluginProps(props);
@@ -42,11 +44,14 @@ export function buildPrebuildMetadata(
   return {
     generatedAt: new Date().toISOString(),
     generatedBy: `${TOOLKIT_PACKAGE_NAME}@${TOOLKIT_VERSION}`,
+    matrixId: DEFAULT_VALIDATED_MATRIX_ID,
     templateVersion: props.templateVersion ?? TEMPLATE_VERSION,
     app: {
       name: config.name ?? null,
       slug: config.slug ?? null,
       version: config.version ?? null,
+      schemes: collectExpoSchemes(config),
+      plugins: collectExpoPlugins(config),
     },
     identifiers,
     props: {

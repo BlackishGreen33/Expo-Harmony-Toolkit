@@ -21,11 +21,13 @@ import {
   CompatibilityRecord,
   DetectedDependency,
   DoctorReport,
+  PackageJson,
   ValidatedReleaseMatrix,
 } from '../types';
 import {
   collectDeclaredDependencies,
   collectExpoPlugins,
+  collectExpoSchemes,
   detectExpoSdkVersion,
   getExpoSdkWarning,
   loadProject,
@@ -40,6 +42,8 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
   const loadedProject = await loadProject(projectRoot);
   const expoSdkVersion = detectExpoSdkVersion(loadedProject.packageJson);
   const matrix = VALIDATED_RELEASE_MATRICES[DEFAULT_VALIDATED_MATRIX_ID];
+  const expoPlugins = collectExpoPlugins(loadedProject.expoConfig);
+  const expoSchemes = collectExpoSchemes(loadedProject.expoConfig);
   const dependencyRecords = new Map<string, DetectedDependency>();
   const declaredDependencies = collectDeclaredDependencies(loadedProject.packageJson);
 
@@ -50,7 +54,7 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
     );
   }
 
-  for (const pluginName of collectExpoPlugins(loadedProject.expoConfig)) {
+  for (const pluginName of expoPlugins) {
     if (!dependencyRecords.has(pluginName)) {
       dependencyRecords.set(pluginName, createDependencyRecord(pluginName, 'configured', 'expo-plugin'));
     }
@@ -62,6 +66,9 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
   const blockingIssues = await collectBlockingIssues(
     loadedProject.projectRoot,
     loadedProject.expoConfig,
+    loadedProject.packageJson,
+    expoPlugins,
+    expoSchemes,
     expoSdkVersion,
     dependencies,
     matrix,
@@ -97,6 +104,8 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
       version: loadedProject.expoConfig.version ?? null,
       androidPackage: loadedProject.expoConfig.android?.package ?? null,
       iosBundleIdentifier: loadedProject.expoConfig.ios?.bundleIdentifier ?? null,
+      schemes: expoSchemes,
+      plugins: expoPlugins,
     },
     dependencies: resolvedDependencies,
     summary: {
@@ -133,6 +142,8 @@ export function renderDoctorReport(report: DoctorReport): string {
     `Expo SDK: ${report.expoSdkVersion ?? 'unknown'} (recognized ${SUPPORTED_EXPO_SDKS.join(', ')})`,
     `Matrix: ${report.matrixId ?? 'none'}`,
     `Eligibility: ${report.eligibility}`,
+    `Schemes: ${report.expoConfig.schemes.join(', ') || 'none'}`,
+    `Plugins: ${report.expoConfig.plugins.join(', ') || 'none'}`,
     `RNOH template: ${report.templateVersion} / runtime ${report.rnohVersion}`,
     `Summary: ${report.summary.supported} supported, ${report.summary.manual} manual, ${report.summary.unknown} unknown (${report.summary.total} total)`,
     '',
@@ -187,6 +198,9 @@ function createDependencyRecord(
 async function collectBlockingIssues(
   projectRoot: string,
   expoConfig: Record<string, any>,
+  packageJson: PackageJson,
+  expoPlugins: string[],
+  expoSchemes: string[],
   expoSdkVersion: number | null,
   dependencies: DetectedDependency[],
   matrix: ValidatedReleaseMatrix,
@@ -230,10 +244,46 @@ async function collectBlockingIssues(
     if (!matrix.allowedDependencies.includes(dependency.name)) {
       issues.push({
         code: 'dependency.not_allowed',
-        message: `${dependency.name} is outside the validated v0.5 allowlist.`,
+        message: `${dependency.name} is outside the validated ${matrix.id} allowlist.`,
         subject: dependency.name,
       });
     }
+  }
+
+  if (dependencyMap.has('expo-router')) {
+    for (const peerDependencyName of ['expo-linking', 'expo-constants']) {
+      if (!dependencyMap.has(peerDependencyName)) {
+        issues.push({
+          code: 'dependency.router_peer_missing',
+          message: `expo-router requires ${peerDependencyName} inside the validated App Shell matrix.`,
+          subject: peerDependencyName,
+        });
+      }
+    }
+
+    if (!expoPlugins.includes('expo-router')) {
+      issues.push({
+        code: 'config.router_plugin.missing',
+        message: 'Expo config plugins must include expo-router when expo-router is used inside the App Shell matrix.',
+        subject: 'expo-router',
+      });
+    }
+
+    if (expoSchemes.length === 0) {
+      issues.push({
+        code: 'config.scheme.missing',
+        message: 'Expo config must declare at least one scheme when expo-router is used inside the App Shell matrix.',
+      });
+    }
+
+    const bundleScript = packageJson.scripts?.['bundle:harmony'];
+    if (bundleScript && !bundleScript.includes('index.harmony.js')) {
+      issues.push({
+        code: 'config.bundle_script.mismatch',
+        message: 'Router projects must bundle with the Harmony sidecar entry file index.harmony.js inside the App Shell matrix.',
+      });
+    }
+
   }
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
@@ -295,13 +345,13 @@ function buildWarnings(
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
     warnings.push(
-      'Neither android.package nor ios.bundleIdentifier is set in Expo config. v0.5 strict eligibility requires at least one explicit native identifier.',
+      'Neither android.package nor ios.bundleIdentifier is set in Expo config. v0.8 strict eligibility requires at least one explicit native identifier.',
     );
   }
 
   if (dependencies.some((dependency) => dependency.status === 'manual')) {
     warnings.push(
-      'Manual-review dependencies were detected. They remain outside the v0.5 validated matrix even though the toolkit can still scaffold exploratory files.',
+      'Manual-review dependencies were detected. They remain outside the v0.8 validated matrix even though the toolkit can still scaffold exploratory files.',
     );
   }
 

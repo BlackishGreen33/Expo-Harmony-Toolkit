@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Expo Harmony Router Missing Plugin Fixture",
+    "slug": "expo-harmony-router-missing-plugin",
+    "version": "1.0.0",
+    "scheme": "expoharmonyroutermissingplugin",
+    "android": {
+      "package": "com.blackishgreen.expoharmonyroutermissingplugin"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyroutermissingplugin"
+    }
+  }
+}
