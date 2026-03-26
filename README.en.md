@@ -1,14 +1,30 @@
-# Expo Harmony Toolkit
+<div align="center">
+  <h1>Expo Harmony Toolkit</h1>
+  <p><strong>A validated Expo-to-Harmony toolkit for managed Expo app-shell projects.</strong></p>
+  <p>Built around one public App Shell matrix, with clear admission checks, vendored Harmony scaffolding, and a documented DevEco release gate.</p>
+  <p>
+    <a href="./README.md">简体中文</a> ·
+    <a href="./README.en.md">English</a>
+  </p>
+  <p>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
+    <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-111827?style=flat-square"></a>
+    <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--app--shell-2563eb?style=flat-square"></a>
+    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
+  </p>
+  <p>
+    <a href="./docs/support-matrix.md">Support Matrix</a> ·
+    <a href="./docs/official-app-shell-sample.md">Official App Shell Sample</a> ·
+    <a href="./docs/roadmap.md">Roadmap</a>
+  </p>
+</div>
 
-> A validated Expo-to-Harmony toolkit for managed Expo app-shell projects.
+> [!IMPORTANT]
+> `v1.0.0` is a formal restricted-platform promise for `expo55-rnoh082-app-shell`. It is not a promise that arbitrary Expo apps can ship to HarmonyOS unchanged.
 
-[简体中文](./README.md) | [English](./README.en.md)
-
-![CI](https://img.shields.io/github/actions/workflow/status/BlackishGreen33/Expo-Harmony-Plugin/ci.yml?branch=main&label=CI)
-![License](https://img.shields.io/github/license/BlackishGreen33/Expo-Harmony-Plugin)
-![Version](https://img.shields.io/badge/version-v1.0.0-111827)
-![Matrix](https://img.shields.io/badge/matrix-expo55--rnoh082--app--shell-2563eb)
-![Managed/CNG Only](https://img.shields.io/badge/input-Managed%2FCNG-059669)
+> [!TIP]
+> If you only need a fast admission check, start with `expo-harmony doctor --strict --project-root /path/to/app`.
 
 ## Overview
 
@@ -22,9 +38,7 @@
 - Dependency classification and `doctor --strict` admission checks
 - Official minimal sample and official app-shell sample
 
-`v1.0.0` is not a promise that arbitrary Expo apps can ship to HarmonyOS. It is a formal restricted-platform promise for one validated app-shell matrix.
-
-## Current Status and Boundaries
+## Project Status
 
 | Item | Status |
 | --- | --- |
@@ -32,8 +46,22 @@
 | Formal release matrix | `expo55-rnoh082-app-shell` |
 | Supported input | Managed/CNG Expo projects |
 | Validated capabilities | `expo-router`, `expo-linking`, `expo-constants` |
-| Official release gate | DevEco Studio GUI build/run |
-| Out of scope | bare Expo, `reanimated`, `svg`, `gesture-handler`, `camera`, `notifications`, `file-system`, pure `hvigor` CLI packaging |
+| Official sample | `examples/official-app-shell-sample` |
+| Official release gate | DevEco Studio GUI `Build Debug Hap(s)` / `Run` |
+
+<details>
+<summary><strong>Currently out of scope</strong></summary>
+
+- bare Expo
+- `react-native-reanimated`
+- `react-native-svg`
+- `react-native-gesture-handler`
+- `expo-camera`
+- `expo-notifications`
+- `expo-file-system`
+- pure `hvigor` CLI packaging
+
+</details>
 
 ## Key Features
 

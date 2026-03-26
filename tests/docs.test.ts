@@ -7,9 +7,16 @@ const readmeEnPath = path.join(repoRoot, 'README.en.md');
 const licensePath = path.join(repoRoot, 'LICENSE');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 
-function getLocalMarkdownLinks(contents: string): string[] {
-  const matches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
-  return Array.from(matches, (match) => match[1]);
+function getLocalLinks(contents: string): string[] {
+  const markdownMatches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
+  const htmlMatches = contents.matchAll(/href="(\.\/[^"]+)"/g);
+
+  return Array.from(
+    new Set([
+      ...Array.from(markdownMatches, (match) => match[1]),
+      ...Array.from(htmlMatches, (match) => match[1]),
+    ]),
+  );
 }
 
 describe('documentation metadata', () => {
@@ -22,12 +29,12 @@ describe('documentation metadata', () => {
     const readmeZh = await fs.readFile(readmeZhPath, 'utf8');
     const readmeEn = await fs.readFile(readmeEnPath, 'utf8');
     const linkedFiles = [
-      ...getLocalMarkdownLinks(readmeZh),
-      ...getLocalMarkdownLinks(readmeEn),
+      ...getLocalLinks(readmeZh),
+      ...getLocalLinks(readmeEn),
     ];
 
-    expect(readmeZh).toContain('[English](./README.en.md)');
-    expect(readmeEn).toContain('[简体中文](./README.md)');
+    expect(readmeZh).toContain('href="./README.en.md"');
+    expect(readmeEn).toContain('href="./README.md"');
 
     for (const link of linkedFiles) {
       const target = path.resolve(repoRoot, link);

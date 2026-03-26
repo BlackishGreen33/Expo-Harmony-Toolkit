@@ -1,18 +1,34 @@
-# Expo Harmony Toolkit
+<div align="center">
+  <h1>Expo Harmony Toolkit</h1>
+  <p><strong>面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与正式受限平台工具链。</strong></p>
+  <p>Focused on one validated App Shell matrix, with clear admission checks, vendored Harmony sidecar scaffolding, and a documented DevEco release gate.</p>
+  <p>
+    <a href="./README.md">简体中文</a> ·
+    <a href="./README.en.md">English</a>
+  </p>
+  <p>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
+    <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-111827?style=flat-square"></a>
+    <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--app--shell-2563eb?style=flat-square"></a>
+    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
+  </p>
+  <p>
+    <a href="./docs/support-matrix.md">支持矩阵</a> ·
+    <a href="./docs/official-app-shell-sample.md">官方 App Shell Sample</a> ·
+    <a href="./docs/roadmap.md">路线图</a>
+  </p>
+</div>
 
-> 面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与正式受限平台工具链。
+> [!IMPORTANT]
+> `v1.0.0` 只对 `expo55-rnoh082-app-shell` 做正式受限平台承诺，不代表任意 Expo 项目都能直接打包为 HarmonyOS 应用。
 
-[简体中文](./README.md) | [English](./README.en.md)
+> [!TIP]
+> 如果你只想先判断项目是否落在承诺范围内，先运行 `expo-harmony doctor --strict --project-root /path/to/app`。
 
-![CI](https://img.shields.io/github/actions/workflow/status/BlackishGreen33/Expo-Harmony-Plugin/ci.yml?branch=main&label=CI)
-![License](https://img.shields.io/github/license/BlackishGreen33/Expo-Harmony-Plugin)
-![Version](https://img.shields.io/badge/version-v1.0.0-111827)
-![Matrix](https://img.shields.io/badge/matrix-expo55--rnoh082--app--shell-2563eb)
-![Managed/CNG Only](https://img.shields.io/badge/input-Managed%2FCNG-059669)
+## 概览
 
-## 简介
-
-`expo-harmony-toolkit` 提供一套围绕 Expo 到 HarmonyOS 迁移的工具链：
+`expo-harmony-toolkit` 围绕 Expo 到 HarmonyOS 的迁移与准入检查提供一条清晰工具链：
 
 - Expo config plugin 根入口 `app.plugin.js`
 - CLI：`expo-harmony doctor`
@@ -22,9 +38,7 @@
 - 依赖分类与 `doctor --strict` 准入检查
 - 官方最小 sample 与官方 App Shell sample
 
-`v1.0.0` 的定位不是“任意 Expo 项目都能直接打包”，而是对单一 App Shell matrix 的正式受限平台承诺。
-
-## 当前状态与边界
+## 项目状态
 
 | 项目 | 说明 |
 | --- | --- |
@@ -32,15 +46,29 @@
 | 正式承诺矩阵 | `expo55-rnoh082-app-shell` |
 | 输入范围 | Managed/CNG Expo 项目 |
 | 已验证能力 | `expo-router`、`expo-linking`、`expo-constants` |
-| 官方 release gate | DevEco Studio GUI build/run |
-| 不在承诺内 | bare Expo、`reanimated`、`svg`、`gesture-handler`、`camera`、`notifications`、`file-system`、`hvigor` 纯 CLI 打包 |
+| 官方 sample | `examples/official-app-shell-sample` |
+| 官方 release gate | DevEco Studio GUI `Build Debug Hap(s)` / `Run` |
 
-## 核心特性
+<details>
+<summary><strong>当前不在承诺范围</strong></summary>
+
+- bare Expo
+- `react-native-reanimated`
+- `react-native-svg`
+- `react-native-gesture-handler`
+- `expo-camera`
+- `expo-notifications`
+- `expo-file-system`
+- `hvigor` 纯 CLI 打包
+
+</details>
+
+## 核心能力
 
 - `doctor --strict` 提供稳定的准入检查，输出 `matrixId`、`eligibility`、`blockingIssues`、`advisories`
 - `init` 生成 Harmony sidecar、Metro 配置、受管 metadata 与 package scripts
 - `sync-template` 以幂等方式刷新模板，并对 drift 给出清晰提示
-- 官方 sample 覆盖 baseline smoke 与 App Shell 运行链路
+- 官方 sample 同时覆盖 baseline smoke 与 App Shell 运行链路
 - 当前矩阵的自动化验证已经固化到 CI
 
 ## 快速开始
