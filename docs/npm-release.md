@@ -6,7 +6,7 @@
 
 - 包名：`expo-harmony-toolkit`
 - dist-tag：`latest`
-- provenance：开启
+- provenance：GitHub 自动发布开启；本地手动发布不要求
 - 自动发布：hosted CI only
 
 ## 发布前检查
@@ -42,7 +42,7 @@ pnpm release:check
 
 ```bash
 pnpm release:check
-npm publish --tag latest --provenance --access public
+npm publish --tag latest --access public
 ```
 
 前提：
@@ -66,7 +66,8 @@ npm publish --tag latest --provenance --access public
 
 - GitHub Actions secret 中存在 `NPM_TOKEN`
 - 使用 npm 官方认证流程
-- 发布命令包含 `--provenance`
+- GitHub 自动发布命令包含 `--provenance`
+- 本地手动发布只要求 `latest` dist-tag，不强制 provenance
 
 `workflow_dispatch` 仅用于 rehearsal / dry-run，不会直接 publish。
 
