@@ -51,11 +51,11 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(packageJson.version).toBe('1.5.0');
+    expect(packageJson.version).toBe('1.5.1');
     expect(packageJson.license).toBe('MIT');
-    expect(packageJson.repository?.url).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Plugin.git');
-    expect(packageJson.homepage).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Plugin#readme');
-    expect(packageJson.bugs?.url).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Plugin/issues');
+    expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
+    expect(packageJson.homepage).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit#readme');
+    expect(packageJson.bugs?.url).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/issues');
   });
 
   it('documents the validated adapter specifiers in the support matrix', async () => {

@@ -23,9 +23,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@11.5.1
 
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -38,6 +41,4 @@ jobs:
 
       - name: Publish to npm
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --tag latest --provenance --access public

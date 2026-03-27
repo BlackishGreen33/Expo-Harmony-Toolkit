@@ -7,9 +7,9 @@
     <a href="./README.en.md">English</a>
   </p>
   <p>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.1-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.5.0` 只对 `expo55-rnoh082-ui-stack` 做正式公开承诺。这不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明，而是对一条受限、可验证矩阵的稳定承诺。
+> `v1.5.1` 继续只对 `expo55-rnoh082-ui-stack` 做正式公开承诺。这不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明，而是对一条受限、可验证矩阵的稳定承诺。
 
 > [!TIP]
 > 由于当前三套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -46,7 +46,7 @@
 
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.5.0` |
+| 当前版本 | `v1.5.1` |
 | 唯一公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
 | 已验证 JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg`、`react-native-gesture-handler` |
@@ -67,42 +67,103 @@
 
 </details>
 
-## 快速开始
+## 安装方式
 
-仓库自身：
+已发布 npm 包：
+
+```bash
+pnpm add -D expo-harmony-toolkit
+# 或
+npm install -D expo-harmony-toolkit
+```
+
+安装完成后，推荐通过本地项目依赖调用 CLI：
+
+```bash
+pnpm exec expo-harmony doctor --project-root .
+# 或
+npx expo-harmony doctor --project-root .
+```
+
+如果你是在这个仓库里开发，或直接运行官方 UI-stack sample，仍推荐：
 
 ```bash
 pnpm install --ignore-scripts
-pnpm build
-pnpm test
 ```
 
-任意 Expo 项目：
+因为当前三套 `@react-native-oh-tpl/*` adapter 在 prepare 阶段可能访问私有上游资源。
 
-```bash
-expo-harmony doctor --project-root /path/to/app
-expo-harmony doctor --project-root /path/to/app --strict
-expo-harmony init --project-root /path/to/app
-expo-harmony sync-template --project-root /path/to/app
+## 推荐接入方式
+
+建议把 config plugin 写进 Expo 配置，这样 `prebuild` 元数据和 CLI 读取的 Harmony 标识会保持一致：
+
+```json
+{
+  "expo": {
+    "android": {
+      "package": "com.example.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-harmony-toolkit",
+        {
+          "entryModuleName": "entry"
+        }
+      ]
+    ]
+  }
+}
 ```
 
-进入项目根目录后的 CLI 构建链：
+说明：
+
+- 如果已经配置了 `android.package` 或 `ios.bundleIdentifier`，通常不需要额外传 `bundleName`
+- `entryModuleName` 默认就是 `entry`，只有你需要显式固定时才需要写出来
+- toolkit 不会替你自动补齐 UI-stack 依赖；依赖是否落入公开矩阵，以 `doctor --strict` 结果为准
+
+## 使用方法
+
+1. 先做准入检查：
 
 ```bash
 cd /path/to/app
-expo-harmony env --strict
-expo-harmony build-hap --mode debug
+pnpm exec expo-harmony doctor --project-root .
+pnpm exec expo-harmony doctor --project-root . --strict
 ```
 
-如果你只想单独生成 JS bundle：
+2. 生成或刷新受管 Harmony sidecar：
 
 ```bash
-expo-harmony bundle
+pnpm exec expo-harmony init --project-root .
+pnpm exec expo-harmony sync-template --project-root .
 ```
+
+3. 生成 JS bundle，或继续发起 Harmony 构建：
+
+```bash
+pnpm exec expo-harmony bundle --project-root .
+pnpm exec expo-harmony env --strict
+pnpm exec expo-harmony build-hap --mode debug
+```
+
+4. 如果需要 release 构建，先确认签名环境已就绪，再执行：
+
+```bash
+pnpm exec expo-harmony env
+pnpm exec expo-harmony build-hap --mode release
+```
+
+常见使用判断：
+
+- 想知道当前项目是否还在公开矩阵里：跑 `doctor --strict`
+- 刚改过依赖、Expo 配置或插件：先跑 `sync-template`
+- 只想验证 JS/UI 侧是否能打包：跑 `bundle`
+- 准备进 DevEco Studio 或本机构建 HAP：先跑 `env`
 
 ## 支持矩阵
 
-`v1.5.0` 继续坚持单矩阵路线：`expo55-rnoh082-ui-stack`。
+`v1.5.1` 继续坚持单矩阵路线：`expo55-rnoh082-ui-stack`。
 
 - Expo SDK：`55`
 - React：`19.2.x`
@@ -169,7 +230,8 @@ expo-harmony bundle
 
 - GitHub workflow 跑 `build/test/pack/tarball smoke`
 - `build-hap --mode debug` 不阻塞 npm publish
-- npm 发布使用 `latest` dist-tag 和 provenance
+- GitHub 自动发布使用 `latest` dist-tag 和 provenance
+- 本地手动发布使用 `latest` dist-tag
 
 手动 Harmony 验收继续要求：
 

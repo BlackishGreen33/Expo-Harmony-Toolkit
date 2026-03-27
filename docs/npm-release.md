@@ -54,18 +54,20 @@ npm publish --tag latest --access public
 
 默认触发：
 
-- push version tag，例如 `v1.5.0`
+- push version tag，例如 `v1.5.1`
 
 工作流行为：
 
 - 安装依赖
 - 执行 `pnpm release:check`
-- 使用 `NPM_TOKEN` 发布到 npm
+- 使用 npm Trusted Publisher 发布到 npm
 
 要求：
 
-- GitHub Actions secret 中存在 `NPM_TOKEN`
-- 使用 npm 官方认证流程
+- npm 包页面已配置 GitHub Trusted Publisher
+- workflow 文件名与 Trusted Publisher 配置一致
+- workflow 具备 `id-token: write`
+- 使用 GitHub-hosted runner
 - GitHub 自动发布命令包含 `--provenance`
 - 本地手动发布只要求 `latest` dist-tag，不强制 provenance
 

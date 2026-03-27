@@ -132,7 +132,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.5.0',
+      [TOOLKIT_PACKAGE_NAME]: '1.5.1',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 

@@ -7,9 +7,9 @@
     <a href="./README.en.md">English</a>
   </p>
   <p>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.1-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.5.0` makes one formal public promise only: `expo55-rnoh082-ui-stack`. This is not a claim that arbitrary Expo applications can be published to HarmonyOS unchanged.
+> `v1.5.1` continues to make one formal public promise only: `expo55-rnoh082-ui-stack`. This is not a claim that arbitrary Expo applications can be published to HarmonyOS unchanged.
 
 > [!TIP]
 > The three validated `@react-native-oh-tpl/*` adapters are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -46,7 +46,7 @@
 
 | Item | Status |
 | --- | --- |
-| Current version | `v1.5.0` |
+| Current version | `v1.5.1` |
 | Public matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
 | Validated JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg`, `react-native-gesture-handler` |
@@ -67,42 +67,103 @@
 
 </details>
 
-## Quick Start
+## Installation
 
-For this repository:
+Published npm package:
+
+```bash
+pnpm add -D expo-harmony-toolkit
+# or
+npm install -D expo-harmony-toolkit
+```
+
+After installation, prefer invoking the CLI through the local project dependency:
+
+```bash
+pnpm exec expo-harmony doctor --project-root .
+# or
+npx expo-harmony doctor --project-root .
+```
+
+If you are developing inside this repository or running the official UI-stack sample directly, still prefer:
 
 ```bash
 pnpm install --ignore-scripts
-pnpm build
-pnpm test
 ```
 
-For any Expo project:
+This avoids adapter prepare hooks failing on private upstream resources.
 
-```bash
-expo-harmony doctor --project-root /path/to/app
-expo-harmony doctor --project-root /path/to/app --strict
-expo-harmony init --project-root /path/to/app
-expo-harmony sync-template --project-root /path/to/app
+## Recommended Plugin Wiring
+
+Add the config plugin to your Expo config so prebuild metadata and CLI-derived Harmony identifiers stay aligned:
+
+```json
+{
+  "expo": {
+    "android": {
+      "package": "com.example.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-harmony-toolkit",
+        {
+          "entryModuleName": "entry"
+        }
+      ]
+    ]
+  }
+}
 ```
 
-Inside the project root:
+Notes:
+
+- If `android.package` or `ios.bundleIdentifier` is already set, you usually do not need to pass `bundleName`
+- `entryModuleName` defaults to `entry`; only pin it explicitly when you want to make that choice obvious
+- the toolkit does not auto-install validated UI-stack dependencies; use `doctor --strict` as the real admission gate
+
+## Usage
+
+1. Run the admission check first:
 
 ```bash
 cd /path/to/app
-expo-harmony env --strict
-expo-harmony build-hap --mode debug
+pnpm exec expo-harmony doctor --project-root .
+pnpm exec expo-harmony doctor --project-root . --strict
 ```
 
-If you only need the JavaScript artifact:
+2. Generate or refresh the managed Harmony sidecar:
 
 ```bash
-expo-harmony bundle
+pnpm exec expo-harmony init --project-root .
+pnpm exec expo-harmony sync-template --project-root .
 ```
+
+3. Generate the JavaScript bundle, or continue into Harmony build steps:
+
+```bash
+pnpm exec expo-harmony bundle --project-root .
+pnpm exec expo-harmony env --strict
+pnpm exec expo-harmony build-hap --mode debug
+```
+
+4. For a release build, verify signing first and then run:
+
+```bash
+pnpm exec expo-harmony env
+pnpm exec expo-harmony build-hap --mode release
+```
+
+Common decision points:
+
+- Want to know whether the current project still matches the public matrix: run `doctor --strict`
+- Changed dependencies, Expo config, or plugin wiring: run `sync-template`
+- Only want to verify JavaScript/UI portability: run `bundle`
+- About to open DevEco Studio or build a HAP locally: run `env` first
 
 ## Support Matrix
 
-`v1.5.0` stays on one public matrix: `expo55-rnoh082-ui-stack`.
+`v1.5.1` stays on one public matrix: `expo55-rnoh082-ui-stack`.
 
 - Expo SDK: `55`
 - React: `19.2.x`
@@ -169,7 +230,8 @@ Automatic publishing defaults to hosted CI only:
 
 - GitHub workflow runs `build/test/pack/tarball smoke`
 - `build-hap --mode debug` does not block npm publish
-- npm publish uses the `latest` dist-tag and provenance
+- GitHub auto-publish uses the `latest` dist-tag and provenance
+- local manual publishing uses the `latest` dist-tag
 
 Manual Harmony acceptance still requires:
 
