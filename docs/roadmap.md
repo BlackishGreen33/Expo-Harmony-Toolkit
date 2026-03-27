@@ -3,35 +3,65 @@
 ## 已完成里程碑
 
 ### v0.1 迁移工具包
+
 - plugin + CLI + vendored 模板
 - 依赖兼容性扫描
 - 幂等模板同步
 
-### v0.2 可打包 Sample
-- 仓库内官方最小 sample
-- 文档化的 `doctor -> init -> bundle -> DevEco/HAP` 链路
-- 最小 Harmony skeleton 与 bundle 路径验证
-
 ### v0.5 受限平台承诺
-- 单一验证矩阵 `expo55-rnoh082-minimal`
-- 明确的白名单依赖与阻断规则
+
+- 单一验证矩阵
+- 明确白名单依赖与阻断规则
 - `doctor --strict` fail-fast 准入检查
-- 官方 sample 的 CI 验证与手动 DevEco release gate
 
-### v0.8 App Shell 能力扩张
-- 单一验证矩阵 `expo55-rnoh082-app-shell`
-- `expo-router`、`expo-linking`、`expo-constants` 进入承诺范围
-- 官方 App Shell sample 与 router 边界 fixtures
-- App Shell 级别的手动验收，不包含完整原生 deep link 生命周期
+### v1.1 CLI 打包闭环
 
-### v1.0 正式受限平台承诺
-- 将 `expo55-rnoh082-app-shell` 升级为公开、稳定、可验证的正式承诺
-- `doctor --strict` 输出字段与 issue code 作为公开契约
-- README、支持矩阵、sample 指南与 License 完成公开发布形态整理
-- DevEco Studio GUI build/run 作为当前官方 release gate
+- 新增 `env`
+- 新增 `bundle`
+- 新增 `build-hap --mode debug|release`
+- 新增 `.expo-harmony/env-report.json`
+- 新增 `.expo-harmony/build-report.json`
 
-## 下一阶段候选
+### v1.5 UI Stack 正式公开版本
 
-- 打通 `hvigor` 纯 CLI 构建链路
-- 扩展更多 Expo modules 与第三方依赖覆盖面
-- 增加更多真实项目 fixture 与升级回归场景
+- 公开矩阵升级为 `expo55-rnoh082-ui-stack`
+- `react-native-reanimated`
+- `react-native-svg`
+- `react-native-gesture-handler`
+- `official-ui-stack-sample` 升级为主 sample
+- npm 首次公开发布准备：`release:check`、tarball smoke、release workflow
+
+## 下一阶段
+
+### v2.0 Expo 原生能力核心栈
+
+目标：补齐常见 Expo 一方设备能力。
+
+- `expo-image-picker`
+- `expo-file-system`
+- `expo-location`
+- `expo-camera`
+
+### v2.5 交付服务栈
+
+目标：补齐交付与服务链路。
+
+- `expo-notifications`
+- 完整 deep link 生命周期
+- 更完整的 release signing / profile 检查
+
+### v3.0 单矩阵下的实用全兼容
+
+定义：单矩阵下的“实用全兼容”，而不是 Expo / React Native 全生态绝对 100% 覆盖。
+
+公开目标：
+
+- 单矩阵内的大多数常见 Expo 生产项目可迁移
+- 可构建、可运行、可发布
+- 常见 UI 栈、常见设备 API、常见交付链路都进入正式承诺
+
+## 策略约束
+
+- `v3.0` 前继续坚持单矩阵扩张，不提前开启多 Expo / RNOH 并行矩阵
+- sample、fixture、测试、文档必须和 matrix 规则同步收口
+- 不允许只改 dependency catalog 状态而不补齐 sidecar、文档与验收链

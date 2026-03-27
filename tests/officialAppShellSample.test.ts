@@ -27,6 +27,7 @@ describe('official app-shell sample', () => {
   it('passes strict doctor expectations, scaffolds, and bundles a harmony artifact', async () => {
     const report = await buildDoctorReport(sampleRoot);
     expect(report.expoSdkVersion).toBe(55);
+    expect(report.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(report.eligibility).toBe('eligible');
     expect(report.expoConfig.plugins).toContain('expo-router');
     expect(report.expoConfig.schemes).toEqual(['expoharmonyappshell']);
@@ -43,8 +44,20 @@ describe('official app-shell sample', () => {
       'utf8',
     );
     expect(cmakeLists).toContain('oh_modules/.ohpm/@rnoh+react-native-openharmony@*');
+    expect(cmakeLists).toContain('include("${CMAKE_CURRENT_SOURCE_DIR}/autolinking.cmake")');
+    expect(cmakeLists).toContain('autolink_libraries(rnoh_app)');
     expect(cmakeLists).toContain('foreach(RNOH_TARGET rnoh_core rnoh_core_package)');
     expect(cmakeLists).toContain('assert.h');
+    const autolinkingCmake = await fs.readFile(
+      path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
+      'utf8',
+    );
+    expect(autolinkingCmake).toContain('function(autolink_libraries target)');
+    const etsFactory = await fs.readFile(
+      path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+      'utf8',
+    );
+    expect(etsFactory).toContain('createRNOHPackages');
     const metroConfig = await fs.readFile(path.join(sampleRoot, 'metro.harmony.config.js'), 'utf8');
     expect(metroConfig).toContain("'expo-modules-core'");
     expect(metroConfig).toContain("'react-native-safe-area-context'");
@@ -74,6 +87,11 @@ describe('official app-shell sample', () => {
     const harmonyEntry = await fs.readFile(path.join(sampleRoot, 'index.harmony.js'), 'utf8');
     expect(harmonyEntry).toContain("require('./.expo-harmony/shims/runtime-prelude.js');");
     expect(harmonyEntry).toContain('AppRegistry.registerComponent("expo-harmony-app-shell-sample"');
+    const packageJson = await fs.readJson(path.join(sampleRoot, 'package.json'));
+    expect(packageJson.scripts['harmony:bundle']).toBe('node ../../bin/expo-harmony.js bundle --project-root .');
+    expect(packageJson.scripts['harmony:build:debug']).toBe(
+      'node ../../bin/expo-harmony.js build-hap --project-root . --mode debug',
+    );
 
     const bundleOutput = path.join(
       sampleRoot,
@@ -86,7 +104,7 @@ describe('official app-shell sample', () => {
       'bundle.harmony.js',
     );
 
-    await execFileAsync('pnpm', ['run', 'bundle:harmony'], {
+    await execFileAsync('pnpm', ['run', 'harmony:bundle'], {
       cwd: sampleRoot,
       env: {
         ...process.env,

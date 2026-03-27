@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "UI Stack Specifier Mismatch",
+    "slug": "ui-stack-specifier-mismatch",
+    "version": "1.0.0",
+    "scheme": "uistackspecmismatch",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.uistackspecmismatch"
+    }
+  }
+}

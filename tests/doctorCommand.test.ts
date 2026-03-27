@@ -1,3 +1,4 @@
+import fs from 'fs-extra';
 import path from 'path';
 import { runDoctorCommand } from '../src/commands/doctor';
 import { STRICT_DOCTOR_EXIT_CODE } from '../src/core/constants';
@@ -5,6 +6,14 @@ import { STRICT_DOCTOR_EXIT_CODE } from '../src/core/constants';
 const managedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 const sampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
 const appShellSampleRoot = path.join(__dirname, '..', 'examples', 'official-app-shell-sample');
+const uiStackSampleRoot = path.join(__dirname, '..', 'examples', 'official-ui-stack-sample');
+
+async function cleanupGeneratedArtifacts(projectRoot: string) {
+  await fs.remove(path.join(projectRoot, 'harmony'));
+  await fs.remove(path.join(projectRoot, '.expo-harmony'));
+  await fs.remove(path.join(projectRoot, 'index.harmony.js'));
+  await fs.remove(path.join(projectRoot, 'metro.harmony.config.js'));
+}
 
 describe('doctor command strict mode', () => {
   const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -28,6 +37,7 @@ describe('doctor command strict mode', () => {
   });
 
   it('does not set an exit code when the project is eligible', async () => {
+    await cleanupGeneratedArtifacts(sampleRoot);
     await runDoctorCommand({
       projectRoot: sampleRoot,
       strict: true,
@@ -36,7 +46,18 @@ describe('doctor command strict mode', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
-  it('does not set an exit code for the official app-shell sample either', async () => {
+  it('does not set an exit code for the official ui-stack sample either', async () => {
+    await cleanupGeneratedArtifacts(uiStackSampleRoot);
+    await runDoctorCommand({
+      projectRoot: uiStackSampleRoot,
+      strict: true,
+    });
+
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('does not set an exit code for the official app-shell regression sample either', async () => {
+    await cleanupGeneratedArtifacts(appShellSampleRoot);
     await runDoctorCommand({
       projectRoot: appShellSampleRoot,
       strict: true,

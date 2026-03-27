@@ -15,6 +15,7 @@ import {
   DEFAULT_VALIDATED_MATRIX_ID,
   VALIDATED_RELEASE_MATRICES,
 } from '../data/validatedMatrices';
+import { UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
 import { readManifest, readToolkitConfig } from './metadata';
 import {
   BlockingIssue,
@@ -32,6 +33,7 @@ import {
   getExpoSdkWarning,
   loadProject,
 } from './project';
+import { HARMONY_ROUTER_ENTRY_FILENAME } from './constants';
 
 const DEFAULT_RECORD: CompatibilityRecord = {
   status: 'unknown',
@@ -227,14 +229,22 @@ async function collectBlockingIssues(
       continue;
     }
 
-    if (!dependency || !rule.version) {
+    if (!dependency) {
       continue;
     }
 
-    if (!matchesVersionRange(dependency.version, rule.version)) {
+    if (rule.version && !matchesVersionRange(dependency.version, rule.version)) {
       issues.push({
         code: 'dependency.version_mismatch',
         message: `Dependency ${dependencyName} does not satisfy the validated range ${rule.version}.`,
+        subject: dependencyName,
+      });
+    }
+
+    if (rule.specifier && !matchesDependencySpecifier(dependency.version, rule.specifier)) {
+      issues.push({
+        code: 'dependency.specifier_mismatch',
+        message: `Dependency ${dependencyName} does not match the validated dependency spec ${rule.specifier}.`,
         subject: dependencyName,
       });
     }
@@ -255,7 +265,7 @@ async function collectBlockingIssues(
       if (!dependencyMap.has(peerDependencyName)) {
         issues.push({
           code: 'dependency.router_peer_missing',
-          message: `expo-router requires ${peerDependencyName} inside the validated App Shell matrix.`,
+          message: `expo-router requires ${peerDependencyName} inside the validated UI-stack matrix.`,
           subject: peerDependencyName,
         });
       }
@@ -264,7 +274,7 @@ async function collectBlockingIssues(
     if (!expoPlugins.includes('expo-router')) {
       issues.push({
         code: 'config.router_plugin.missing',
-        message: 'Expo config plugins must include expo-router when expo-router is used inside the App Shell matrix.',
+        message: 'Expo config plugins must include expo-router when expo-router is used inside the validated UI-stack matrix.',
         subject: 'expo-router',
       });
     }
@@ -272,18 +282,51 @@ async function collectBlockingIssues(
     if (expoSchemes.length === 0) {
       issues.push({
         code: 'config.scheme.missing',
-        message: 'Expo config must declare at least one scheme when expo-router is used inside the App Shell matrix.',
+        message: 'Expo config must declare at least one scheme when expo-router is used inside the validated UI-stack matrix.',
       });
     }
 
-    const bundleScript = packageJson.scripts?.['bundle:harmony'];
-    if (bundleScript && !bundleScript.includes('index.harmony.js')) {
+    const harmonyBundleScript = packageJson.scripts?.['harmony:bundle'];
+    const legacyBundleScript = packageJson.scripts?.['bundle:harmony'];
+
+    if (
+      harmonyBundleScript &&
+      !/(\bexpo-harmony\s+bundle\b|\bexpo-harmony\.js\s+bundle\b)/.test(harmonyBundleScript)
+    ) {
       issues.push({
         code: 'config.bundle_script.mismatch',
-        message: 'Router projects must bundle with the Harmony sidecar entry file index.harmony.js inside the App Shell matrix.',
+        message: 'Router projects should bundle through the toolkit command expo-harmony bundle inside the validated UI-stack matrix.',
       });
     }
 
+    if (!harmonyBundleScript && legacyBundleScript && !legacyBundleScript.includes(HARMONY_ROUTER_ENTRY_FILENAME)) {
+      issues.push({
+        code: 'config.bundle_script.mismatch',
+        message: 'Router projects must bundle with the Harmony sidecar entry file index.harmony.js inside the validated UI-stack matrix.',
+      });
+    }
+
+  }
+
+  for (const pairing of UI_STACK_VALIDATED_ADAPTERS) {
+    const hasCanonical = dependencyMap.has(pairing.canonicalPackageName);
+    const hasAdapter = dependencyMap.has(pairing.adapterPackageName);
+
+    if (hasCanonical && !hasAdapter) {
+      issues.push({
+        code: 'dependency.required_missing',
+        message: `Using ${pairing.canonicalPackageName} inside the validated UI-stack matrix also requires ${pairing.adapterPackageName}.`,
+        subject: pairing.adapterPackageName,
+      });
+    }
+
+    if (hasAdapter && !hasCanonical) {
+      issues.push({
+        code: 'dependency.required_missing',
+        message: `Using ${pairing.adapterPackageName} inside the validated UI-stack matrix also requires ${pairing.canonicalPackageName}.`,
+        subject: pairing.canonicalPackageName,
+      });
+    }
   }
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
@@ -345,13 +388,13 @@ function buildWarnings(
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
     warnings.push(
-      'Neither android.package nor ios.bundleIdentifier is set in Expo config. v1.0 strict eligibility requires at least one explicit native identifier.',
+      'Neither android.package nor ios.bundleIdentifier is set in Expo config. Strict eligibility requires at least one explicit native identifier inside the validated matrix.',
     );
   }
 
   if (dependencies.some((dependency) => dependency.status === 'manual')) {
     warnings.push(
-      'Manual-review dependencies were detected. They remain outside the v1.0 validated matrix even though the toolkit can still scaffold exploratory files.',
+      'Manual-review dependencies were detected. They remain outside the current validated matrix even though the toolkit can still scaffold exploratory files.',
     );
   }
 
@@ -386,6 +429,10 @@ function matchesVersionRange(rawVersion: string, range: string): boolean {
   return semver.satisfies(coerced, range, {
     includePrerelease: true,
   });
+}
+
+function matchesDependencySpecifier(rawSpecifier: string, expectedSpecifier: string): boolean {
+  return rawSpecifier.trim() === expectedSpecifier.trim();
 }
 
 function dedupeIssues(issues: BlockingIssue[]): BlockingIssue[] {

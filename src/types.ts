@@ -28,6 +28,7 @@ export interface BlockingIssue {
 
 export interface ValidatedDependencyRule {
   version?: string;
+  specifier?: string;
   required?: boolean;
 }
 
@@ -108,6 +109,48 @@ export interface DoctorReport {
   blockingIssues: BlockingIssue[];
   advisories: string[];
   warnings: string[];
+}
+
+export interface EnvReport {
+  generatedAt: string;
+  projectRoot: string;
+  toolkitVersion: string;
+  devecoStudioPath: string | null;
+  sdkRoot: string | null;
+  harmonyProjectRoot: string | null;
+  javaPath: string | null;
+  ohpmPath: string | null;
+  hvigorPath: string | null;
+  hdcPath: string | null;
+  signingConfigured: boolean;
+  status: 'ready' | 'blocked';
+  blockingIssues: BlockingIssue[];
+  advisories: BlockingIssue[];
+  warnings: string[];
+}
+
+export interface BuildStepReport {
+  label: string;
+  command: string;
+  cwd: string;
+  exitCode: number | null;
+}
+
+export interface BuildReport {
+  generatedAt: string;
+  projectRoot: string;
+  toolkitVersion: string;
+  command: 'bundle' | 'build-hap';
+  mode: 'debug' | 'release' | null;
+  status: 'succeeded' | 'failed';
+  harmonyProjectRoot: string | null;
+  entryFile: string | null;
+  bundleOutputPath: string | null;
+  assetsDestPath: string | null;
+  artifactPaths: string[];
+  blockingIssues: BlockingIssue[];
+  warnings: string[];
+  steps: BuildStepReport[];
 }
 
 export interface TemplateFileDefinition {

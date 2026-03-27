@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Expo Harmony Toolkit</h1>
-  <p><strong>面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与正式受限平台工具链。</strong></p>
-  <p>Focused on one validated App Shell matrix, with clear admission checks, vendored Harmony sidecar scaffolding, and a documented DevEco release gate.</p>
+  <p><strong>面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链。</strong></p>
+  <p>One validated UI-stack matrix, explicit dependency admission rules, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
   <p>
     <a href="./README.md">简体中文</a> ·
     <a href="./README.en.md">English</a>
@@ -9,77 +9,75 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-111827?style=flat-square"></a>
-    <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--app--shell-2563eb?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Plugin/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.0-111827?style=flat-square"></a>
+    <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
   <p>
     <a href="./docs/support-matrix.md">支持矩阵</a> ·
-    <a href="./docs/official-app-shell-sample.md">官方 App Shell Sample</a> ·
+    <a href="./docs/cli-build.md">CLI 构建指南</a> ·
+    <a href="./docs/official-ui-stack-sample.md">官方 UI Stack Sample</a> ·
+    <a href="./docs/npm-release.md">npm 发布说明</a> ·
     <a href="./docs/roadmap.md">路线图</a>
   </p>
 </div>
 
 > [!IMPORTANT]
-> `v1.0.0` 只对 `expo55-rnoh082-app-shell` 做正式受限平台承诺，不代表任意 Expo 项目都能直接打包为 HarmonyOS 应用。
+> `v1.5.0` 只对 `expo55-rnoh082-ui-stack` 做正式公开承诺。这不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明，而是对一条受限、可验证矩阵的稳定承诺。
 
 > [!TIP]
-> 如果你只想先判断项目是否落在承诺范围内，先运行 `expo-harmony doctor --strict --project-root /path/to/app`。
+> 由于当前三套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
 
 ## 概览
 
-`expo-harmony-toolkit` 围绕 Expo 到 HarmonyOS 的迁移与准入检查提供一条清晰工具链：
+`expo-harmony-toolkit` 提供一条围绕 Expo 到 HarmonyOS 迁移的受限、可验证工具链：
 
 - Expo config plugin 根入口 `app.plugin.js`
-- CLI：`expo-harmony doctor`
-- CLI：`expo-harmony init`
-- CLI：`expo-harmony sync-template`
-- vendored `harmony/` sidecar 模板
-- 依赖分类与 `doctor --strict` 准入检查
-- 官方最小 sample 与官方 App Shell sample
+- `expo-harmony doctor`
+- `expo-harmony init`
+- `expo-harmony sync-template`
+- `expo-harmony env`
+- `expo-harmony bundle`
+- `expo-harmony build-hap --mode debug|release`
+- 受管 `harmony/` sidecar 模板与 autolinking 产物
+- `.expo-harmony/*.json` 形式的稳定报告与元数据
 
-## 项目状态
+## 当前状态
 
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.0.0` |
-| 正式承诺矩阵 | `expo55-rnoh082-app-shell` |
+| 当前版本 | `v1.5.0` |
+| 唯一公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
-| 已验证能力 | `expo-router`、`expo-linking`、`expo-constants` |
-| 官方 sample | `examples/official-app-shell-sample` |
-| 官方 release gate | DevEco Studio GUI `Build Debug Hap(s)` / `Run` |
+| 已验证 JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg`、`react-native-gesture-handler` |
+| 构建链 | `doctor -> init -> bundle -> build-hap` |
+| 主 sample | `examples/official-ui-stack-sample` |
+| 回归基线 | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
 
 <details>
 <summary><strong>当前不在承诺范围</strong></summary>
 
 - bare Expo
-- `react-native-reanimated`
-- `react-native-svg`
-- `react-native-gesture-handler`
+- `expo-image-picker`
+- `expo-file-system`
+- `expo-location`
 - `expo-camera`
 - `expo-notifications`
-- `expo-file-system`
-- `hvigor` 纯 CLI 打包
+- 多矩阵并行支持
 
 </details>
 
-## 核心能力
-
-- `doctor --strict` 提供稳定的准入检查，输出 `matrixId`、`eligibility`、`blockingIssues`、`advisories`
-- `init` 生成 Harmony sidecar、Metro 配置、受管 metadata 与 package scripts
-- `sync-template` 以幂等方式刷新模板，并对 drift 给出清晰提示
-- 官方 sample 同时覆盖 baseline smoke 与 App Shell 运行链路
-- 当前矩阵的自动化验证已经固化到 CI
-
 ## 快速开始
 
+仓库自身：
+
 ```bash
-pnpm install
+pnpm install --ignore-scripts
 pnpm build
 pnpm test
 ```
 
-针对任意 Expo 项目：
+任意 Expo 项目：
 
 ```bash
 expo-harmony doctor --project-root /path/to/app
@@ -88,28 +86,49 @@ expo-harmony init --project-root /path/to/app
 expo-harmony sync-template --project-root /path/to/app
 ```
 
+进入项目根目录后的 CLI 构建链：
+
+```bash
+cd /path/to/app
+expo-harmony env --strict
+expo-harmony build-hap --mode debug
+```
+
+如果你只想单独生成 JS bundle：
+
+```bash
+expo-harmony bundle
+```
+
 ## 支持矩阵
 
-`v1.0.0` 只公开承诺一条矩阵：`expo55-rnoh082-app-shell`。
+`v1.5.0` 继续坚持单矩阵路线：`expo55-rnoh082-ui-stack`。
 
 - Expo SDK：`55`
 - React：`19.2.x`
 - React Native：`0.83.x`
-- RNOH：`0.82.18`
+- RNOH / `@react-native-oh/react-native-harmony-cli`：`0.82.18`
 - App Shell 依赖：`expo-router`、`expo-linking`、`expo-constants`
+- UI stack 依赖：`react-native-reanimated`、`react-native-svg`、`react-native-gesture-handler`
+- Harmony adapter：对应三项 `@react-native-oh-tpl/*` exact Git specifier
 - 原生标识：至少配置 `android.package` 或 `ios.bundleIdentifier`
 
-完整矩阵、白名单依赖、阻断条件与反例见 [docs/support-matrix.md](./docs/support-matrix.md)。
+完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
 ## 官方 Samples
 
+- `examples/official-ui-stack-sample`
+  当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、gesture、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-app-shell-sample`
-  当前唯一对外承诺的 App Shell sample，用于验证 `doctor -> init -> bundle -> DevEco` 的正式手动 release gate。
+  `v1.1` App Shell 回归基线，用来防止 UI-stack 收口引入 router 退化。
 - `examples/official-minimal-sample`
-  baseline smoke sample，用于回归最小链路与模板稳定性。
+  最小 smoke baseline，用来回归 sidecar 模板与最短 bundle 路径。
 
-App Shell sample 的完整手动流程见 [docs/official-app-shell-sample.md](./docs/official-app-shell-sample.md)。  
-最小 sample 的 baseline 说明见 [docs/official-minimal-sample.md](./docs/official-minimal-sample.md)。
+详见：
+
+- [官方 UI Stack sample 指南](./docs/official-ui-stack-sample.md)
+- [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
+- [官方最小 sample 指南](./docs/official-minimal-sample.md)
 
 ## CLI 命令
 
@@ -117,53 +136,61 @@ App Shell sample 的完整手动流程见 [docs/official-app-shell-sample.md](./
 | --- | --- |
 | `expo-harmony doctor` | 扫描 Expo 配置与依赖，输出迁移报告 |
 | `expo-harmony doctor --strict` | 将当前矩阵准入检查作为正式 gate 执行 |
-| `expo-harmony init` | 生成 Harmony sidecar、metadata 与 package scripts |
-| `expo-harmony sync-template` | 再次应用 vendored 模板并检查 drift |
+| `expo-harmony init` | 生成 Harmony sidecar、autolinking 产物、metadata 与 package scripts |
+| `expo-harmony sync-template` | 再次应用受管模板并检查 drift |
+| `expo-harmony env` | 检查 DevEco / hvigor / hdc / signing 本地环境 |
+| `expo-harmony bundle` | 生成标准 `bundle.harmony.js` |
+| `expo-harmony build-hap --mode debug` | 触发 debug HAP 构建 |
+| `expo-harmony build-hap --mode release` | 触发 release HAP 构建，需要 signing 就绪 |
 
-工具生成的关键文件包括：
+关键受管产物包括：
 
-- `harmony/`
+- `harmony/oh-package.json5`
+- `harmony/entry/src/main/ets/RNOHPackagesFactory.ets`
+- `harmony/entry/src/main/cpp/RNOHPackagesFactory.h`
+- `harmony/entry/src/main/cpp/autolinking.cmake`
 - `metro.harmony.config.js`
 - `.expo-harmony/manifest.json`
 - `.expo-harmony/doctor-report.json`
+- `.expo-harmony/env-report.json`
+- `.expo-harmony/build-report.json`
 - `.expo-harmony/toolkit-config.json`
 
-## 验证流程 / Release Gate
+## 发布与验收
 
-自动化要求：
+发布前统一检查：
 
 - `pnpm build`
 - `pnpm test`
-- 官方 samples 的 `doctor --strict`
-- `init` / `sync-template` 幂等
-- `bundle:harmony`
+- `npm pack --dry-run`
+- tarball 安装 smoke：`doctor --strict`、`init --force`、`bundle`
 
-手动 release gate：
+自动发布默认走 hosted CI only：
 
-- 在 DevEco Studio 中打开 `examples/official-app-shell-sample/harmony`
+- GitHub workflow 跑 `build/test/pack/tarball smoke`
+- `build-hap --mode debug` 不阻塞 npm publish
+- npm 发布使用 `latest` dist-tag 和 provenance
+
+手动 Harmony 验收继续要求：
+
+- `official-ui-stack-sample` 成功启动
+- SVG 正常渲染
+- gesture 能触发可见动画
+- 动画完成后路由跳转仍正常
 - `Build Debug Hap(s)` 成功
-- App 正常启动
-- 首页显示 `Constants.expoConfig?.name`
-- 首页显示 `Linking.createURL('/details')`
-- 可进入 `/details`
-- 可从 `/details` 返回首页
+
+详见 [docs/npm-release.md](./docs/npm-release.md) 与 [docs/signing-and-release.md](./docs/signing-and-release.md)。
 
 ## 文档索引
 
 - [支持矩阵](./docs/support-matrix.md)
-- [官方 App Shell sample 打包指南](./docs/official-app-shell-sample.md)
-- [官方最小 sample 打包指南](./docs/official-minimal-sample.md)
+- [CLI 构建指南](./docs/cli-build.md)
+- [官方 UI Stack sample 指南](./docs/official-ui-stack-sample.md)
+- [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
+- [官方最小 sample 指南](./docs/official-minimal-sample.md)
+- [npm 发布说明](./docs/npm-release.md)
+- [签名与 Release 说明](./docs/signing-and-release.md)
 - [路线图](./docs/roadmap.md)
-
-## 路线图
-
-- `v0.1`：迁移工具包
-- `v0.2`：官方最小 sample 可按文档手动打包
-- `v0.5`：单一受限矩阵可打包
-- `v0.8`：App Shell 能力扩张
-- `v1.0`：正式受限平台承诺
-
-更完整的阶段说明见 [docs/roadmap.md](./docs/roadmap.md)。
 
 ## License
 

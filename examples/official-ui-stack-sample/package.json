@@ -1,0 +1,38 @@
+{
+  "name": "official-ui-stack-sample",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "harmony:doctor": "node ../../bin/expo-harmony.js doctor --project-root .",
+    "harmony:doctor:strict": "node ../../bin/expo-harmony.js doctor --project-root . --strict",
+    "harmony:env": "node ../../bin/expo-harmony.js env",
+    "harmony:init": "node ../../bin/expo-harmony.js init --project-root .",
+    "harmony:bundle": "node ../../bin/expo-harmony.js bundle --project-root .",
+    "harmony:build:debug": "node ../../bin/expo-harmony.js build-hap --project-root . --mode debug",
+    "harmony:build:release": "node ../../bin/expo-harmony.js build-hap --project-root . --mode release",
+    "harmony:sync-template": "node ../../bin/expo-harmony.js sync-template --project-root .",
+    "start": "expo start"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-oh/react-native-harmony": "0.82.18",
+    "@react-native-oh/react-native-harmony-cli": "0.82.18",
+    "@react-native-oh-tpl/react-native-gesture-handler": "github:react-native-oh-library/react-native-harmony-gesture-handler#ed5bcf2ada6e83f9ec0d50cf239c8d84db3c6462&path:react-native-harmony-gesture-handler",
+    "@react-native-oh-tpl/react-native-reanimated": "github:react-native-oh-library/react-native-harmony-reanimated#9fdbe676209937383907be0592291223c6ca7ad7&path:react-native-harmony-reanimated",
+    "@react-native-oh-tpl/react-native-svg": "github:react-native-oh-library/react-native-harmony-svg#97c31d2f72559931d62fa84a9c86e86d343753d3&path:react-native-harmony-svg",
+    "expo": "^55.0.8",
+    "expo-constants": "~55.0.9",
+    "expo-linking": "~55.0.8",
+    "expo-router": "~6.0.23",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-gesture-handler": "2.14.1",
+    "react-native-reanimated": "3.6.0",
+    "react-native-svg": "15.0.0"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^20.1.2",
+    "metro": "^0.83.1"
+  }
+}

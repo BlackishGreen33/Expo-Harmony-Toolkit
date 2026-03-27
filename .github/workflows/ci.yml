@@ -23,7 +23,7 @@ jobs:
           cache: pnpm
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build
         run: pnpm build
@@ -35,10 +35,11 @@ jobs:
         run: |
           node bin/expo-harmony.js doctor --project-root examples/official-minimal-sample --strict
           node bin/expo-harmony.js doctor --project-root examples/official-app-shell-sample --strict
+          node bin/expo-harmony.js doctor --project-root examples/official-ui-stack-sample --strict
 
       - name: Strict doctor fails on negative fixtures
         run: |
-          for fixture in fixtures/managed-app fixtures/minimal-camera-app fixtures/minimal-router-app fixtures/router-missing-plugin-app fixtures/missing-identifiers-app; do
+          for fixture in fixtures/managed-app fixtures/minimal-camera-app fixtures/minimal-router-app fixtures/router-missing-plugin-app fixtures/missing-identifiers-app fixtures/ui-stack-missing-reanimated-adapter-app fixtures/ui-stack-missing-svg-adapter-app fixtures/ui-stack-missing-gesture-adapter-app fixtures/ui-stack-specifier-mismatch-app; do
             exit_code=0
             node bin/expo-harmony.js doctor --project-root "$fixture" --strict || exit_code=$?
             if [ "$exit_code" -ne 2 ]; then
@@ -55,8 +56,12 @@ jobs:
           pnpm --dir examples/official-app-shell-sample run harmony:init
           pnpm --dir examples/official-app-shell-sample run harmony:sync-template
           pnpm --dir examples/official-app-shell-sample run harmony:sync-template
+          pnpm --dir examples/official-ui-stack-sample run harmony:init
+          pnpm --dir examples/official-ui-stack-sample run harmony:sync-template
+          pnpm --dir examples/official-ui-stack-sample run harmony:sync-template
 
       - name: Official samples bundle
         run: |
-          pnpm --dir examples/official-minimal-sample run bundle:harmony
-          pnpm --dir examples/official-app-shell-sample run bundle:harmony
+          pnpm --dir examples/official-minimal-sample run harmony:bundle
+          pnpm --dir examples/official-app-shell-sample run harmony:bundle
+          pnpm --dir examples/official-ui-stack-sample run harmony:bundle

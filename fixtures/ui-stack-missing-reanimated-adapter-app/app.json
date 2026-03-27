@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "UI Stack Missing Reanimated Adapter",
+    "slug": "ui-stack-missing-reanimated-adapter",
+    "version": "1.0.0",
+    "scheme": "uistackmissingreanimated",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.uistackmissingreanimated"
+    }
+  }
+}

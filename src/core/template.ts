@@ -1,4 +1,6 @@
 import fs from 'fs-extra';
+import JSON5 from 'json5';
+import os from 'os';
 import path from 'path';
 import {
   DESIRED_PACKAGE_SCRIPTS,
@@ -26,9 +28,11 @@ import {
   ToolkitConfig,
   ToolkitManifest,
 } from '../types';
+import { UI_STACK_ADAPTER_PACKAGE_NAMES, UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
 import {
   createGeneratedSha,
   deriveHarmonyIdentifiers,
+  hasDeclaredDependency,
   loadProject,
   resolveRnohHvigorPluginFilename,
 } from './project';
@@ -42,7 +46,6 @@ const TEMPLATE_FILE_PATHS = [
   'codelinter.json',
   'hvigor/hvigor-config.json5',
   'hvigorfile.ts',
-  'oh-package.json5',
   'AppScope/app.json5',
   'AppScope/resources/base/element/string.json',
   'AppScope/resources/base/media/app_icon.png',
@@ -64,6 +67,13 @@ const TEMPLATE_FILE_PATHS = [
   'entry/src/main/resources/base/media/startIcon.png',
   'entry/src/main/resources/base/profile/main_pages.json',
   'entry/src/main/resources/rawfile/.gitkeep',
+] as const;
+
+const AUTOLINKED_FILE_PATHS = [
+  path.join('harmony', 'oh-package.json5'),
+  path.join('harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+  path.join('harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
+  path.join('harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
 ] as const;
 
 export async function initProject(projectRoot: string, force = false): Promise<InitResult> {
@@ -153,6 +163,12 @@ async function buildManagedFiles(
 ): Promise<TemplateFileDefinition[]> {
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
+  const renderedHarmonyRootPackage = renderTemplate(
+    await fs.readFile(path.join(TEMPLATE_ROOT, 'oh-package.json5'), 'utf8'),
+    loadedProject,
+    identifiers,
+    hvigorPluginFilename,
+  );
   const templateFiles = await Promise.all(
     TEMPLATE_FILE_PATHS.map(async (relativePath) => {
       const templatePath = path.join(TEMPLATE_ROOT, relativePath);
@@ -168,6 +184,10 @@ async function buildManagedFiles(
         binary,
       };
     }),
+  );
+  const autolinkedFiles = await buildAutolinkedManagedFiles(
+    loadedProject.projectRoot,
+    renderedHarmonyRootPackage,
   );
 
   const nextToolkitConfig: ToolkitConfig = {
@@ -190,6 +210,7 @@ async function buildManagedFiles(
 
   return [
     ...templateFiles,
+    ...autolinkedFiles,
     {
       relativePath: 'metro.harmony.config.js',
       contents: renderMetroConfig(),
@@ -221,6 +242,212 @@ async function buildManagedFiles(
   ];
 }
 
+async function buildAutolinkedManagedFiles(
+  projectRoot: string,
+  harmonyRootPackageContents: string,
+): Promise<TemplateFileDefinition[]> {
+  const generated = await generateAutolinkingArtifacts(projectRoot, harmonyRootPackageContents);
+
+  return [
+    {
+      relativePath: AUTOLINKED_FILE_PATHS[0],
+      contents: generated.ohPackageContents,
+    },
+    {
+      relativePath: AUTOLINKED_FILE_PATHS[1],
+      contents: generated.etsFactoryContents,
+    },
+    {
+      relativePath: AUTOLINKED_FILE_PATHS[2],
+      contents: generated.cppFactoryContents,
+    },
+    {
+      relativePath: AUTOLINKED_FILE_PATHS[3],
+      contents: generated.cmakeContents,
+    },
+  ];
+}
+
+async function generateAutolinkingArtifacts(
+  projectRoot: string,
+  harmonyRootPackageContents: string,
+): Promise<{
+  ohPackageContents: string;
+  etsFactoryContents: string;
+  cppFactoryContents: string;
+  cmakeContents: string;
+}> {
+  const rnohCliPackageJsonPath = resolveProjectPackageJson(projectRoot, '@react-native-oh/react-native-harmony-cli');
+  const managedOhPackageContents = await buildManagedHarmonyRootPackageContents(
+    projectRoot,
+    harmonyRootPackageContents,
+  );
+
+  if (!rnohCliPackageJsonPath) {
+    return createEmptyAutolinkingArtifacts(managedOhPackageContents);
+  }
+
+  try {
+    const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-autolinking-'));
+
+    try {
+      const temporaryHarmonyRoot = path.join(temporaryRoot, 'harmony');
+
+      await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets'));
+      await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp'));
+      await fs.writeFile(path.join(temporaryHarmonyRoot, 'oh-package.json5'), harmonyRootPackageContents);
+      await runRnohLinkHarmonyCommand(projectRoot, rnohCliPackageJsonPath, temporaryHarmonyRoot);
+
+      return {
+        ohPackageContents: managedOhPackageContents,
+        etsFactoryContents: await fs.readFile(
+          path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+          'utf8',
+        ),
+        cppFactoryContents: await fs.readFile(
+          path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
+          'utf8',
+        ),
+        cmakeContents: await fs.readFile(
+          path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
+          'utf8',
+        ),
+      };
+    } finally {
+      await fs.remove(temporaryRoot);
+    }
+  } catch {
+    return createEmptyAutolinkingArtifacts(managedOhPackageContents);
+  }
+}
+
+async function runRnohLinkHarmonyCommand(
+  projectRoot: string,
+  rnohCliPackageJsonPath: string,
+  harmonyProjectPath: string,
+): Promise<void> {
+  const rnohCliRoot = path.dirname(rnohCliPackageJsonPath);
+  const { commandLinkHarmony } = require(path.join(
+    rnohCliRoot,
+    'dist',
+    'commands',
+    'link-harmony.js',
+  )) as {
+    commandLinkHarmony: {
+      func: (_argv: unknown[], _config: unknown, rawArgs: Record<string, unknown>) => Promise<void>;
+    };
+  };
+
+  await commandLinkHarmony.func([], {}, {
+    harmonyProjectPath,
+    nodeModulesPath: path.join(projectRoot, 'node_modules'),
+    cmakeAutolinkPathRelativeToHarmony: './entry/src/main/cpp/autolinking.cmake',
+    cppRnohPackagesFactoryPathRelativeToHarmony: './entry/src/main/cpp/RNOHPackagesFactory.h',
+    etsRnohPackagesFactoryPathRelativeToHarmony: './entry/src/main/ets/RNOHPackagesFactory.ets',
+    ohPackagePathRelativeToHarmony: './oh-package.json5',
+    includeNpmPackages: UI_STACK_ADAPTER_PACKAGE_NAMES,
+  });
+}
+
+async function buildManagedHarmonyRootPackageContents(
+  projectRoot: string,
+  harmonyRootPackageContents: string,
+): Promise<string> {
+  const parsedPackageJson = JSON5.parse(harmonyRootPackageContents) as {
+    dependencies?: Record<string, string>;
+  };
+  const dependencies = { ...(parsedPackageJson.dependencies ?? {}) };
+
+  for (const adapter of UI_STACK_VALIDATED_ADAPTERS) {
+    const dependencySpecifier = await resolveHarmonyAdapterHarDependency(projectRoot, adapter.adapterPackageName);
+
+    if (dependencySpecifier) {
+      dependencies[adapter.adapterPackageName] = dependencySpecifier;
+    }
+  }
+
+  parsedPackageJson.dependencies = sortRecordByKey(dependencies);
+  return JSON5.stringify(parsedPackageJson, null, 2) + '\n';
+}
+
+async function resolveHarmonyAdapterHarDependency(
+  projectRoot: string,
+  adapterPackageName: string,
+): Promise<string | null> {
+  const adapterEntry = UI_STACK_VALIDATED_ADAPTERS.find(
+    (candidate) => candidate.adapterPackageName === adapterPackageName,
+  );
+
+  if (!adapterEntry) {
+    return null;
+  }
+
+  const adapterRoot = path.join(projectRoot, 'node_modules', ...adapterPackageName.split('/'));
+  const harPath = path.join(adapterRoot, 'harmony', adapterEntry.harmonyHarFileName);
+
+  if (!(await fs.pathExists(harPath))) {
+    return null;
+  }
+
+  const relativeHarPath = path.relative(path.join(projectRoot, 'harmony'), harPath).replace(/\\/g, '/');
+  return `file:${relativeHarPath}`;
+}
+
+function createEmptyAutolinkingArtifacts(harmonyRootPackageContents: string): {
+  ohPackageContents: string;
+  etsFactoryContents: string;
+  cppFactoryContents: string;
+  cmakeContents: string;
+} {
+  return {
+    ohPackageContents: harmonyRootPackageContents,
+    etsFactoryContents: `/*
+ * This file was generated by Expo Harmony Toolkit autolinking.
+ * DO NOT modify it manually, your changes WILL be overwritten.
+ */
+import type { RNPackageContext, RNOHPackage } from '@rnoh/react-native-openharmony';
+
+export function createRNOHPackages(_ctx: RNPackageContext): RNOHPackage[] {
+  return [];
+}
+`,
+    cppFactoryContents: `/*
+ * This file was generated by Expo Harmony Toolkit autolinking.
+ * DO NOT modify it manually, your changes WILL be overwritten.
+ */
+#pragma once
+#include "RNOH/Package.h"
+
+std::vector<rnoh::Package::Shared> createRNOHPackages(const rnoh::Package::Context &_ctx) {
+  return {};
+}
+`,
+    cmakeContents: `# This file was generated by Expo Harmony Toolkit autolinking.
+# DO NOT modify it manually, your changes WILL be overwritten.
+cmake_minimum_required(VERSION 3.5)
+
+function(autolink_libraries target)
+  set(AUTOLINKED_LIBRARIES
+  )
+
+  foreach(lib \${AUTOLINKED_LIBRARIES})
+    target_link_libraries(\${target} PUBLIC \${lib})
+  endforeach()
+endfunction()
+`,
+  };
+}
+
+function resolveProjectPackageJson(projectRoot: string, request: string): string | null {
+  try {
+    return require.resolve(path.join(request, 'package.json'), {
+      paths: [projectRoot],
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function syncPackageScripts(projectRoot: string, _force: boolean): Promise<string[]> {
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
@@ -239,6 +466,10 @@ async function syncPackageScripts(projectRoot: string, _force: boolean): Promise
     }
 
     if (currentCommand === desiredCommand) {
+      continue;
+    }
+
+    if (isEquivalentToolkitScript(scriptName, currentCommand, desiredCommand)) {
       continue;
     }
 
@@ -815,21 +1046,41 @@ function sortRecordByKey(record: Record<string, string>): Record<string, string>
   return Object.fromEntries(Object.entries(record).sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function buildDesiredPackageScripts(packageJson: PackageJson): Record<string, string> {
-  const entryFile = usesExpoRouter(packageJson) ? HARMONY_ROUTER_ENTRY_FILENAME : 'index.js';
+function isEquivalentToolkitScript(
+  scriptName: string,
+  currentCommand: string,
+  desiredCommand: string,
+): boolean {
+  if (currentCommand === desiredCommand) {
+    return true;
+  }
 
+  const compatibilityPatterns: Record<string, RegExp> = {
+    'harmony:doctor': /\bexpo-harmony(?:\.js)?\s+doctor\b/,
+    'harmony:init': /\bexpo-harmony(?:\.js)?\s+init\b/,
+    'harmony:sync-template': /\bexpo-harmony(?:\.js)?\s+sync-template\b/,
+    'harmony:env': /\bexpo-harmony(?:\.js)?\s+env\b/,
+    'harmony:bundle': /\bexpo-harmony(?:\.js)?\s+bundle\b/,
+    'harmony:build:debug': /\bexpo-harmony(?:\.js)?\s+build-hap\b[\s\S]*--mode\s+debug\b/,
+    'harmony:build:release': /\bexpo-harmony(?:\.js)?\s+build-hap\b[\s\S]*--mode\s+release\b/,
+  };
+  const compatibilityPattern = compatibilityPatterns[scriptName];
+
+  return compatibilityPattern ? compatibilityPattern.test(currentCommand) : false;
+}
+
+export function buildDesiredPackageScripts(packageJson: PackageJson): Record<string, string> {
   return {
     ...DESIRED_PACKAGE_SCRIPTS,
-    'bundle:harmony': `EXPO_ROUTER_APP_ROOT=app react-native bundle-harmony --reset-cache --dev false --entry-file ${entryFile} --bundle-output harmony/entry/src/main/resources/rawfile/bundle.harmony.js --assets-dest harmony/entry/src/main/resources/rawfile/assets --config ./metro.harmony.config.js`,
   };
 }
 
-function usesExpoRouter(packageJson: PackageJson): boolean {
-  return Boolean(
-    packageJson.dependencies?.['expo-router'] ||
-      packageJson.devDependencies?.['expo-router'] ||
-      packageJson.peerDependencies?.['expo-router'],
-  );
+export function usesExpoRouter(packageJson: PackageJson): boolean {
+  return hasDeclaredDependency(packageJson, 'expo-router');
+}
+
+export function resolveHarmonyBundleEntryFile(packageJson: PackageJson): string {
+  return usesExpoRouter(packageJson) ? HARMONY_ROUTER_ENTRY_FILENAME : 'index.js';
 }
 
 function renderRouterHarmonyEntry(identifiers: HarmonyIdentifiers): string {

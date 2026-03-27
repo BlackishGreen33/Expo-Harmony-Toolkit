@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "UI Stack Missing SVG Adapter",
+    "slug": "ui-stack-missing-svg-adapter",
+    "version": "1.0.0",
+    "scheme": "uistackmissingsvg",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.uistackmissingsvg"
+    }
+  }
+}

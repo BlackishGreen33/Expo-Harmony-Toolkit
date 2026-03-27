@@ -1,0 +1,23 @@
+{
+  "name": "ui-stack-missing-gesture-adapter-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "harmony:bundle": "expo-harmony bundle"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-community/cli": "^20.1.2",
+    "@react-native-oh/react-native-harmony": "0.82.18",
+    "@react-native-oh/react-native-harmony-cli": "0.82.18",
+    "expo": "^55.0.8",
+    "expo-constants": "~55.0.9",
+    "expo-linking": "~55.0.8",
+    "expo-router": "~6.0.23",
+    "expo-status-bar": "~3.0.8",
+    "metro": "^0.83.1",
+    "react": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-gesture-handler": "2.14.1"
+  }
+}

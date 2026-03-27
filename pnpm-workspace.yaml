@@ -1,3 +1,6 @@
 packages:
   - examples/*
-  - fixtures/*
+onlyBuiltDependencies:
+  - "@react-native-oh-tpl/react-native-gesture-handler"
+  - "@react-native-oh-tpl/react-native-reanimated"
+  - "@react-native-oh-tpl/react-native-svg"

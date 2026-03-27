@@ -26,11 +26,7 @@ export async function resolveProjectRoot(projectRoot?: string): Promise<string> 
 
 export async function loadProject(projectRoot: string): Promise<LoadedProject> {
   const resolvedRoot = await resolveProjectRoot(projectRoot);
-  const packageJsonPath = path.join(resolvedRoot, 'package.json');
-
-  if (!(await fs.pathExists(packageJsonPath))) {
-    throw new Error(`No package.json found at ${resolvedRoot}`);
-  }
+  const packageJsonPath = await ensureProjectPackageJsonPath(resolvedRoot);
 
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
   const appConfigPath = await findAppConfigPath(resolvedRoot);
@@ -49,6 +45,17 @@ export async function loadProject(projectRoot: string): Promise<LoadedProject> {
     expoConfig,
     appConfigPath,
   };
+}
+
+export async function ensureProjectPackageJsonPath(projectRoot: string): Promise<string> {
+  const resolvedRoot = await resolveProjectRoot(projectRoot);
+  const packageJsonPath = path.join(resolvedRoot, 'package.json');
+
+  if (!(await fs.pathExists(packageJsonPath))) {
+    throw new Error(`No package.json found at ${resolvedRoot}`);
+  }
+
+  return packageJsonPath;
 }
 
 export async function findAppConfigPath(projectRoot: string): Promise<string | null> {
@@ -78,6 +85,14 @@ export function collectDeclaredDependencies(
   }
 
   return entries.sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export function hasDeclaredDependency(packageJson: PackageJson, dependencyName: string): boolean {
+  return Boolean(
+    packageJson.dependencies?.[dependencyName] ||
+      packageJson.devDependencies?.[dependencyName] ||
+      packageJson.peerDependencies?.[dependencyName],
+  );
 }
 
 export function collectExpoPlugins(expoConfig: Record<string, any>): string[] {

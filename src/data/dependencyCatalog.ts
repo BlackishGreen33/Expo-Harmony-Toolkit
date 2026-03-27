@@ -1,6 +1,35 @@
 import { CompatibilityRecord } from '../types';
+import { TOOLKIT_PACKAGE_NAME } from '../core/constants';
+import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from './uiStack';
+
+const UI_STACK_COMPATIBILITY_RECORDS = Object.fromEntries(
+  UI_STACK_VALIDATED_ADAPTERS.flatMap((entry) => [
+    [
+      entry.canonicalPackageName,
+      {
+        status: 'supported',
+        note: `Supported in the validated UI-stack matrix when paired with ${entry.adapterPackageName} and the managed Harmony autolinking output.`,
+        replacement: entry.adapterPackageName,
+        docsUrl: entry.docsUrl,
+      } satisfies CompatibilityRecord,
+    ],
+    [
+      entry.adapterPackageName,
+      {
+        status: 'supported',
+        note: `Harmony adapter pinned to ${entry.adapterVersion}. The validated matrix requires the exact Git spec ${getUiStackAdapterSpecifier(entry)}.`,
+        replacement: entry.canonicalPackageName,
+        docsUrl: entry.docsUrl,
+      } satisfies CompatibilityRecord,
+    ],
+  ]),
+) as Record<string, CompatibilityRecord>;
 
 export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
+  [TOOLKIT_PACKAGE_NAME]: {
+    status: 'supported',
+    note: 'The published toolkit package may be installed locally to provide the CLI and config plugin inside a validated project.',
+  },
   expo: {
     status: 'supported',
     note: 'Toolkit can parse Expo config and scaffold Harmony sidecar files for managed/CNG projects.',
@@ -57,24 +86,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     status: 'supported',
     note: 'File-based routing is treated as part of the validated App Shell matrix when router peers, scheme, and plugin config are present.',
   },
-  'react-native-gesture-handler': {
-    status: 'manual',
-    note: 'A Harmony adaptation exists, but this toolkit does not auto-wire it yet.',
-    replacement: 'react-native-oh-library/react-native-harmony-gesture-handler',
-    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-gesture-handler',
-  },
-  'react-native-reanimated': {
-    status: 'manual',
-    note: 'A Harmony adaptation exists, but integration must be verified app by app.',
-    replacement: 'react-native-oh-library/react-native-harmony-reanimated',
-    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-reanimated',
-  },
-  'react-native-svg': {
-    status: 'manual',
-    note: 'A Harmony adaptation exists, but this toolkit does not patch it automatically.',
-    replacement: 'react-native-oh-library/react-native-harmony-svg',
-    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-svg',
-  },
+  ...UI_STACK_COMPATIBILITY_RECORDS,
   'expo-camera': {
     status: 'unknown',
     note: 'No verified Harmony migration path is shipped in v1.0.',

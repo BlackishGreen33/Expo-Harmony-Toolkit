@@ -1,6 +1,24 @@
 import { ValidatedReleaseMatrix } from '../types';
+import { TOOLKIT_PACKAGE_NAME } from '../core/constants';
+import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from './uiStack';
 
-export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-app-shell';
+export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-ui-stack';
+
+const BASE_ALLOWED_DEPENDENCIES = [
+  'expo',
+  'expo-constants',
+  'expo-linking',
+  'expo-router',
+  'react',
+  'react-native',
+  'expo-status-bar',
+  '@babel/runtime',
+  '@react-native-community/cli',
+  'metro',
+  '@react-native-oh/react-native-harmony',
+  '@react-native-oh/react-native-harmony-cli',
+  TOOLKIT_PACKAGE_NAME,
+] as const;
 
 export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> = {
   [DEFAULT_VALIDATED_MATRIX_ID]: {
@@ -8,18 +26,11 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
     expoSdkVersion: 55,
     nativeIdentifierRequirement: 'android_or_ios',
     allowedDependencies: [
-      'expo',
-      'expo-constants',
-      'expo-linking',
-      'expo-router',
-      'react',
-      'react-native',
-      'expo-status-bar',
-      '@babel/runtime',
-      '@react-native-community/cli',
-      'metro',
-      '@react-native-oh/react-native-harmony',
-      '@react-native-oh/react-native-harmony-cli',
+      ...BASE_ALLOWED_DEPENDENCIES,
+      ...UI_STACK_VALIDATED_ADAPTERS.flatMap((entry) => [
+        entry.canonicalPackageName,
+        entry.adapterPackageName,
+      ]),
     ],
     dependencyRules: {
       expo: {
@@ -65,6 +76,22 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
       'expo-status-bar': {
         version: '>=3.0.0 <4.0.0',
       },
+      ...Object.fromEntries(
+        UI_STACK_VALIDATED_ADAPTERS.flatMap((entry) => [
+          [
+            entry.canonicalPackageName,
+            {
+              version: entry.canonicalVersion,
+            },
+          ],
+          [
+            entry.adapterPackageName,
+            {
+              specifier: getUiStackAdapterSpecifier(entry),
+            },
+          ],
+        ]),
+      ),
     },
   },
 };

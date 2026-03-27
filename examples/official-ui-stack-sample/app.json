@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Expo Harmony UI Stack Sample",
+    "slug": "expo-harmony-ui-stack-sample",
+    "version": "1.0.0",
+    "scheme": "expoharmonyuistack",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.expoharmonyuistack"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyuistack"
+    }
+  }
+}

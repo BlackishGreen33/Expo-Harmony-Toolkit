@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "UI Stack Missing Gesture Adapter",
+    "slug": "ui-stack-missing-gesture-adapter",
+    "version": "1.0.0",
+    "scheme": "uistackmissinggesture",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.uistackmissinggesture"
+    }
+  }
+}
