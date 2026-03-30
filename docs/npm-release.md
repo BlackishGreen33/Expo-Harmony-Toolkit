@@ -54,7 +54,7 @@ npm publish --tag latest --access public
 
 默认触发：
 
-- push version tag，例如 `v1.5.1`
+- push version tag，例如 `v1.5.2`
 
 工作流行为：
 
