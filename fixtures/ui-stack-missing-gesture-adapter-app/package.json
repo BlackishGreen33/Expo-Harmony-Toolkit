@@ -16,8 +16,8 @@
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.8",
     "metro": "^0.83.1",
-    "react": "19.2.0",
-    "react-native": "0.83.2",
+    "react": "19.1.1",
+    "react-native": "0.82.1",
     "react-native-gesture-handler": "2.14.1"
   }
 }

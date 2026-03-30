@@ -2,60 +2,55 @@ import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withSequence,
 } from 'react-native-reanimated';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 const detailsUrl = Linking.createURL('/details');
-const MAX_DRAG = 76;
-
-function clamp(value: number, min: number, max: number) {
-  'worklet';
-  return Math.min(Math.max(value, min), max);
-}
+const MAX_SHIFT = 72;
 
 export default function HomeScreen() {
-  const translateX = useSharedValue(0);
+  const motion = useSharedValue(0);
 
-  const gesture = Gesture.Pan()
-    .onUpdate((event) => {
-      translateX.value = clamp(event.translationX, -MAX_DRAG, MAX_DRAG);
-    })
-    .onEnd(() => {
-      translateX.value = withSpring(0, {
-        damping: 15,
-        stiffness: 180,
-      });
-    });
+  const runMotionDemo = () => {
+    motion.value = 0;
+    motion.value = withSequence(
+      withSpring(1, {
+        damping: 12,
+        stiffness: 170,
+      }),
+      withSpring(0, {
+        damping: 14,
+        stiffness: 150,
+      }),
+    );
+  };
 
   const animatedOrbStyle = useAnimatedStyle(() => {
-    const progress = (translateX.value + MAX_DRAG) / (MAX_DRAG * 2);
-
     return {
       transform: [
-        { translateX: translateX.value },
-        { rotate: `${translateX.value / 9}deg` },
+        { translateX: motion.value * MAX_SHIFT },
+        { translateY: motion.value * -6 },
+        { rotate: `${motion.value * 18}deg` },
+        { scale: 1 + motion.value * 0.08 },
       ],
-      backgroundColor: interpolateColor(progress, [0, 0.5, 1], ['#c4b5fd', '#818cf8', '#22d3ee']),
-      shadowOpacity: 0.24,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 10 },
+      backgroundColor: interpolateColor(motion.value, [0, 1], ['#818cf8', '#22d3ee']),
+      shadowOpacity: 0.2 + motion.value * 0.16,
+      shadowRadius: 18 + motion.value * 8,
+      shadowOffset: { width: 0, height: 10 + motion.value * 4 },
     };
   });
 
   const animatedRailStyle = useAnimatedStyle(() => {
-    const progress = Math.abs(translateX.value) / MAX_DRAG;
-
     return {
-      borderColor: interpolateColor(progress, [0, 1], ['#d0d5dd', '#818cf8']),
-      backgroundColor: interpolateColor(progress, [0, 1], ['#eef2ff', '#e0e7ff']),
+      borderColor: interpolateColor(motion.value, [0, 1], ['#d0d5dd', '#4f46e5']),
+      backgroundColor: interpolateColor(motion.value, [0, 1], ['#eef2ff', '#dbeafe']),
     };
   });
 
@@ -68,7 +63,7 @@ export default function HomeScreen() {
             <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
             <Text style={styles.title}>Official UI Stack Sample</Text>
             <Text style={styles.body}>
-              This sample validates Expo Router, Expo Linking, Expo Constants, reanimated, gesture-handler, and SVG inside the Harmony UI-stack matrix.
+              This sample validates Expo Router, Expo Linking, Expo Constants, reanimated, and SVG inside the current Harmony UI-stack matrix.
             </Text>
           </View>
           <View style={styles.svgBadge}>
@@ -95,14 +90,15 @@ export default function HomeScreen() {
         <Text style={styles.metaLabel}>Linking.createURL('/details')</Text>
         <Text style={styles.metaValue}>{detailsUrl}</Text>
 
-        <Text style={styles.metaLabel}>Gesture + reanimated</Text>
-        <Text style={styles.metaHint}>Drag the orb left or right and release to watch it spring back.</Text>
+        <Text style={styles.metaLabel}>Reanimated spring check</Text>
+        <Text style={styles.metaHint}>Press the motion rail to trigger a spring animation on-device.</Text>
 
-        <GestureDetector gesture={gesture}>
-          <AnimatedView style={[styles.gestureRail, animatedRailStyle]}>
-            <AnimatedView style={[styles.gestureOrb, animatedOrbStyle]} />
-          </AnimatedView>
-        </GestureDetector>
+        <Pressable accessibilityRole="button" onPress={runMotionDemo}>
+          <Animated.View style={[styles.motionRail, animatedRailStyle]}>
+            <Text style={styles.motionLabel}>Run reanimated spring</Text>
+            <Animated.View style={[styles.motionOrb, animatedOrbStyle]} />
+          </Animated.View>
+        </Pressable>
 
         <Link href="/details" style={styles.link}>
           Open details route
@@ -175,14 +171,24 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#475467',
   },
-  gestureRail: {
+  motionRail: {
+    position: 'relative',
     height: 72,
     borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingLeft: 78,
+    paddingRight: 20,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  gestureOrb: {
+  motionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#101828',
+  },
+  motionOrb: {
+    position: 'absolute',
+    left: 16,
     width: 44,
     height: 44,
     borderRadius: 999,

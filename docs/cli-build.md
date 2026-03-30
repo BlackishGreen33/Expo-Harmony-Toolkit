@@ -33,11 +33,10 @@ expo-harmony build-hap --mode debug
 
 ## UI stack 依赖安装注意事项
 
-当前三项 Harmony adapter 依赖都固定为 Git URL + exact commit：
+当前公开矩阵里的两项 Harmony adapter 依赖都固定为 Git URL + exact commit：
 
 - `@react-native-oh-tpl/react-native-reanimated`
 - `@react-native-oh-tpl/react-native-svg`
-- `@react-native-oh-tpl/react-native-gesture-handler`
 
 这些 Git 包在某些环境下会在 prepare 阶段尝试拉取上游私有资源。对于仓库开发和官方 sample，推荐：
 
@@ -67,9 +66,14 @@ pnpm install --ignore-scripts
 当前规则：
 
 - toolkit 会调用项目安装的 `react-native-harmony-cli` 中的 `link-harmony` command
-- 只对白名单三项 `@react-native-oh-tpl/*` adapter 传入 include allowlist
-- `gesture-handler` 会进入 `autolinking.cmake` 与 `RNOHPackagesFactory.*`
-- `reanimated` 和 `svg` 目前通过 `harmony/oh-package.json5` 中的 `.har` 依赖接入
+- 只对白名单两项 `@react-native-oh-tpl/*` adapter 传入 include allowlist
+- `reanimated` 与 `svg` 会进入 `autolinking.cmake` 与 `RNOHPackagesFactory.*`
+- `reanimated` 与 `svg` 通过 `harmony/oh-package.json5` 中的 `.har` 依赖接入
+
+额外说明：
+
+- `react-native-gesture-handler` 当前仍保留为矩阵外的手动探索项
+- `doctor --strict` 不再把它视为公开承诺的一部分
 
 toolkit 不会改动用户业务路由、动画逻辑或页面源码；它只负责受管 sidecar、构建链和 metadata。
 

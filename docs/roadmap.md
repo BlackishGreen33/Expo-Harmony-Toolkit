@@ -27,7 +27,6 @@
 - 公开矩阵升级为 `expo55-rnoh082-ui-stack`
 - `react-native-reanimated`
 - `react-native-svg`
-- `react-native-gesture-handler`
 - `official-ui-stack-sample` 升级为主 sample
 - npm 首次公开发布准备：`release:check`、tarball smoke、release workflow
 
@@ -35,8 +34,9 @@
 
 ### v2.0 Expo 原生能力核心栈
 
-目标：补齐常见 Expo 一方设备能力。
+目标：补齐常见 Expo 一方设备能力，并补回当前仍在矩阵外的手势 runtime 验证。
 
+- `react-native-gesture-handler`
 - `expo-image-picker`
 - `expo-file-system`
 - `expo-location`

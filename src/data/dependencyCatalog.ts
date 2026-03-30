@@ -87,6 +87,18 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     note: 'File-based routing is treated as part of the validated App Shell matrix when router peers, scheme, and plugin config are present.',
   },
   ...UI_STACK_COMPATIBILITY_RECORDS,
+  'react-native-gesture-handler': {
+    status: 'manual',
+    note: 'Gesture Handler is not part of the current public matrix. Device-side runtime validation is still blocked by the current Harmony adapter and RNOH combination.',
+    replacement: '@react-native-oh-tpl/react-native-gesture-handler',
+    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-gesture-handler',
+  },
+  '@react-native-oh-tpl/react-native-gesture-handler': {
+    status: 'manual',
+    note: 'The current Gesture Handler adapter remains experimental and is outside the validated matrix until its ArkTS turbo module path runs cleanly on device.',
+    replacement: 'react-native-gesture-handler',
+    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-gesture-handler',
+  },
   'expo-camera': {
     status: 'unknown',
     note: 'No verified Harmony migration path is shipped in v1.0.',

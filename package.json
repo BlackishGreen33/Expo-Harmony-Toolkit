@@ -55,6 +55,13 @@
     "node": ">=20.0.0"
   },
   "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "overrides": {
+      "react-native-gesture-handler": "2.14.1",
+      "react-native-reanimated": "3.6.0",
+      "react-native-svg": "15.0.0"
+    }
+  },
   "peerDependencies": {
     "expo": "*"
   },

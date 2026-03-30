@@ -6,7 +6,6 @@
 
 - `expo-router`、`expo-linking`、`expo-constants`
 - `react-native-svg`
-- `react-native-gesture-handler`
 - `react-native-reanimated`
 - `doctor -> init -> bundle -> build-hap` 的完整工具链
 
@@ -42,8 +41,7 @@ pnpm run harmony:build:debug
 - 首页能正常启动
 - 顶部信息区能看到 `Constants.expoConfig?.name`
 - 页面能展示 SVG 圆环图形
-- 拖动交互球体时有可见位移与旋转
-- 松手后球体会回弹
+- 点击 motion rail 时有可见位移、旋转与回弹
 - 点击 `Open details route` 后能跳到 `/details`
 - 在 `/details` 点击返回后能回首页
 - 动画和路由交互不会互相破坏
@@ -60,7 +58,7 @@ pnpm run harmony:build:debug
 
 当前细节：
 
-- `gesture-handler` 会出现在 autolinking 产物里
+- `reanimated` 与 `svg` 会进入 `RNOHPackagesFactory.*` 与 `autolinking.cmake`
 - `reanimated` 与 `svg` 会作为 `.har` 依赖出现在 `harmony/oh-package.json5`
 
 ## DevEco 手动验证

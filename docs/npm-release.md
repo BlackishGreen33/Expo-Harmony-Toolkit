@@ -75,11 +75,10 @@ npm publish --tag latest --access public
 
 ## tarball smoke 的安装注意事项
 
-当前官方 UI-stack sample 依赖三项 Git adapter：
+当前官方 UI-stack sample 依赖两项 Git adapter：
 
 - `@react-native-oh-tpl/react-native-reanimated`
 - `@react-native-oh-tpl/react-native-svg`
-- `@react-native-oh-tpl/react-native-gesture-handler`
 
 为了避免 Git adapter prepare 阶段拉取私有上游资源，tarball smoke 固定使用：
 
@@ -89,3 +88,8 @@ pnpm add --ignore-scripts <tarball>
 ```
 
 这不会影响 toolkit 的公开发布验证，因为 tarball smoke 只要求 `doctor`、`init`、`bundle`。
+
+补充：
+
+- `react-native-gesture-handler` 目前不在公开 release gate 里
+- 如需继续尝试它，请按矩阵外的手动探索项处理，而不是把它当作 `doctor --strict` 通过条件

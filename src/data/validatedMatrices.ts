@@ -48,11 +48,11 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
       },
       react: {
         required: true,
-        version: '>=19.2.0 <19.3.0',
+        version: '19.1.1',
       },
       'react-native': {
         required: true,
-        version: '>=0.83.0 <0.84.0',
+        version: '0.82.1',
       },
       '@react-native-oh/react-native-harmony': {
         required: true,

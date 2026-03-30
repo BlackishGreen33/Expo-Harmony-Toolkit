@@ -99,8 +99,6 @@ describe('doctor report', () => {
     expect(byName.get('@react-native-oh-tpl/react-native-reanimated')?.status).toBe('supported');
     expect(byName.get('react-native-svg')?.status).toBe('supported');
     expect(byName.get('@react-native-oh-tpl/react-native-svg')?.status).toBe('supported');
-    expect(byName.get('react-native-gesture-handler')?.status).toBe('supported');
-    expect(byName.get('@react-native-oh-tpl/react-native-gesture-handler')?.status).toBe('supported');
     expect(report.blockingIssues).toHaveLength(0);
   });
 
@@ -233,15 +231,17 @@ describe('doctor report', () => {
     ).toBe(true);
   });
 
-  it('flags a missing gesture adapter as a blocking issue', async () => {
+  it('flags gesture-handler as outside the current public matrix', async () => {
     const report = await buildDoctorReport(missingGestureAdapterRoot);
 
     expect(report.eligibility).toBe('ineligible');
+    expect(report.dependencies.find((dependency) => dependency.name === 'react-native-gesture-handler')?.status).toBe(
+      'manual',
+    );
     expect(
       report.blockingIssues.some(
         (issue) =>
-          issue.code === 'dependency.required_missing' &&
-          issue.subject === '@react-native-oh-tpl/react-native-gesture-handler',
+          issue.code === 'dependency.not_allowed' && issue.subject === 'react-native-gesture-handler',
       ),
     ).toBe(true);
   });

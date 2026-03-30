@@ -26,7 +26,7 @@
 > `v1.5.1` continues to make one formal public promise only: `expo55-rnoh082-ui-stack`. This is not a claim that arbitrary Expo applications can be published to HarmonyOS unchanged.
 
 > [!TIP]
-> The three validated `@react-native-oh-tpl/*` adapters are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
+> The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
 
 ## Overview
 
@@ -49,7 +49,7 @@
 | Current version | `v1.5.1` |
 | Public matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
-| Validated JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg`, `react-native-gesture-handler` |
+| Validated JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Regression baselines | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
@@ -166,20 +166,22 @@ Common decision points:
 `v1.5.1` stays on one public matrix: `expo55-rnoh082-ui-stack`.
 
 - Expo SDK: `55`
-- React: `19.2.x`
-- React Native: `0.83.x`
+- React: `19.1.1`
+- React Native: `0.82.1`
 - RNOH and `@react-native-oh/react-native-harmony-cli`: `0.82.18`
 - App Shell packages: `expo-router`, `expo-linking`, `expo-constants`
-- UI stack packages: `react-native-reanimated`, `react-native-svg`, `react-native-gesture-handler`
+- UI stack packages: `react-native-reanimated`, `react-native-svg`
 - Harmony adapters: the matching `@react-native-oh-tpl/*` exact Git specifiers
 - Native identifier: at least `android.package` or `ios.bundleIdentifier`
+
+`react-native-gesture-handler` is no longer part of the public matrix. It remains a manual exploration path until the current `@react-native-oh-tpl/react-native-gesture-handler` and `@react-native-oh/react-native-harmony@0.82.18` runtime pairing passes on-device validation.
 
 See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, pairing rules, exact specifiers, issue codes, and release gates.
 
 ## Official Samples
 
 - `examples/official-ui-stack-sample`
-  The primary public sample for `v1.5.0`, covering router, linking, constants, SVG, gesture, reanimated, and Harmony sidecar build flow.
+  The primary public sample for `v1.5.0`, covering router, linking, constants, SVG, reanimated, and Harmony sidecar build flow.
 - `examples/official-app-shell-sample`
   The `v1.1` App Shell regression baseline that protects router behavior while UI-stack support is finalized.
 - `examples/official-minimal-sample`
@@ -237,7 +239,7 @@ Manual Harmony acceptance still requires:
 
 - `official-ui-stack-sample` launches successfully
 - SVG renders correctly
-- the gesture triggers visible animation
+- pressing the home-screen motion rail triggers visible animation
 - routing still works after the animation completes
 - `Build Debug Hap(s)` succeeds
 

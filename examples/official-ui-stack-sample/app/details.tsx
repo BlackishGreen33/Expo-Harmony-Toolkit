@@ -7,7 +7,7 @@ export default function DetailsScreen() {
       <View style={styles.card}>
         <Text style={styles.title}>UI Stack Details</Text>
         <Text style={styles.body}>
-          This second route confirms that the validated UI stack still survives the `doctor -> init -> bundle -> build-hap -> runtime` bridge.
+          This second route confirms that router, linking, reanimated, and SVG still survive the `doctor -> init -> bundle -> build-hap -> runtime` bridge.
         </Text>
         <Link href="/" style={styles.link}>
           Back to home

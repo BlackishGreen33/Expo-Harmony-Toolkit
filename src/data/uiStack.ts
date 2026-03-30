@@ -9,6 +9,13 @@ export const UI_STACK_VALIDATED_ADAPTERS = [
     adapterCommit: '9fdbe676209937383907be0592291223c6ca7ad7',
     harmonyHarFileName: 'reanimated.har',
     supportsAutolinking: false,
+    managedAutolinking: {
+      etsImportPath: '@react-native-oh-tpl/react-native-reanimated/ts',
+      etsPackageName: 'ReanimatedPackage',
+      cppHeaderName: 'ReanimatedPackage.h',
+      cppPackageName: 'ReanimatedPackage',
+      cmakeTargetName: 'rnoh_reanimated',
+    },
     docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-reanimated',
   },
   {
@@ -21,19 +28,14 @@ export const UI_STACK_VALIDATED_ADAPTERS = [
     adapterCommit: '97c31d2f72559931d62fa84a9c86e86d343753d3',
     harmonyHarFileName: 'svg.har',
     supportsAutolinking: false,
+    managedAutolinking: {
+      etsImportPath: '@react-native-oh-tpl/react-native-svg/ts',
+      etsPackageName: 'SvgPackage',
+      cppHeaderName: 'SVGPackage.h',
+      cppPackageName: 'SVGPackage',
+      cmakeTargetName: 'rnoh_svg',
+    },
     docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-svg',
-  },
-  {
-    canonicalPackageName: 'react-native-gesture-handler',
-    canonicalVersion: '2.14.1',
-    adapterPackageName: '@react-native-oh-tpl/react-native-gesture-handler',
-    adapterVersion: '2.14.17-rc.2',
-    adapterRepository: 'react-native-oh-library/react-native-harmony-gesture-handler',
-    adapterPath: 'react-native-harmony-gesture-handler',
-    adapterCommit: 'ed5bcf2ada6e83f9ec0d50cf239c8d84db3c6462',
-    harmonyHarFileName: 'gesture_handler.har',
-    supportsAutolinking: true,
-    docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-gesture-handler',
   },
 ] as const;
 

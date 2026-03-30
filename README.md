@@ -26,7 +26,7 @@
 > `v1.5.1` 继续只对 `expo55-rnoh082-ui-stack` 做正式公开承诺。这不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明，而是对一条受限、可验证矩阵的稳定承诺。
 
 > [!TIP]
-> 由于当前三套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
+> 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
 
 ## 概览
 
@@ -49,7 +49,7 @@
 | 当前版本 | `v1.5.1` |
 | 唯一公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
-| 已验证 JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg`、`react-native-gesture-handler` |
+| 已验证 JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | 回归基线 | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
@@ -91,7 +91,7 @@ npx expo-harmony doctor --project-root .
 pnpm install --ignore-scripts
 ```
 
-因为当前三套 `@react-native-oh-tpl/*` adapter 在 prepare 阶段可能访问私有上游资源。
+因为当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 在 prepare 阶段可能访问私有上游资源。
 
 ## 推荐接入方式
 
@@ -166,20 +166,22 @@ pnpm exec expo-harmony build-hap --mode release
 `v1.5.1` 继续坚持单矩阵路线：`expo55-rnoh082-ui-stack`。
 
 - Expo SDK：`55`
-- React：`19.2.x`
-- React Native：`0.83.x`
+- React：`19.1.1`
+- React Native：`0.82.1`
 - RNOH / `@react-native-oh/react-native-harmony-cli`：`0.82.18`
 - App Shell 依赖：`expo-router`、`expo-linking`、`expo-constants`
-- UI stack 依赖：`react-native-reanimated`、`react-native-svg`、`react-native-gesture-handler`
-- Harmony adapter：对应三项 `@react-native-oh-tpl/*` exact Git specifier
+- UI stack 依赖：`react-native-reanimated`、`react-native-svg`
+- Harmony adapter：对应两项 `@react-native-oh-tpl/*` exact Git specifier
 - 原生标识：至少配置 `android.package` 或 `ios.bundleIdentifier`
+
+当前不再把 `react-native-gesture-handler` 放进公开矩阵。它仍可作为手动探索项，但当前 `@react-native-oh-tpl/react-native-gesture-handler` 与 `@react-native-oh/react-native-harmony@0.82.18` 的设备侧 runtime 组合还没有通过正式验收。
 
 完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
 ## 官方 Samples
 
 - `examples/official-ui-stack-sample`
-  当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、gesture、reanimated 和 Harmony sidecar 构建链。
+  当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-app-shell-sample`
   `v1.1` App Shell 回归基线，用来防止 UI-stack 收口引入 router 退化。
 - `examples/official-minimal-sample`
@@ -237,7 +239,7 @@ pnpm exec expo-harmony build-hap --mode release
 
 - `official-ui-stack-sample` 成功启动
 - SVG 正常渲染
-- gesture 能触发可见动画
+- 点击首页 motion rail 后能触发可见动画
 - 动画完成后路由跳转仍正常
 - `Build Debug Hap(s)` 成功
 
