@@ -2,7 +2,6 @@
 
 const { spawnSync } = require('node:child_process');
 const fs = require('fs-extra');
-const os = require('node:os');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
@@ -11,6 +10,9 @@ const smokeSampleRoot = path.resolve(
     path.join(repoRoot, 'examples', 'official-ui-stack-sample'),
 );
 const skipHap = process.env.EXPO_HARMONY_RELEASE_SKIP_HAP === '1';
+const smokeTempRootBase = path.resolve(process.env.EXPO_HARMONY_RELEASE_SMOKE_TEMP_ROOT ?? '/tmp');
+const smokeTempPrefix = 'eht-smoke-';
+const smokeSampleDirName = 'sample';
 const forbiddenTarballPrefixes = ['examples/', 'fixtures/', 'tests/'];
 const packEnv = {
   ...process.env,
@@ -109,8 +111,9 @@ async function main() {
   }
 
   const tarballPath = path.join(repoRoot, tarballFilename);
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-release-smoke-'));
-  const tempSampleRoot = path.join(tempRoot, path.basename(smokeSampleRoot));
+  await fs.ensureDir(smokeTempRootBase);
+  const tempRoot = await fs.mkdtemp(path.join(smokeTempRootBase, smokeTempPrefix));
+  const tempSampleRoot = path.join(tempRoot, smokeSampleDirName);
 
   try {
     await fs.copy(smokeSampleRoot, tempSampleRoot, {

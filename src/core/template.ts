@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import JSON5 from 'json5';
 import os from 'os';
 import path from 'path';
+import semver from 'semver';
 import {
   DESIRED_PACKAGE_SCRIPTS,
   GENERATED_DIR,
@@ -36,6 +37,7 @@ import {
   loadProject,
   resolveRnohHvigorPluginFilename,
 } from './project';
+import { normalizeKnownJavaScriptDependencies } from './javascriptDependencies';
 import { buildDoctorReport, writeDoctorReport } from './report';
 
 const TEMPLATE_ROOT = path.resolve(__dirname, '..', '..', 'templates', 'harmony');
@@ -75,6 +77,46 @@ const AUTOLINKED_FILE_PATHS = [
   path.join('harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
   path.join('harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
 ] as const;
+const RNOH_GENERATED_TS_SHIM_RELATIVE_PATH = path.join(
+  'harmony',
+  'oh_modules',
+  '@rnoh',
+  'react-native-openharmony',
+  'ts.ts',
+);
+
+export const BUILD_REQUIRED_MANAGED_FILE_PATHS = [
+  ...AUTOLINKED_FILE_PATHS,
+  RNOH_GENERATED_TS_SHIM_RELATIVE_PATH,
+] as const;
+
+type PackageJsonNormalizer = (
+  packageJson: Record<string, unknown>,
+) => Record<string, unknown> | null;
+
+const HARMONY_PACKAGE_JSON_NORMALIZERS: Record<string, PackageJsonNormalizer> = {
+  '@react-native-oh-tpl/react-native-gesture-handler': (packageJson) => {
+    const harmony =
+      packageJson.harmony && typeof packageJson.harmony === 'object' && !Array.isArray(packageJson.harmony)
+        ? { ...packageJson.harmony }
+        : null;
+
+    if (!harmony || !('codegenConfig' in harmony)) {
+      return null;
+    }
+
+    delete harmony.codegenConfig;
+    return {
+      ...packageJson,
+      harmony,
+    };
+  },
+};
+
+interface SyncProjectTemplateOptions {
+  forceManagedPaths?: readonly string[];
+  skipJavaScriptDependencyNormalization?: boolean;
+}
 
 export async function initProject(projectRoot: string, force = false): Promise<InitResult> {
   const report = await buildDoctorReport(projectRoot);
@@ -90,12 +132,17 @@ export async function initProject(projectRoot: string, force = false): Promise<I
   };
 }
 
-export async function syncProjectTemplate(projectRoot: string, force = false): Promise<SyncResult> {
+export async function syncProjectTemplate(
+  projectRoot: string,
+  force = false,
+  options: SyncProjectTemplateOptions = {},
+): Promise<SyncResult> {
   const loadedProject = await loadProject(projectRoot);
   const identifiers = deriveHarmonyIdentifiers(loadedProject.expoConfig, loadedProject.packageJson);
   const previousToolkitConfig = await readToolkitConfig(loadedProject.projectRoot);
   const desiredFiles = await buildManagedFiles(loadedProject, identifiers, previousToolkitConfig);
   const previousManifest = await readManifest(loadedProject.projectRoot);
+  const forceManagedPaths = new Set(options.forceManagedPaths ?? []);
   const result: SyncResult = {
     writtenFiles: [],
     unchangedFiles: [],
@@ -126,8 +173,9 @@ export async function syncProjectTemplate(projectRoot: string, force = false): P
 
       const currentHash = createGeneratedSha(currentContents);
       const managedByToolkit = previousRecord?.sha1 === currentHash;
+      const shouldForce = force || forceManagedPaths.has(file.relativePath);
 
-      if (!force && !managedByToolkit) {
+      if (!shouldForce && !managedByToolkit) {
         result.skippedFiles.push(file.relativePath);
         result.warnings.push(
           `Skipped ${file.relativePath} because it drifted from the last generated version. Re-run with --force to overwrite it.`,
@@ -140,6 +188,13 @@ export async function syncProjectTemplate(projectRoot: string, force = false): P
     await fs.writeFile(targetPath, file.contents);
     result.writtenFiles.push(file.relativePath);
     manifestFiles.push({ relativePath: file.relativePath, sha1: expectedHash });
+  }
+
+  if (!options.skipJavaScriptDependencyNormalization) {
+    await normalizeKnownJavaScriptDependencies(
+      loadedProject.projectRoot,
+      loadedProject.packageJson as Record<string, unknown>,
+    );
   }
 
   await fs.ensureDir(path.dirname(result.manifestPath));
@@ -212,6 +267,10 @@ async function buildManagedFiles(
     ...templateFiles,
     ...autolinkedFiles,
     {
+      relativePath: RNOH_GENERATED_TS_SHIM_RELATIVE_PATH,
+      contents: renderRnohGeneratedTsShim(),
+    },
+    {
       relativePath: 'metro.harmony.config.js',
       contents: renderMetroConfig(),
     },
@@ -282,43 +341,327 @@ async function generateAutolinkingArtifacts(
     projectRoot,
     harmonyRootPackageContents,
   );
+  const managedAutolinkingEntries = await resolveManagedAutolinkingEntries(projectRoot);
 
   if (!rnohCliPackageJsonPath) {
-    return createEmptyAutolinkingArtifacts(managedOhPackageContents);
+    return createEmptyAutolinkingArtifacts(managedOhPackageContents, managedAutolinkingEntries);
   }
 
   try {
-    const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-autolinking-'));
+    const restoreNormalizedHarmonyPackageJsons =
+      await normalizeKnownHarmonyPackageJsons(projectRoot);
 
     try {
-      const temporaryHarmonyRoot = path.join(temporaryRoot, 'harmony');
+      const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-autolinking-'));
 
-      await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets'));
-      await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp'));
-      await fs.writeFile(path.join(temporaryHarmonyRoot, 'oh-package.json5'), harmonyRootPackageContents);
-      await runRnohLinkHarmonyCommand(projectRoot, rnohCliPackageJsonPath, temporaryHarmonyRoot);
+      try {
+        const temporaryHarmonyRoot = path.join(temporaryRoot, 'harmony');
 
-      return {
-        ohPackageContents: managedOhPackageContents,
-        etsFactoryContents: await fs.readFile(
-          path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
-          'utf8',
-        ),
-        cppFactoryContents: await fs.readFile(
-          path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
-          'utf8',
-        ),
-        cmakeContents: await fs.readFile(
+        await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets'));
+        await fs.ensureDir(path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp'));
+        await fs.writeFile(path.join(temporaryHarmonyRoot, 'oh-package.json5'), harmonyRootPackageContents);
+        await runRnohLinkHarmonyCommand(projectRoot, rnohCliPackageJsonPath, temporaryHarmonyRoot);
+
+        const normalizedEtsFactoryContents = await normalizeAutolinkingEtsFactoryContents(
+          projectRoot,
+          await fs.readFile(
+            path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+            'utf8',
+          ),
+        );
+        const normalizedCppFactoryContents = await normalizeAutolinkingCppFactoryContents(
+          projectRoot,
+          await fs.readFile(
+            path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
+            'utf8',
+          ),
+        );
+        const normalizedCmakeContents = await fs.readFile(
           path.join(temporaryHarmonyRoot, 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
           'utf8',
-        ),
-      };
+        );
+
+        return {
+          ohPackageContents: managedOhPackageContents,
+          etsFactoryContents: injectManagedAutolinkingIntoEtsFactory(
+            normalizedEtsFactoryContents,
+            managedAutolinkingEntries,
+          ),
+          cppFactoryContents: injectManagedAutolinkingIntoCppFactory(
+            normalizedCppFactoryContents,
+            managedAutolinkingEntries,
+          ),
+          cmakeContents: injectManagedAutolinkingIntoCmake(
+            normalizedCmakeContents,
+            managedAutolinkingEntries,
+          ),
+        };
+      } finally {
+        await fs.remove(temporaryRoot);
+      }
     } finally {
-      await fs.remove(temporaryRoot);
+      await restoreNormalizedHarmonyPackageJsons();
     }
   } catch {
-    return createEmptyAutolinkingArtifacts(managedOhPackageContents);
+    return createEmptyAutolinkingArtifacts(managedOhPackageContents, managedAutolinkingEntries);
   }
+}
+
+type ManagedAutolinkingEntry = {
+  adapterPackageName: string;
+  etsImportPath: string;
+  etsPackageName: string;
+  cppHeaderName: string;
+  cppPackageName: string;
+  cmakeTargetName: string;
+};
+
+async function resolveManagedAutolinkingEntries(projectRoot: string): Promise<ManagedAutolinkingEntry[]> {
+  const entries: Array<ManagedAutolinkingEntry | null> = await Promise.all(
+    UI_STACK_VALIDATED_ADAPTERS.map(async (adapter) => {
+      if (adapter.supportsAutolinking || !adapter.managedAutolinking) {
+        return null;
+      }
+
+      const dependencySpecifier = await resolveHarmonyAdapterHarDependency(projectRoot, adapter.adapterPackageName);
+
+      if (!dependencySpecifier) {
+        return null;
+      }
+
+      return {
+        adapterPackageName: adapter.adapterPackageName,
+        ...adapter.managedAutolinking,
+      } satisfies ManagedAutolinkingEntry;
+    }),
+  );
+
+  return entries.filter((entry): entry is ManagedAutolinkingEntry => entry !== null);
+}
+
+export async function normalizeKnownHarmonyPackageJsons(
+  projectRoot: string,
+): Promise<() => Promise<void>> {
+  const originalContentsByPath = new Map<string, string>();
+
+  for (const [packageName, normalizePackageJson] of Object.entries(HARMONY_PACKAGE_JSON_NORMALIZERS)) {
+    const packageJsonPath = resolveProjectPackageJson(projectRoot, packageName);
+
+    if (!packageJsonPath || originalContentsByPath.has(packageJsonPath)) {
+      continue;
+    }
+
+    try {
+      const currentContents = await fs.readFile(packageJsonPath, 'utf8');
+      const packageJson = JSON.parse(currentContents) as Record<string, unknown>;
+      const normalizedPackageJson = normalizePackageJson(packageJson);
+
+      if (!normalizedPackageJson) {
+        continue;
+      }
+
+      originalContentsByPath.set(packageJsonPath, currentContents);
+      await fs.writeFile(packageJsonPath, JSON.stringify(normalizedPackageJson, null, 2) + '\n');
+    } catch {
+      // Ignore malformed adapter package metadata and let downstream tooling surface the failure.
+    }
+  }
+
+  return async () => {
+    for (const [packageJsonPath, originalContents] of originalContentsByPath) {
+      await fs.writeFile(packageJsonPath, originalContents);
+    }
+  };
+}
+
+async function normalizeAutolinkingEtsFactoryContents(
+  projectRoot: string,
+  contents: string,
+): Promise<string> {
+  let normalizedContents = contents
+    .replace(
+      /import type \{\s*RNPackageContext\s*,\s*RNOHPackage\s*\} from '@rnoh\/react-native-openharmony';/,
+      "import type { RNPackageContext, RNPackage } from '@rnoh/react-native-openharmony';",
+    )
+    .replace(
+      /export function createRNOHPackages\(([^)]*)\):\s*RNOHPackage\[\]/,
+      'export function createRNOHPackages($1): RNPackage[]',
+    );
+
+  const gestureHandlerPackageJsonPath = resolveProjectPackageJson(
+    projectRoot,
+    '@react-native-oh-tpl/react-native-gesture-handler',
+  );
+
+  if (!gestureHandlerPackageJsonPath) {
+    return normalizedContents;
+  }
+
+  try {
+    const gestureHandlerPackageJson = (await fs.readJson(gestureHandlerPackageJsonPath)) as PackageJson & {
+      harmony?: {
+        codegenConfig?: unknown;
+      };
+    };
+
+    if (gestureHandlerPackageJson.harmony?.codegenConfig) {
+      return normalizedContents;
+    }
+  } catch {
+    return normalizedContents;
+  }
+
+  let gestureHandlerPackageImportName: string | null = null;
+  normalizedContents = normalizedContents.replace(
+    /import\s+([A-Za-z_$][\w$]*)\s+from ['"]@react-native-oh-tpl\/react-native-gesture-handler['"];?/,
+    (_match, importName: string) => {
+      gestureHandlerPackageImportName = importName;
+      return "import { GestureHandlerPackage } from '@react-native-oh-tpl/react-native-gesture-handler/ts';";
+    },
+  );
+
+  if (!gestureHandlerPackageImportName) {
+    return normalizedContents;
+  }
+
+  return normalizedContents.replace(
+    new RegExp(`new\\s+${escapeRegExp(gestureHandlerPackageImportName)}\\(ctx\\)`, 'g'),
+    'new GestureHandlerPackage(ctx)',
+  );
+}
+
+function injectManagedAutolinkingIntoEtsFactory(
+  contents: string,
+  entries: readonly ManagedAutolinkingEntry[],
+): string {
+  if (entries.length === 0) {
+    return contents;
+  }
+
+  const missingImports = entries
+    .filter((entry) => !contents.includes(`from '${entry.etsImportPath}'`))
+    .map((entry) => `import { ${entry.etsPackageName} } from '${entry.etsImportPath}';`);
+
+  if (missingImports.length > 0) {
+    contents = contents.replace(
+      "import type { RNPackageContext, RNPackage } from '@rnoh/react-native-openharmony';",
+      `import type { RNPackageContext, RNPackage } from '@rnoh/react-native-openharmony';\n${missingImports.join('\n')}`,
+    );
+  }
+
+  const missingFactoryEntries = entries
+    .filter((entry) => !contents.includes(`new ${entry.etsPackageName}(ctx)`))
+    .map((entry) => `    new ${entry.etsPackageName}(ctx),`);
+
+  if (missingFactoryEntries.length > 0) {
+    contents = contents.replace(/return \[\n/, `return [\n${missingFactoryEntries.join('\n')}\n`);
+  }
+
+  return contents;
+}
+
+async function normalizeAutolinkingCppFactoryContents(
+  projectRoot: string,
+  contents: string,
+): Promise<string> {
+  const gestureHandlerPackageJsonPath = resolveProjectPackageJson(
+    projectRoot,
+    '@react-native-oh-tpl/react-native-gesture-handler',
+  );
+
+  if (!gestureHandlerPackageJsonPath) {
+    return contents;
+  }
+
+  try {
+    const gestureHandlerPackageJson = (await fs.readJson(gestureHandlerPackageJsonPath)) as PackageJson & {
+      harmony?: {
+        codegenConfig?: unknown;
+      };
+    };
+
+    if (gestureHandlerPackageJson.harmony?.codegenConfig) {
+      return contents;
+    }
+  } catch {
+    return contents;
+  }
+
+  return contents
+    .replace(
+      /#include "ReactNativeOhTplReactNativeGestureHandlerPackage\.h"/,
+      '#include "RnohReactNativeHarmonyGestureHandlerPackage.h"',
+    )
+    .replace(
+      /\brnoh::ReactNativeOhTplReactNativeGestureHandlerPackage\b/g,
+      'rnoh::RnohReactNativeHarmonyGestureHandlerPackage',
+    );
+}
+
+function injectManagedAutolinkingIntoCppFactory(
+  contents: string,
+  entries: readonly ManagedAutolinkingEntry[],
+): string {
+  if (entries.length === 0) {
+    return contents;
+  }
+
+  const missingIncludes = entries
+    .filter((entry) => !contents.includes(`#include "${entry.cppHeaderName}"`))
+    .map((entry) => `#include "${entry.cppHeaderName}"`);
+
+  if (missingIncludes.length > 0) {
+    contents = contents.replace(
+      '#include "RNOH/Package.h"',
+      `#include "RNOH/Package.h"\n${missingIncludes.join('\n')}`,
+    );
+  }
+
+  const missingFactoryEntries = entries
+    .filter((entry) => !contents.includes(`std::make_shared<rnoh::${entry.cppPackageName}>(ctx)`))
+    .map((entry) => `    std::make_shared<rnoh::${entry.cppPackageName}>(ctx),`);
+
+  if (missingFactoryEntries.length > 0) {
+    contents = contents.replace(/return \{\n/, `return {\n${missingFactoryEntries.join('\n')}\n`);
+  }
+
+  return contents;
+}
+
+function injectManagedAutolinkingIntoCmake(
+  contents: string,
+  entries: readonly ManagedAutolinkingEntry[],
+): string {
+  if (entries.length === 0) {
+    return contents;
+  }
+
+  const missingSubdirectories = entries
+    .filter((entry) => !contents.includes(`./${entry.cmakeTargetName}`))
+    .map(
+      (entry) =>
+        `    add_subdirectory("\${OH_MODULES_DIR}/${entry.adapterPackageName}/src/main/cpp" ./${entry.cmakeTargetName})`,
+    );
+
+  if (missingSubdirectories.length > 0) {
+    contents = contents.replace(
+      /function\(autolink_libraries target\)\n/,
+      `function(autolink_libraries target)\n${missingSubdirectories.join('\n')}\n`,
+    );
+  }
+
+  const missingLibraryTargets = entries
+    .filter((entry) => !contents.includes(`        ${entry.cmakeTargetName}`))
+    .map((entry) => `        ${entry.cmakeTargetName}`);
+
+  if (missingLibraryTargets.length > 0) {
+    contents = contents.replace(
+      /set\(AUTOLINKED_LIBRARIES\n/,
+      `set(AUTOLINKED_LIBRARIES\n${missingLibraryTargets.join('\n')}\n`,
+    );
+  }
+
+  return contents;
 }
 
 async function runRnohLinkHarmonyCommand(
@@ -356,7 +699,10 @@ async function buildManagedHarmonyRootPackageContents(
   const parsedPackageJson = JSON5.parse(harmonyRootPackageContents) as {
     dependencies?: Record<string, string>;
   };
-  const dependencies = { ...(parsedPackageJson.dependencies ?? {}) };
+  const dependencies = {
+    ...(parsedPackageJson.dependencies ?? {}),
+    ...(await readPreservedHarmonyRootDependencies(projectRoot)),
+  };
 
   for (const adapter of UI_STACK_VALIDATED_ADAPTERS) {
     const dependencySpecifier = await resolveHarmonyAdapterHarDependency(projectRoot, adapter.adapterPackageName);
@@ -368,6 +714,40 @@ async function buildManagedHarmonyRootPackageContents(
 
   parsedPackageJson.dependencies = sortRecordByKey(dependencies);
   return JSON5.stringify(parsedPackageJson, null, 2) + '\n';
+}
+
+async function readPreservedHarmonyRootDependencies(
+  projectRoot: string,
+): Promise<Record<string, string>> {
+  const harmonyRootPackagePath = path.join(projectRoot, 'harmony', 'oh-package.json5');
+
+  if (!(await fs.pathExists(harmonyRootPackagePath))) {
+    return {};
+  }
+
+  const currentHarmonyRootPackage = JSON5.parse(
+    await fs.readFile(harmonyRootPackagePath, 'utf8'),
+  ) as {
+    dependencies?: Record<string, unknown>;
+  };
+  const preservedDependencies: Record<string, string> = {};
+  const validatedAdapterPackageNames = new Set<string>(UI_STACK_ADAPTER_PACKAGE_NAMES);
+
+  for (const [packageName, specifier] of Object.entries(
+    currentHarmonyRootPackage.dependencies ?? {},
+  )) {
+    if (typeof specifier !== 'string') {
+      continue;
+    }
+
+    if (validatedAdapterPackageNames.has(packageName)) {
+      continue;
+    }
+
+    preservedDependencies[packageName] = specifier;
+  }
+
+  return preservedDependencies;
 }
 
 async function resolveHarmonyAdapterHarDependency(
@@ -393,7 +773,10 @@ async function resolveHarmonyAdapterHarDependency(
   return `file:${relativeHarPath}`;
 }
 
-function createEmptyAutolinkingArtifacts(harmonyRootPackageContents: string): {
+function createEmptyAutolinkingArtifacts(
+  harmonyRootPackageContents: string,
+  managedAutolinkingEntries: readonly ManagedAutolinkingEntry[],
+): {
   ohPackageContents: string;
   etsFactoryContents: string;
   cppFactoryContents: string;
@@ -401,17 +784,19 @@ function createEmptyAutolinkingArtifacts(harmonyRootPackageContents: string): {
 } {
   return {
     ohPackageContents: harmonyRootPackageContents,
-    etsFactoryContents: `/*
+    etsFactoryContents: injectManagedAutolinkingIntoEtsFactory(`/*
  * This file was generated by Expo Harmony Toolkit autolinking.
  * DO NOT modify it manually, your changes WILL be overwritten.
  */
-import type { RNPackageContext, RNOHPackage } from '@rnoh/react-native-openharmony';
+import type { RNPackageContext, RNPackage } from '@rnoh/react-native-openharmony';
 
-export function createRNOHPackages(_ctx: RNPackageContext): RNOHPackage[] {
+export function createRNOHPackages(_ctx: RNPackageContext): RNPackage[] {
   return [];
 }
 `,
-    cppFactoryContents: `/*
+    managedAutolinkingEntries,
+    ),
+    cppFactoryContents: injectManagedAutolinkingIntoCppFactory(`/*
  * This file was generated by Expo Harmony Toolkit autolinking.
  * DO NOT modify it manually, your changes WILL be overwritten.
  */
@@ -422,7 +807,9 @@ std::vector<rnoh::Package::Shared> createRNOHPackages(const rnoh::Package::Conte
   return {};
 }
 `,
-    cmakeContents: `# This file was generated by Expo Harmony Toolkit autolinking.
+    managedAutolinkingEntries,
+    ),
+    cmakeContents: injectManagedAutolinkingIntoCmake(`# This file was generated by Expo Harmony Toolkit autolinking.
 # DO NOT modify it manually, your changes WILL be overwritten.
 cmake_minimum_required(VERSION 3.5)
 
@@ -435,10 +822,18 @@ function(autolink_libraries target)
   endforeach()
 endfunction()
 `,
+    managedAutolinkingEntries,
+    ),
   };
 }
 
 function resolveProjectPackageJson(projectRoot: string, request: string): string | null {
+  const directPackageJsonPath = path.join(projectRoot, 'node_modules', ...request.split('/'), 'package.json');
+
+  if (fs.existsSync(directPackageJsonPath)) {
+    return directPackageJsonPath;
+  }
+
   try {
     return require.resolve(path.join(request, 'package.json'), {
       paths: [projectRoot],
@@ -452,7 +847,10 @@ async function syncPackageScripts(projectRoot: string, _force: boolean): Promise
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
   const desiredScripts = buildDesiredPackageScripts(packageJson);
+  const desiredPnpmOverrides = buildDesiredPnpmOverrides(packageJson);
   const scripts = { ...(packageJson.scripts ?? {}) };
+  const pnpm = packageJson.pnpm && typeof packageJson.pnpm === 'object' ? { ...packageJson.pnpm } : {};
+  const pnpmOverrides = { ...(pnpm.overrides ?? {}) };
   const warnings: string[] = [];
   let didChange = false;
 
@@ -478,8 +876,30 @@ async function syncPackageScripts(projectRoot: string, _force: boolean): Promise
     );
   }
 
+  for (const [packageName, desiredSpecifier] of Object.entries(desiredPnpmOverrides)) {
+    const currentSpecifier = pnpmOverrides[packageName];
+
+    if (!currentSpecifier) {
+      pnpmOverrides[packageName] = desiredSpecifier;
+      didChange = true;
+      continue;
+    }
+
+    if (currentSpecifier === desiredSpecifier) {
+      continue;
+    }
+
+    warnings.push(
+      `Left package.json pnpm.overrides["${packageName}"] unchanged because it already exists with different contents.`,
+    );
+  }
+
   if (didChange) {
     packageJson.scripts = sortRecordByKey(scripts);
+    if (Object.keys(pnpmOverrides).length > 0) {
+      pnpm.overrides = sortRecordByKey(pnpmOverrides);
+      packageJson.pnpm = pnpm;
+    }
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
     await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
   }
@@ -510,6 +930,26 @@ function renderTemplate(
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key: string) => replacements[key] ?? '');
 }
 
+function renderRnohGeneratedTsShim(): string {
+  let relativeTarget = path.relative(
+    path.dirname(RNOH_GENERATED_TS_SHIM_RELATIVE_PATH),
+    path.join(
+      'harmony',
+      'expo-harmony-local-deps',
+      'rnoh-react-native-openharmony-react_native_openharmony',
+      'ts.ts',
+    ),
+  );
+
+  relativeTarget = relativeTarget.replace(/\\/g, '/').replace(/\.ts$/, '');
+
+  if (!relativeTarget.startsWith('.')) {
+    relativeTarget = `./${relativeTarget}`;
+  }
+
+  return `export * from '${relativeTarget}';\n`;
+}
+
 function renderMetroConfig(): string {
   return `const fs = require('fs');
 const path = require('path');
@@ -530,10 +970,48 @@ const expoHarmonyShims = {
     '.expo-harmony/shims/react-native-safe-area-context',
   ),
 };
+const uiStackRootModuleAliases = {
+  'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler'),
+  'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
+  'react-native-svg': path.resolve(__dirname, 'node_modules/react-native-svg'),
+};
+const resolveUiStackModuleAlias = (context, moduleName, platform) => {
+  for (const [aliasedModuleName, aliasedModulePath] of Object.entries(uiStackRootModuleAliases)) {
+    if (moduleName === aliasedModuleName) {
+      return context.resolveRequest(context, aliasedModulePath, platform);
+    }
+
+    if (moduleName.startsWith(\`\${aliasedModuleName}/\`)) {
+      return context.resolveRequest(
+        context,
+        path.join(aliasedModulePath, moduleName.slice(aliasedModuleName.length + 1)),
+        platform,
+      );
+    }
+  }
+
+  return null;
+};
+const reactNativeCompatibilitySourceExts = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'json'];
 const reactNativeCompatibilityPackageMarkers = [
   path.sep + '@react-native-oh' + path.sep + 'react-native-harmony' + path.sep,
   path.sep + 'react-native' + path.sep,
 ];
+const findFirstExistingCompatibilityModule = (candidateBasePath, platforms) => {
+  for (const candidatePlatform of platforms) {
+    for (const candidateExtension of reactNativeCompatibilitySourceExts) {
+      const candidatePath = candidatePlatform
+        ? \`\${candidateBasePath}.\${candidatePlatform}.\${candidateExtension}\`
+        : \`\${candidateBasePath}.\${candidateExtension}\`;
+
+      if (fs.existsSync(candidatePath)) {
+        return { candidatePath, candidatePlatform };
+      }
+    }
+  }
+
+  return null;
+};
 const resolveReactNativeCompatibilityWrapper = (context, moduleName, platform) => {
   if (platform !== 'harmony' || !context.originModulePath || !moduleName.startsWith('.')) {
     return null;
@@ -554,25 +1032,61 @@ const resolveReactNativeCompatibilityWrapper = (context, moduleName, platform) =
   const candidateModuleExtension = path.extname(candidateModulePath);
   const candidateBasename = path.basename(candidateModulePath, candidateModuleExtension);
 
-  if (candidateBasename !== originBasename) {
-    return null;
-  }
-
   const candidateBasePath = candidateModuleExtension
     ? candidateModulePath.slice(0, -candidateModuleExtension.length)
     : candidateModulePath;
 
-  for (const candidatePlatform of ['harmony', 'android', 'ios']) {
-    const candidatePath = \`\${candidateBasePath}.\${candidatePlatform}.js\`;
+  if (candidateBasename === originBasename) {
+    const compatibilityWrapperCandidate = findFirstExistingCompatibilityModule(candidateBasePath, [
+      'harmony',
+      'native',
+      'android',
+      'ios',
+    ]);
 
-    if (fs.existsSync(candidatePath)) {
-      return context.resolveRequest(context, candidatePath, candidatePlatform);
+    if (compatibilityWrapperCandidate) {
+      return context.resolveRequest(
+        context,
+        compatibilityWrapperCandidate.candidatePath,
+        compatibilityWrapperCandidate.candidatePlatform || platform,
+      );
     }
+
+    return null;
+  }
+
+  const standardResolutionCandidate = findFirstExistingCompatibilityModule(candidateBasePath, [
+    'harmony',
+    'native',
+    '',
+  ]);
+
+  if (standardResolutionCandidate) {
+    return null;
+  }
+
+  const compatibilityFallbackCandidate = findFirstExistingCompatibilityModule(candidateBasePath, [
+    'android',
+    'ios',
+  ]);
+
+  if (compatibilityFallbackCandidate) {
+    return context.resolveRequest(
+      context,
+      compatibilityFallbackCandidate.candidatePath,
+      compatibilityFallbackCandidate.candidatePlatform || platform,
+    );
   }
 
   return null;
 };
 const resolveExpoHarmonyShim = (context, moduleName, platform) => {
+  const uiStackModuleAliasResolution = resolveUiStackModuleAlias(context, moduleName, platform);
+
+  if (uiStackModuleAliasResolution) {
+    return uiStackModuleAliasResolution;
+  }
+
   if (moduleName in expoHarmonyShims) {
     return context.resolveRequest(context, expoHarmonyShims[moduleName], platform);
   }
@@ -587,12 +1101,24 @@ const resolveExpoHarmonyShim = (context, moduleName, platform) => {
     return compatibilityWrapperResolution;
   }
 
+  const harmonyResolveRequest = harmonyConfig.resolver?.resolveRequest;
+
+  if (typeof harmonyResolveRequest === 'function') {
+    return harmonyResolveRequest(context, moduleName, platform);
+  }
+
   return context.resolveRequest(context, moduleName, platform);
 };
 
 module.exports = {
   ...defaultConfig,
   ...harmonyConfig,
+  projectRoot: __dirname,
+  server: {
+    ...(defaultConfig.server ?? {}),
+    ...(harmonyConfig.server ?? {}),
+    unstable_serverRoot: __dirname,
+  },
   transformer: {
     ...(defaultConfig.transformer ?? {}),
     ...(harmonyConfig.transformer ?? {}),
@@ -607,6 +1133,7 @@ module.exports = {
     extraNodeModules: {
       ...((defaultConfig.resolver?.extraNodeModules ?? {})),
       ...((harmonyConfig.resolver?.extraNodeModules ?? {})),
+      ...uiStackRootModuleAliases,
       ...expoHarmonyShims,
     },
     resolveRequest: resolveExpoHarmonyShim,
@@ -1075,6 +1602,31 @@ export function buildDesiredPackageScripts(packageJson: PackageJson): Record<str
   };
 }
 
+function buildDesiredPnpmOverrides(packageJson: PackageJson): Record<string, string> {
+  const overrides: Record<string, string> = {};
+
+  for (const adapter of UI_STACK_VALIDATED_ADAPTERS) {
+    const declaredSpecifier =
+      packageJson.dependencies?.[adapter.canonicalPackageName] ??
+      packageJson.devDependencies?.[adapter.canonicalPackageName] ??
+      packageJson.peerDependencies?.[adapter.canonicalPackageName];
+
+    if (!declaredSpecifier) {
+      continue;
+    }
+
+    const declaredRange = semver.validRange(declaredSpecifier);
+
+    if (!declaredRange || !semver.satisfies(adapter.canonicalVersion, declaredRange)) {
+      continue;
+    }
+
+    overrides[adapter.canonicalPackageName] = adapter.canonicalVersion;
+  }
+
+  return sortRecordByKey(overrides);
+}
+
 export function usesExpoRouter(packageJson: PackageJson): boolean {
   return hasDeclaredDependency(packageJson, 'expo-router');
 }
@@ -1249,4 +1801,8 @@ function stabilizeToolkitConfigTimestamp(
   }
 
   return nextToolkitConfig;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

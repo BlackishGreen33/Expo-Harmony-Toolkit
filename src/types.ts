@@ -48,6 +48,9 @@ export interface PackageJson {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  pnpm?: {
+    overrides?: Record<string, string>;
+  };
 }
 
 export interface LoadedProject {

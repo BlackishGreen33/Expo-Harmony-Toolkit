@@ -15,7 +15,19 @@ if(NOT EXISTS "${RNOH_CPP_DIR}/CMakeLists.txt")
 endif()
 
 if(NOT EXISTS "${RNOH_CPP_DIR}/CMakeLists.txt")
-  message(FATAL_ERROR "Unable to locate RNOH C++ sources under oh_modules or oh_modules/.ohpm. Re-sync Harmony dependencies before building.")
+  file(GLOB RNOH_LOCAL_DEP_CPP_DIR_CANDIDATES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../expo-harmony-local-deps/*react_native_openharmony*/src/main/cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.expo-harmony/ohpm-local-deps/*react_native_openharmony*/src/main/cpp"
+  )
+
+  list(LENGTH RNOH_LOCAL_DEP_CPP_DIR_CANDIDATES RNOH_LOCAL_DEP_CPP_DIR_CANDIDATE_COUNT)
+  if(RNOH_LOCAL_DEP_CPP_DIR_CANDIDATE_COUNT GREATER 0)
+    list(GET RNOH_LOCAL_DEP_CPP_DIR_CANDIDATES 0 RNOH_CPP_DIR)
+  endif()
+endif()
+
+if(NOT EXISTS "${RNOH_CPP_DIR}/CMakeLists.txt")
+  message(FATAL_ERROR "Unable to locate RNOH C++ sources under oh_modules, oh_modules/.ohpm, or expo-harmony-local-deps. Re-sync Harmony dependencies before building.")
 endif()
 
 set(RNOH_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")

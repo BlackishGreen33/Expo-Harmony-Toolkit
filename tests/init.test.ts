@@ -28,6 +28,7 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:env']).toBe('expo-harmony env');
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
+    expect(packageJson.pnpm?.overrides).toBeUndefined();
     expect(manifest?.toolkitVersion).toBe('1.5.1');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(toolkitConfig?.toolkitVersion).toBe('1.5.1');
@@ -35,6 +36,16 @@ describe('init project', () => {
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'))).toBe(true);
+    expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'oh_modules', '@rnoh', 'react-native-openharmony', 'ts.ts'))).toBe(true);
+    expect(await fs.readFile(path.join(projectRoot, 'harmony', 'build-profile.json5'), 'utf8')).toContain(
+      'useNormalizedOHMUrl',
+    );
+    expect(await fs.readFile(path.join(projectRoot, 'harmony', 'entry', 'hvigorfile.ts'), 'utf8')).toContain(
+      'autolinking: null',
+    );
+    expect(await fs.readFile(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'PackageProvider.ets'), 'utf8')).toContain(
+      'RNPackage',
+    );
     expect(secondRun.sync.writtenFiles).toHaveLength(0);
     expect(secondRun.sync.skippedFiles).toHaveLength(0);
     expect(secondRun.sync.unchangedFiles.length).toBeGreaterThan(0);

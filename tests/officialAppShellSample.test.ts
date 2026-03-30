@@ -62,7 +62,9 @@ describe('official app-shell sample', () => {
     expect(metroConfig).toContain("'expo-modules-core'");
     expect(metroConfig).toContain("'react-native-safe-area-context'");
     expect(metroConfig).toContain('resolveRequest: resolveExpoHarmonyShim');
+    expect(metroConfig).toContain('moduleName.startsWith(`${aliasedModuleName}/`)');
     expect(metroConfig).toContain('resolveReactNativeCompatibilityWrapper');
+    expect(metroConfig).toContain('unstable_serverRoot: __dirname');
     const safeAreaShim = await fs.readFile(
       path.join(sampleRoot, '.expo-harmony', 'shims', 'react-native-safe-area-context', 'index.js'),
       'utf8',

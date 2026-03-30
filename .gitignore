@@ -3,3 +3,6 @@ build
 coverage
 .DS_Store
 *.log
+.tmp-acceptance/
+**/expo-harmony-local-deps/
+**/.expo-harmony/ohpm-local-deps/

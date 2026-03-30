@@ -19,11 +19,11 @@ async function cleanupGeneratedArtifacts() {
 describe('official ui-stack sample', () => {
   beforeAll(async () => {
     await cleanupGeneratedArtifacts();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await cleanupGeneratedArtifacts();
-  });
+  }, 30000);
 
   it('passes strict doctor expectations, scaffolds autolinking outputs, and bundles a harmony artifact', async () => {
     const report = await buildDoctorReport(sampleRoot);
@@ -35,15 +35,48 @@ describe('official ui-stack sample', () => {
     expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/ets/RNOHPackagesFactory.ets');
     expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/cpp/RNOHPackagesFactory.h');
     expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/cpp/autolinking.cmake');
+    expect(initResult.sync.writtenFiles).toContain('harmony/oh_modules/@rnoh/react-native-openharmony/ts.ts');
+    const samplePackageJson = await fs.readJson(path.join(sampleRoot, 'package.json'));
+    expect(samplePackageJson.pnpm?.overrides).toMatchObject({
+      'react-native-reanimated': '3.6.0',
+      'react-native-svg': '15.0.0',
+    });
+    const metroConfig = await fs.readFile(path.join(sampleRoot, 'metro.harmony.config.js'), 'utf8');
+    expect(metroConfig).toContain('unstable_serverRoot: __dirname');
+    expect(metroConfig).toContain('moduleName.startsWith(`${aliasedModuleName}/`)');
 
     const autolinkingCmake = await fs.readFile(
       path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'),
       'utf8',
     );
-    expect(autolinkingCmake).toContain('rnoh_gesture_handler');
-    expect(autolinkingCmake).toContain('@react-native-oh-tpl/react-native-gesture-handler');
-    expect(autolinkingCmake).not.toContain('@react-native-oh-tpl/react-native-reanimated');
-    expect(autolinkingCmake).not.toContain('@react-native-oh-tpl/react-native-svg');
+    expect(autolinkingCmake).toContain('rnoh_reanimated');
+    expect(autolinkingCmake).toContain('@react-native-oh-tpl/react-native-reanimated');
+    expect(autolinkingCmake).toContain('rnoh_svg');
+    expect(autolinkingCmake).toContain('@react-native-oh-tpl/react-native-svg');
+    const etsFactory = await fs.readFile(
+      path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+      'utf8',
+    );
+    expect(etsFactory).toContain('RNPackage');
+    expect(etsFactory).toContain("import { ReanimatedPackage } from '@react-native-oh-tpl/react-native-reanimated/ts';");
+    expect(etsFactory).toContain("import { SvgPackage } from '@react-native-oh-tpl/react-native-svg/ts';");
+    expect(etsFactory).toContain('new ReanimatedPackage(ctx)');
+    expect(etsFactory).toContain('new SvgPackage(ctx)');
+    const cppFactory = await fs.readFile(
+      path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'),
+      'utf8',
+    );
+    expect(cppFactory).toContain('ReanimatedPackage.h');
+    expect(cppFactory).toContain('SVGPackage.h');
+    expect(cppFactory).toContain('std::make_shared<rnoh::ReanimatedPackage>(ctx)');
+    expect(cppFactory).toContain('std::make_shared<rnoh::SVGPackage>(ctx)');
+    const rnohGeneratedTsShim = await fs.readFile(
+      path.join(sampleRoot, 'harmony', 'oh_modules', '@rnoh', 'react-native-openharmony', 'ts.ts'),
+      'utf8',
+    );
+    expect(rnohGeneratedTsShim).toContain(
+      'expo-harmony-local-deps/rnoh-react-native-openharmony-react_native_openharmony/ts',
+    );
 
     const ohPackage = await fs.readFile(path.join(sampleRoot, 'harmony', 'oh-package.json5'), 'utf8');
     for (const adapter of UI_STACK_VALIDATED_ADAPTERS) {
@@ -74,7 +107,8 @@ describe('official ui-stack sample', () => {
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('react-native-svg');
     expect(bundleContents).toContain('react-native-reanimated');
-    expect(bundleContents).toContain('react-native-gesture-handler');
+    expect(bundleContents).not.toContain('3.17.5');
+    expect(bundleContents).not.toContain('WorkletsModule');
 
     const secondInit = await initProject(sampleRoot, false);
     expect(secondInit.sync.skippedFiles).toHaveLength(0);
