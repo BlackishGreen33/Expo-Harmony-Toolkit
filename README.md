@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Expo Harmony Toolkit</h1>
   <p><strong>面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链。</strong></p>
-  <p>One validated UI-stack matrix, explicit dependency admission rules, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
+  <p>One verified UI-stack matrix, additive preview/experimental capability tiers, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
   <p>
     <a href="./README.md">简体中文</a> ·
     <a href="./README.en.md">English</a>
@@ -9,13 +9,14 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.2-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.6.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
   <p>
     <a href="./docs/support-matrix.md">支持矩阵</a> ·
     <a href="./docs/cli-build.md">CLI 构建指南</a> ·
+    <a href="./docs/official-native-capabilities-sample.md">官方 Native Capabilities Sample</a> ·
     <a href="./docs/official-ui-stack-sample.md">官方 UI Stack Sample</a> ·
     <a href="./docs/npm-release.md">npm 发布说明</a> ·
     <a href="./docs/roadmap.md">路线图</a>
@@ -23,14 +24,14 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.5.2` 继续只对 `expo55-rnoh082-ui-stack` 做正式公开承诺。这不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明，而是对一条受限、可验证矩阵的稳定承诺。
+> `v1.6` 开始，toolkit 采用 `verified + preview + experimental` 三层支持模型。`expo55-rnoh082-ui-stack` 仍是唯一 `verified` 公开矩阵；`expo-file-system` 与 `expo-image-picker` 进入 `preview`，但这仍然不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
 
 ## 概览
 
-`expo-harmony-toolkit` 提供一条围绕 Expo 到 HarmonyOS 迁移的受限、可验证工具链：
+`expo-harmony-toolkit` 提供一条围绕 Expo 到 HarmonyOS 迁移的受限、可验证工具链，并开始公开 preview 层的原生能力桥接骨架：
 
 - Expo config plugin 根入口 `app.plugin.js`
 - `expo-harmony doctor`
@@ -46,20 +47,23 @@
 
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.5.2` |
-| 唯一公开矩阵 | `expo55-rnoh082-ui-stack` |
+| 当前版本 | `v1.6.0` |
+| 支持模型 | `verified + preview + experimental` |
+| 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
-| 已验证 JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
+| `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
+| `preview` 原生能力 | `expo-file-system`、`expo-image-picker` |
+| `experimental` 能力 | `expo-location`、`expo-camera`、`expo-notifications`、`react-native-gesture-handler` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
+| preview sample | `examples/official-native-capabilities-sample` |
 | 回归基线 | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
 
 <details>
-<summary><strong>当前不在承诺范围</strong></summary>
+<summary><strong>当前仍不在 verified 正式承诺范围</strong></summary>
 
 - bare Expo
-- `expo-image-picker`
-- `expo-file-system`
+- `expo-file-system`、`expo-image-picker` 仍只属于 `preview`
 - `expo-location`
 - `expo-camera`
 - `expo-notifications`
@@ -130,6 +134,7 @@ pnpm install --ignore-scripts
 cd /path/to/app
 pnpm exec expo-harmony doctor --project-root .
 pnpm exec expo-harmony doctor --project-root . --strict
+pnpm exec expo-harmony doctor --project-root . --target-tier preview
 ```
 
 2. 生成或刷新受管 Harmony sidecar：
@@ -157,24 +162,20 @@ pnpm exec expo-harmony build-hap --mode release
 常见使用判断：
 
 - 想知道当前项目是否还在公开矩阵里：跑 `doctor --strict`
+- 想知道项目是否只落在 preview / experimental：跑 `doctor --target-tier preview` 或 `doctor --target-tier experimental`
 - 刚改过依赖、Expo 配置或插件：先跑 `sync-template`
 - 只想验证 JS/UI 侧是否能打包：跑 `bundle`
 - 准备进 DevEco Studio 或本机构建 HAP：先跑 `env`
 
 ## 支持矩阵
 
-`v1.5.2` 继续坚持单矩阵路线：`expo55-rnoh082-ui-stack`。
+`v1.6` 开始改成支持分层：
 
-- Expo SDK：`55`
-- React：`19.1.1`
-- React Native：`0.82.1`
-- RNOH / `@react-native-oh/react-native-harmony-cli`：`0.82.18`
-- App Shell 依赖：`expo-router`、`expo-linking`、`expo-constants`
-- UI stack 依赖：`react-native-reanimated`、`react-native-svg`
-- Harmony adapter：对应两项 `@react-native-oh-tpl/*` exact Git specifier
-- 原生标识：至少配置 `android.package` 或 `ios.bundleIdentifier`
+- `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
+- `preview`：`expo-file-system`、`expo-image-picker`
+- `experimental`：`expo-location`、`expo-camera`、`expo-notifications`、`react-native-gesture-handler`
 
-当前不再把 `react-native-gesture-handler` 放进公开矩阵。它仍可作为手动探索项，但当前 `@react-native-oh-tpl/react-native-gesture-handler` 与 `@react-native-oh/react-native-harmony@0.82.18` 的设备侧 runtime 组合还没有通过正式验收。
+`doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
 
 完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
@@ -182,6 +183,8 @@ pnpm exec expo-harmony build-hap --mode release
 
 - `examples/official-ui-stack-sample`
   当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
+- `examples/official-native-capabilities-sample`
+  v1.6 新增的 preview sample，用来承接 `expo-file-system` 与 `expo-image-picker` 的 bridge、permission 与 bundle 骨架验收。
 - `examples/official-app-shell-sample`
   `v1.1` App Shell 回归基线，用来防止 UI-stack 收口引入 router 退化。
 - `examples/official-minimal-sample`
@@ -190,6 +193,7 @@ pnpm exec expo-harmony build-hap --mode release
 详见：
 
 - [官方 UI Stack sample 指南](./docs/official-ui-stack-sample.md)
+- [官方 Native Capabilities sample 指南](./docs/official-native-capabilities-sample.md)
 - [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
 
@@ -199,6 +203,7 @@ pnpm exec expo-harmony build-hap --mode release
 | --- | --- |
 | `expo-harmony doctor` | 扫描 Expo 配置与依赖，输出迁移报告 |
 | `expo-harmony doctor --strict` | 将当前矩阵准入检查作为正式 gate 执行 |
+| `expo-harmony doctor --target-tier preview` | 在同一 runtime matrix 下评估项目是否至少落在 `preview` 能力层 |
 | `expo-harmony init` | 生成 Harmony sidecar、autolinking 产物、metadata 与 package scripts |
 | `expo-harmony sync-template` | 再次应用受管模板并检查 drift |
 | `expo-harmony env` | 检查 DevEco / hvigor / hdc / signing 本地环境 |
@@ -242,6 +247,7 @@ pnpm exec expo-harmony build-hap --mode release
 - 点击首页 motion rail 后能触发可见动画
 - 动画完成后路由跳转仍正常
 - `Build Debug Hap(s)` 成功
+- `official-native-capabilities-sample` 至少完成 preview route 的 bundle 与 permission 产物检查
 
 详见 [docs/npm-release.md](./docs/npm-release.md) 与 [docs/signing-and-release.md](./docs/signing-and-release.md)。
 
@@ -249,6 +255,7 @@ pnpm exec expo-harmony build-hap --mode release
 
 - [支持矩阵](./docs/support-matrix.md)
 - [CLI 构建指南](./docs/cli-build.md)
+- [官方 Native Capabilities sample 指南](./docs/official-native-capabilities-sample.md)
 - [官方 UI Stack sample 指南](./docs/official-ui-stack-sample.md)
 - [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)

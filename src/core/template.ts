@@ -24,11 +24,17 @@ import {
   LoadedProject,
   ManagedFileRecord,
   PackageJson,
+  CapabilityDefinition,
   SyncResult,
   TemplateFileDefinition,
   ToolkitConfig,
   ToolkitManifest,
 } from '../types';
+import {
+  CAPABILITY_DEFINITIONS,
+  collectCapabilityHarmonyPermissions,
+  getCapabilityDefinitionsForProject,
+} from '../data/capabilities';
 import { UI_STACK_ADAPTER_PACKAGE_NAMES, UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
 import {
   createGeneratedSha,
@@ -217,6 +223,8 @@ async function buildManagedFiles(
   previousToolkitConfig: ToolkitConfig | null,
 ): Promise<TemplateFileDefinition[]> {
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
+  const enabledCapabilities = getCapabilityDefinitionsForProject(loadedProject.packageJson);
+  const requestedHarmonyPermissions = collectCapabilityHarmonyPermissions(loadedProject.packageJson);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const renderedHarmonyRootPackage = renderTemplate(
     await fs.readFile(path.join(TEMPLATE_ROOT, 'oh-package.json5'), 'utf8'),
@@ -235,7 +243,16 @@ async function buildManagedFiles(
 
       return {
         relativePath: path.join('harmony', relativePath),
-        contents,
+        contents:
+          relativePath === 'entry/src/main/module.json5'
+            ? renderEntryModuleConfig(identifiers.entryModuleName, requestedHarmonyPermissions)
+            : relativePath === 'entry/src/main/resources/base/element/string.json'
+              ? renderEntryStringResources(
+                  `${identifiers.appName} official minimal Harmony sample`,
+                  identifiers.appName,
+                  requestedHarmonyPermissions,
+                )
+            : contents,
         binary,
       };
     }),
@@ -254,6 +271,8 @@ async function buildManagedFiles(
     rnohCliVersion: RNOH_CLI_VERSION,
     bundleName: identifiers.bundleName,
     entryModuleName: identifiers.entryModuleName,
+    capabilities: enabledCapabilities.map((capability) => capability.id),
+    requestedHarmonyPermissions,
     project: {
       name: loadedProject.expoConfig.name ?? identifiers.appName,
       slug: loadedProject.expoConfig.slug ?? identifiers.slug,
@@ -272,7 +291,7 @@ async function buildManagedFiles(
     },
     {
       relativePath: 'metro.harmony.config.js',
-      contents: renderMetroConfig(),
+      contents: renderMetroConfig(enabledCapabilities),
     },
     {
       relativePath: path.join(GENERATED_SHIMS_DIR, 'react-native-safe-area-context', 'index.js'),
@@ -282,6 +301,13 @@ async function buildManagedFiles(
       relativePath: path.join(GENERATED_SHIMS_DIR, 'expo-modules-core', 'index.js'),
       contents: renderExpoModulesCoreHarmonyShim(loadedProject.expoConfig, identifiers),
     },
+    ...CAPABILITY_DEFINITIONS.map(
+      (capability) =>
+        ({
+          relativePath: path.join(GENERATED_SHIMS_DIR, capability.packageName, 'index.js'),
+          contents: renderCapabilityModuleShim(capability),
+        }) satisfies TemplateFileDefinition,
+    ),
     {
       relativePath: HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH,
       contents: renderHarmonyRuntimePrelude(),
@@ -950,7 +976,154 @@ function renderRnohGeneratedTsShim(): string {
   return `export * from '${relativeTarget}';\n`;
 }
 
-function renderMetroConfig(): string {
+function renderEntryModuleConfig(
+  entryModuleName: string,
+  requestedHarmonyPermissions: readonly string[],
+): string {
+  const requestPermissions = [
+    { name: 'ohos.permission.INTERNET' },
+    ...requestedHarmonyPermissions.map((permission) =>
+      createUserGrantHarmonyPermission(permission),
+    ),
+  ];
+
+  return (
+    JSON.stringify(
+      {
+        module: {
+          name: entryModuleName,
+          type: 'entry',
+          description: '$string:module_desc',
+          mainElement: 'EntryAbility',
+          deviceTypes: ['default'],
+          deliveryWithInstall: true,
+          installationFree: false,
+          pages: '$profile:main_pages',
+          requestPermissions,
+          abilities: [
+            {
+              name: 'EntryAbility',
+              srcEntry: './ets/entryability/EntryAbility.ets',
+              description: '$string:EntryAbility_desc',
+              icon: '$media:layered_image',
+              label: '$string:EntryAbility_label',
+              startWindowIcon: '$media:startIcon',
+              startWindowBackground: '$color:start_window_background',
+              visible: true,
+            },
+          ],
+        },
+      },
+      null,
+      2,
+    ) + '\n'
+  );
+}
+
+function createUserGrantHarmonyPermission(permissionName: string): {
+  name: string;
+  reason: string;
+  usedScene: {
+    abilities: string[];
+    when: 'inuse' | 'always';
+  };
+} {
+  return {
+    name: permissionName,
+    reason: `$string:${getHarmonyPermissionReasonKey(permissionName)}`,
+    usedScene: {
+      abilities: ['EntryAbility'],
+      when: getHarmonyPermissionWhen(permissionName),
+    },
+  };
+}
+
+function getHarmonyPermissionReasonKey(permissionName: string): string {
+  return permissionName
+    .replace(/^ohos\.permission\./, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') + '_reason';
+}
+
+function getHarmonyPermissionReasonValue(permissionName: string): string {
+  switch (permissionName) {
+    case 'ohos.permission.CAMERA':
+      return 'Camera access is required for Harmony preview image capture flows.';
+    case 'ohos.permission.READ_IMAGEVIDEO':
+      return 'Media library access is required for Harmony preview image selection flows.';
+    case 'ohos.permission.LOCATION':
+    case 'ohos.permission.APPROXIMATELY_LOCATION':
+      return 'Location access is required for Harmony preview location flows.';
+    case 'ohos.permission.NOTIFICATION_CONTROLLER':
+      return 'Notification access is required for Harmony preview notification flows.';
+    default:
+      return 'This Harmony permission is required for managed preview native capability flows.';
+  }
+}
+
+function getHarmonyPermissionWhen(permissionName: string): 'inuse' | 'always' {
+  switch (permissionName) {
+    case 'ohos.permission.NOTIFICATION_CONTROLLER':
+      return 'always';
+    default:
+      return 'inuse';
+  }
+}
+
+function renderEntryStringResources(
+  appDescription: string,
+  appName: string,
+  requestedHarmonyPermissions: readonly string[],
+): string {
+  const stringEntries = [
+    {
+      name: 'module_desc',
+      value: appDescription,
+    },
+    {
+      name: 'EntryAbility_desc',
+      value: appDescription,
+    },
+    {
+      name: 'EntryAbility_label',
+      value: appName,
+    },
+    ...requestedHarmonyPermissions.map((permissionName) => ({
+      name: getHarmonyPermissionReasonKey(permissionName),
+      value: getHarmonyPermissionReasonValue(permissionName),
+    })),
+  ];
+
+  return JSON.stringify(
+    {
+      string: stringEntries,
+    },
+    null,
+    2,
+  ) + '\n';
+}
+
+function renderCapabilityModuleShim(capability: CapabilityDefinition): string {
+  switch (capability.packageName) {
+    case 'expo-file-system':
+      return renderExpoFileSystemPreviewShim(capability);
+    case 'expo-image-picker':
+      return renderExpoImagePickerPreviewShim(capability);
+    default:
+      return renderUnsupportedCapabilityShim(capability);
+  }
+}
+
+function renderMetroConfig(enabledCapabilities: readonly CapabilityDefinition[]): string {
+  const previewCapabilityAliases = enabledCapabilities
+    .filter((capability) => capability.supportTier === 'preview' || capability.supportTier === 'experimental')
+    .map(
+      (capability) =>
+        `  '${capability.packageName}': path.resolve(__dirname, '.expo-harmony/shims/${capability.packageName}'),`,
+    )
+    .join('\n');
+
   return `const fs = require('fs');
 const path = require('path');
 
@@ -969,14 +1142,14 @@ const expoHarmonyShims = {
     __dirname,
     '.expo-harmony/shims/react-native-safe-area-context',
   ),
-};
+${previewCapabilityAliases ? `${previewCapabilityAliases}\n` : ''}};
 const uiStackRootModuleAliases = {
   'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler'),
   'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
   'react-native-svg': path.resolve(__dirname, 'node_modules/react-native-svg'),
 };
-const resolveUiStackModuleAlias = (context, moduleName, platform) => {
-  for (const [aliasedModuleName, aliasedModulePath] of Object.entries(uiStackRootModuleAliases)) {
+const resolvePackageAlias = (context, moduleName, platform, aliases) => {
+  for (const [aliasedModuleName, aliasedModulePath] of Object.entries(aliases)) {
     if (moduleName === aliasedModuleName) {
       return context.resolveRequest(context, aliasedModulePath, platform);
     }
@@ -992,6 +1165,10 @@ const resolveUiStackModuleAlias = (context, moduleName, platform) => {
 
   return null;
 };
+const resolveUiStackModuleAlias = (context, moduleName, platform) =>
+  resolvePackageAlias(context, moduleName, platform, uiStackRootModuleAliases);
+const resolveExpoHarmonyModuleAlias = (context, moduleName, platform) =>
+  resolvePackageAlias(context, moduleName, platform, expoHarmonyShims);
 const reactNativeCompatibilitySourceExts = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'json'];
 const reactNativeCompatibilityPackageMarkers = [
   path.sep + '@react-native-oh' + path.sep + 'react-native-harmony' + path.sep,
@@ -1087,8 +1264,10 @@ const resolveExpoHarmonyShim = (context, moduleName, platform) => {
     return uiStackModuleAliasResolution;
   }
 
-  if (moduleName in expoHarmonyShims) {
-    return context.resolveRequest(context, expoHarmonyShims[moduleName], platform);
+  const expoHarmonyModuleAliasResolution = resolveExpoHarmonyModuleAlias(context, moduleName, platform);
+
+  if (expoHarmonyModuleAliasResolution) {
+    return expoHarmonyModuleAliasResolution;
   }
 
   const compatibilityWrapperResolution = resolveReactNativeCompatibilityWrapper(
@@ -1144,6 +1323,154 @@ module.exports = {
       'harmony.jsx',
       ...((harmonyConfig.resolver?.sourceExts ?? defaultConfig.resolver?.sourceExts ?? ['ts', 'tsx', 'js', 'jsx', 'json'])),
     ],
+  },
+};
+`;
+}
+
+function renderUnsupportedCapabilityShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { CodedError } = require('expo-modules-core');
+
+function createPreviewError() {
+  return new CodedError(
+    'ERR_EXPO_HARMONY_PREVIEW',
+    '${capability.packageName} is classified as ${capability.supportTier} for Harmony, but no managed runtime shim has been wired yet.',
+  );
+}
+
+function unavailable() {
+  throw createPreviewError();
+}
+
+module.exports = new Proxy(
+  {},
+  {
+    get(_target, propertyName) {
+      if (propertyName === '__esModule') {
+        return true;
+      }
+
+      return unavailable;
+    },
+  },
+);
+`;
+}
+
+function renderExpoFileSystemPreviewShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { CodedError } = require('expo-modules-core');
+
+const PREVIEW_MESSAGE =
+  '${capability.packageName} is routed through the Expo Harmony ${capability.supportTier} bridge. Bundling is supported, but runtime file-system behavior is not verified yet.';
+
+function createPreviewError(operationName) {
+  return new CodedError(
+    'ERR_EXPO_HARMONY_PREVIEW',
+    PREVIEW_MESSAGE + ' Attempted operation: ' + operationName + '.',
+  );
+}
+
+async function unavailable(operationName) {
+  throw createPreviewError(operationName);
+}
+
+module.exports = {
+  cacheDirectory: 'file:///expo-harmony/cache/',
+  documentDirectory: 'file:///expo-harmony/document/',
+  bundleDirectory: 'file:///expo-harmony/bundle/',
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+  FileSystemSessionType: {
+    BACKGROUND: 0,
+    FOREGROUND: 1,
+  },
+  getInfoAsync(path) {
+    return unavailable('getInfoAsync(' + String(path) + ')');
+  },
+  readAsStringAsync(path) {
+    return unavailable('readAsStringAsync(' + String(path) + ')');
+  },
+  writeAsStringAsync(path) {
+    return unavailable('writeAsStringAsync(' + String(path) + ')');
+  },
+  deleteAsync(path) {
+    return unavailable('deleteAsync(' + String(path) + ')');
+  },
+  makeDirectoryAsync(path) {
+    return unavailable('makeDirectoryAsync(' + String(path) + ')');
+  },
+  readDirectoryAsync(path) {
+    return unavailable('readDirectoryAsync(' + String(path) + ')');
+  },
+  copyAsync(options) {
+    return unavailable('copyAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+  moveAsync(options) {
+    return unavailable('moveAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+  downloadAsync(url) {
+    return unavailable('downloadAsync(' + String(url) + ')');
+  },
+};
+`;
+}
+
+function renderExpoImagePickerPreviewShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { CodedError } = require('expo-modules-core');
+
+const PREVIEW_MESSAGE =
+  '${capability.packageName} is routed through the Expo Harmony ${capability.supportTier} bridge. Bundling is supported, but picker and camera flows still need device-side validation.';
+
+function createPreviewError(operationName) {
+  return new CodedError(
+    'ERR_EXPO_HARMONY_PREVIEW',
+    PREVIEW_MESSAGE + ' Attempted operation: ' + operationName + '.',
+  );
+}
+
+async function unavailable(operationName) {
+  throw createPreviewError(operationName);
+}
+
+module.exports = {
+  MediaTypeOptions: {
+    All: 'All',
+    Images: 'Images',
+    Videos: 'Videos',
+  },
+  UIImagePickerPresentationStyle: {
+    AUTOMATIC: 'automatic',
+    FULL_SCREEN: 'fullScreen',
+    PAGE_SHEET: 'pageSheet',
+    FORM_SHEET: 'formSheet',
+    CURRENT_CONTEXT: 'currentContext',
+    OVER_FULL_SCREEN: 'overFullScreen',
+  },
+  requestCameraPermissionsAsync() {
+    return unavailable('requestCameraPermissionsAsync');
+  },
+  requestMediaLibraryPermissionsAsync() {
+    return unavailable('requestMediaLibraryPermissionsAsync');
+  },
+  getCameraPermissionsAsync() {
+    return unavailable('getCameraPermissionsAsync');
+  },
+  getMediaLibraryPermissionsAsync() {
+    return unavailable('getMediaLibraryPermissionsAsync');
+  },
+  launchCameraAsync(options) {
+    return unavailable('launchCameraAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+  launchImageLibraryAsync(options) {
+    return unavailable('launchImageLibraryAsync(' + JSON.stringify(options ?? {}) + ')');
   },
 };
 `;

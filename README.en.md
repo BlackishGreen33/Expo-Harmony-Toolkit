@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Expo Harmony Toolkit</h1>
   <p><strong>A HarmonyOS migration, admission, and UI-stack build toolkit for Managed/CNG Expo projects.</strong></p>
-  <p>One validated UI-stack matrix, explicit dependency admission rules, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
+  <p>One verified UI-stack matrix, additive preview/experimental capability tiers, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
   <p>
     <a href="./README.md">简体中文</a> ·
     <a href="./README.en.md">English</a>
@@ -9,13 +9,14 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.5.2-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.6.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
   <p>
     <a href="./docs/support-matrix.md">Support Matrix</a> ·
     <a href="./docs/cli-build.md">CLI Build Guide</a> ·
+    <a href="./docs/official-native-capabilities-sample.md">Official Native Capabilities Sample</a> ·
     <a href="./docs/official-ui-stack-sample.md">Official UI Stack Sample</a> ·
     <a href="./docs/npm-release.md">npm Release Notes</a> ·
     <a href="./docs/roadmap.md">Roadmap</a>
@@ -23,14 +24,14 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.5.2` continues to make one formal public promise only: `expo55-rnoh082-ui-stack`. This is not a claim that arbitrary Expo applications can be published to HarmonyOS unchanged.
+> Starting with `v1.6`, the toolkit exposes `verified + preview + experimental` support tiers. `expo55-rnoh082-ui-stack` remains the only `verified` public matrix, while `expo-file-system` and `expo-image-picker` move into `preview`. This is still not a claim that arbitrary Expo apps can be published to HarmonyOS unchanged.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
 
 ## Overview
 
-`expo-harmony-toolkit` provides a constrained, verifiable Expo-to-Harmony toolchain:
+`expo-harmony-toolkit` provides a constrained, verifiable Expo-to-Harmony toolchain and now starts exposing preview-tier native capability bridges:
 
 - Expo config plugin entrypoint `app.plugin.js`
 - `expo-harmony doctor`
@@ -46,20 +47,23 @@
 
 | Item | Status |
 | --- | --- |
-| Current version | `v1.5.2` |
-| Public matrix | `expo55-rnoh082-ui-stack` |
+| Current version | `v1.6.0` |
+| Support model | `verified + preview + experimental` |
+| Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
-| Validated JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
+| `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
+| `preview` native capabilities | `expo-file-system`, `expo-image-picker` |
+| `experimental` capabilities | `expo-location`, `expo-camera`, `expo-notifications`, `react-native-gesture-handler` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
+| Preview sample | `examples/official-native-capabilities-sample` |
 | Regression baselines | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
 
 <details>
-<summary><strong>Currently out of scope</strong></summary>
+<summary><strong>Still outside the verified public promise</strong></summary>
 
 - bare Expo
-- `expo-image-picker`
-- `expo-file-system`
+- `expo-file-system` and `expo-image-picker` remain `preview`
 - `expo-location`
 - `expo-camera`
 - `expo-notifications`
@@ -130,6 +134,7 @@ Notes:
 cd /path/to/app
 pnpm exec expo-harmony doctor --project-root .
 pnpm exec expo-harmony doctor --project-root . --strict
+pnpm exec expo-harmony doctor --project-root . --target-tier preview
 ```
 
 2. Generate or refresh the managed Harmony sidecar:
@@ -157,24 +162,20 @@ pnpm exec expo-harmony build-hap --mode release
 Common decision points:
 
 - Want to know whether the current project still matches the public matrix: run `doctor --strict`
+- Want to know whether the project at least falls into preview / experimental tiers: run `doctor --target-tier preview` or `doctor --target-tier experimental`
 - Changed dependencies, Expo config, or plugin wiring: run `sync-template`
 - Only want to verify JavaScript/UI portability: run `bundle`
 - About to open DevEco Studio or build a HAP locally: run `env` first
 
 ## Support Matrix
 
-`v1.5.2` stays on one public matrix: `expo55-rnoh082-ui-stack`.
+`v1.6` moves to tiered support:
 
-- Expo SDK: `55`
-- React: `19.1.1`
-- React Native: `0.82.1`
-- RNOH and `@react-native-oh/react-native-harmony-cli`: `0.82.18`
-- App Shell packages: `expo-router`, `expo-linking`, `expo-constants`
-- UI stack packages: `react-native-reanimated`, `react-native-svg`
-- Harmony adapters: the matching `@react-native-oh-tpl/*` exact Git specifiers
-- Native identifier: at least `android.package` or `ios.bundleIdentifier`
+- `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
+- `preview`: `expo-file-system`, `expo-image-picker`
+- `experimental`: `expo-location`, `expo-camera`, `expo-notifications`, `react-native-gesture-handler`
 
-`react-native-gesture-handler` is no longer part of the public matrix. It remains a manual exploration path until the current `@react-native-oh-tpl/react-native-gesture-handler` and `@react-native-oh/react-native-harmony@0.82.18` runtime pairing passes on-device validation.
+`doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
 
 See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, pairing rules, exact specifiers, issue codes, and release gates.
 
@@ -182,6 +183,8 @@ See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, p
 
 - `examples/official-ui-stack-sample`
   The primary public sample for `v1.5.0`, covering router, linking, constants, SVG, reanimated, and Harmony sidecar build flow.
+- `examples/official-native-capabilities-sample`
+  The new preview sample for `v1.6`, covering the `expo-file-system` and `expo-image-picker` bridge, permission generation, and bundle-time alias flow.
 - `examples/official-app-shell-sample`
   The `v1.1` App Shell regression baseline that protects router behavior while UI-stack support is finalized.
 - `examples/official-minimal-sample`
@@ -189,6 +192,7 @@ See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, p
 
 See:
 
+- [Official Native Capabilities Sample Guide](./docs/official-native-capabilities-sample.md)
 - [Official UI Stack Sample Guide](./docs/official-ui-stack-sample.md)
 - [Official App Shell Sample Guide](./docs/official-app-shell-sample.md)
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
@@ -199,6 +203,7 @@ See:
 | --- | --- |
 | `expo-harmony doctor` | Inspect Expo config and dependencies and produce a migration report |
 | `expo-harmony doctor --strict` | Run the formal matrix admission gate |
+| `expo-harmony doctor --target-tier preview` | Evaluate whether the project fits at least the preview support tier |
 | `expo-harmony init` | Generate Harmony sidecar files, autolinking artifacts, metadata, and package scripts |
 | `expo-harmony sync-template` | Reapply managed templates and report drift |
 | `expo-harmony env` | Check the local DevEco / hvigor / hdc / signing environment |
@@ -242,6 +247,7 @@ Manual Harmony acceptance still requires:
 - pressing the home-screen motion rail triggers visible animation
 - routing still works after the animation completes
 - `Build Debug Hap(s)` succeeds
+- `official-native-capabilities-sample` at least proves preview route bundling and generated Harmony permissions
 
 See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.md](./docs/signing-and-release.md).
 
@@ -249,6 +255,7 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 
 - [Support Matrix](./docs/support-matrix.md)
 - [CLI Build Guide](./docs/cli-build.md)
+- [Official Native Capabilities Sample Guide](./docs/official-native-capabilities-sample.md)
 - [Official UI Stack Sample Guide](./docs/official-ui-stack-sample.md)
 - [Official App Shell Sample Guide](./docs/official-app-shell-sample.md)
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)

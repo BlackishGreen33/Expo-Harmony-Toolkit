@@ -7,6 +7,7 @@ const managedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app')
 const sampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
 const appShellSampleRoot = path.join(__dirname, '..', 'examples', 'official-app-shell-sample');
 const uiStackSampleRoot = path.join(__dirname, '..', 'examples', 'official-ui-stack-sample');
+const nativePreviewRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
 
 async function cleanupGeneratedArtifacts(projectRoot: string) {
   await fs.remove(path.join(projectRoot, 'harmony'));
@@ -64,5 +65,24 @@ describe('doctor command strict mode', () => {
     });
 
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it('allows preview-tier eligibility when the target tier is preview', async () => {
+    await runDoctorCommand({
+      projectRoot: nativePreviewRoot,
+      targetTier: 'preview',
+    });
+
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('keeps strict mode pinned to verified even when a preview target tier is supplied', async () => {
+    await runDoctorCommand({
+      projectRoot: nativePreviewRoot,
+      strict: true,
+      targetTier: 'preview',
+    });
+
+    expect(process.exitCode).toBe(STRICT_DOCTOR_EXIT_CODE);
   });
 });

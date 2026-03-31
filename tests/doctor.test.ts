@@ -9,7 +9,14 @@ const managedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app')
 const sampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
 const appShellSampleRoot = path.join(__dirname, '..', 'examples', 'official-app-shell-sample');
 const uiStackSampleRoot = path.join(__dirname, '..', 'examples', 'official-ui-stack-sample');
+const nativeCapabilitiesSampleRoot = path.join(
+  __dirname,
+  '..',
+  'examples',
+  'official-native-capabilities-sample',
+);
 const missingIdentifiersRoot = path.join(__dirname, '..', 'fixtures', 'missing-identifiers-app');
+const nativePreviewRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
 const minimalRouterRoot = path.join(__dirname, '..', 'fixtures', 'minimal-router-app');
 const routerMissingPluginRoot = path.join(__dirname, '..', 'fixtures', 'router-missing-plugin-app');
 const missingReanimatedAdapterRoot = path.join(
@@ -55,15 +62,17 @@ describe('doctor report', () => {
     expect(report.expoSdkVersion).toBe(53);
     expect(byName.get('expo')?.status).toBe('supported');
     expect(byName.get('expo-constants')?.status).toBe('supported');
-    expect(byName.get('expo-camera')?.status).toBe('unknown');
+    expect(byName.get('expo-camera')?.status).toBe('manual');
+    expect(byName.get('expo-camera')?.supportTier).toBe('experimental');
     expect(byName.get('react-native-reanimated')?.status).toBe('supported');
     expect(byName.get('expo-camera')?.blocking).toBe(true);
-    expect(report.summary.unknown).toBeGreaterThan(0);
+    expect(report.summary.manual).toBeGreaterThan(0);
+    expect(report.supportSummary.experimental).toBeGreaterThan(0);
     expect(issueCodes).toContain('matrix.expo_sdk.unsupported');
     expect(issueCodes).toContain('dependency.not_allowed');
     expect(issueCodes).toContain('dependency.required_missing');
     expect(report.warnings).toContain(
-      'Unknown dependencies were detected. The toolkit can scaffold the project, but runtime portability is not guaranteed.',
+      'Experimental-tier dependencies were detected. Expect bridge drift, runtime gaps, or additional manual validation before claiming release readiness.',
     );
   });
 
@@ -102,6 +111,42 @@ describe('doctor report', () => {
     expect(report.blockingIssues).toHaveLength(0);
   });
 
+  it('keeps preview native capabilities outside verified eligibility but classifies their support tier explicitly', async () => {
+    const report = await buildDoctorReport(nativePreviewRoot);
+    const byName = new Map(report.dependencies.map((dependency) => [dependency.name, dependency]));
+
+    expect(report.targetTier).toBe('verified');
+    expect(report.eligibility).toBe('ineligible');
+    expect(byName.get('expo-file-system')?.status).toBe('manual');
+    expect(byName.get('expo-file-system')?.supportTier).toBe('preview');
+    expect(byName.get('expo-image-picker')?.supportTier).toBe('preview');
+    expect(report.capabilities.map((capability) => capability.id)).toEqual(
+      expect.arrayContaining(['expo-file-system', 'expo-image-picker']),
+    );
+    expect(report.supportSummary.preview).toBeGreaterThan(0);
+    expect(
+      report.blockingIssues.some(
+        (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-file-system',
+      ),
+    ).toBe(true);
+  });
+
+  it('marks preview native capabilities as eligible when the doctor target tier is preview', async () => {
+    const report = await buildDoctorReport(nativePreviewRoot, {
+      targetTier: 'preview',
+    });
+    const capabilityById = new Map(report.capabilities.map((capability) => [capability.id, capability]));
+
+    expect(report.targetTier).toBe('preview');
+    expect(report.eligibility).toBe('eligible');
+    expect(report.blockingIssues).toHaveLength(0);
+    expect(report.capabilities).toHaveLength(2);
+    expect(capabilityById.get('expo-file-system')?.harmonyPermissions).toEqual([]);
+    expect(capabilityById.get('expo-image-picker')?.harmonyPermissions).toEqual(
+      expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO']),
+    );
+  });
+
   it('keeps the official ui-stack sample adapter specs aligned with the validated source of truth', async () => {
     const packageJson = await fs.readJson(path.join(uiStackSampleRoot, 'package.json'));
     const dependencies = packageJson.dependencies ?? {};
@@ -130,7 +175,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.5.2',
+      [TOOLKIT_PACKAGE_NAME]: '1.6.0',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -251,5 +296,18 @@ describe('doctor report', () => {
 
     expect(report.eligibility).toBe('ineligible');
     expect(report.blockingIssues.some((issue) => issue.code === 'dependency.specifier_mismatch')).toBe(true);
+  });
+
+  it('classifies the official native capabilities sample as preview-eligible', async () => {
+    await cleanupGeneratedArtifacts(nativeCapabilitiesSampleRoot);
+    const report = await buildDoctorReport(nativeCapabilitiesSampleRoot, {
+      targetTier: 'preview',
+    });
+
+    expect(report.matrixId).toBe('expo55-rnoh082-ui-stack');
+    expect(report.eligibility).toBe('eligible');
+    expect(report.capabilities.map((capability) => capability.id)).toEqual(
+      expect.arrayContaining(['expo-file-system', 'expo-image-picker']),
+    );
   });
 });

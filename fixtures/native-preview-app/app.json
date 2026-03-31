@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Expo Harmony Native Preview Fixture",
+    "slug": "expo-harmony-native-preview-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.expoharmonypreviewfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonypreviewfixture"
+    }
+  }
+}

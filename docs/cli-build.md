@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.5.0` 开始，toolkit 的公开叙事不再只是 App Shell，而是 `expo55-rnoh082-ui-stack` 这条完整 UI-stack 矩阵。
+`v1.6.0` 开始，toolkit 的公开叙事升级为 `verified + preview + experimental` 支持分层，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
@@ -17,6 +17,7 @@ CLI 命令集合不变：
 
 ```bash
 expo-harmony doctor --strict
+expo-harmony doctor --target-tier preview
 expo-harmony init --force
 expo-harmony env --strict
 expo-harmony bundle
@@ -26,6 +27,7 @@ expo-harmony build-hap --mode debug
 职责划分：
 
 - `doctor --strict` 负责项目是否落入公开矩阵
+- `doctor --target-tier preview` 负责项目是否至少落在 preview 支持层
 - `init` / `sync-template` 负责受管 sidecar 与 autolinking 产物
 - `env --strict` 负责构建机是否 ready
 - `bundle` 负责 `bundle.harmony.js`

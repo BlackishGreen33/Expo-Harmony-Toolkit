@@ -26,7 +26,8 @@ export async function run(argv = process.argv): Promise<void> {
     .command('doctor')
     .description('Inspect an Expo project and classify dependencies against the Harmony migration matrix')
     .option('-p, --project-root <path>', 'path to the Expo project')
-    .option('--strict', 'return a non-zero exit code when the project falls outside the validated v1.5 matrix')
+    .option('--strict', 'return a non-zero exit code when the project falls outside the validated verified matrix')
+    .option('--target-tier <tier>', 'evaluate the project against verified, preview, or experimental support tiers')
     .option('--json', 'print JSON instead of a human-readable report')
     .option('-o, --output <path>', 'write the JSON report to a file')
     .action(runDoctorCommand);

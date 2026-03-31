@@ -15,14 +15,21 @@ import {
   DEFAULT_VALIDATED_MATRIX_ID,
   VALIDATED_RELEASE_MATRICES,
 } from '../data/validatedMatrices';
+import {
+  CAPABILITY_BY_PACKAGE,
+  getCapabilityDefinitionsForProject,
+  isSupportTierAllowed,
+} from '../data/capabilities';
 import { UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
 import { readManifest, readToolkitConfig } from './metadata';
 import {
   BlockingIssue,
   CompatibilityRecord,
   DetectedDependency,
+  DoctorTargetTier,
   DoctorReport,
   PackageJson,
+  ProjectCapabilityReport,
   ValidatedReleaseMatrix,
 } from '../types';
 import {
@@ -37,13 +44,18 @@ import { HARMONY_ROUTER_ENTRY_FILENAME } from './constants';
 
 const DEFAULT_RECORD: CompatibilityRecord = {
   status: 'unknown',
+  supportTier: 'unsupported',
   note: 'This dependency is not in the current compatibility catalog yet.',
 };
 
-export async function buildDoctorReport(projectRoot: string): Promise<DoctorReport> {
+export async function buildDoctorReport(
+  projectRoot: string,
+  options: { targetTier?: DoctorTargetTier } = {},
+): Promise<DoctorReport> {
   const loadedProject = await loadProject(projectRoot);
   const expoSdkVersion = detectExpoSdkVersion(loadedProject.packageJson);
   const matrix = VALIDATED_RELEASE_MATRICES[DEFAULT_VALIDATED_MATRIX_ID];
+  const targetTier = options.targetTier ?? 'verified';
   const expoPlugins = collectExpoPlugins(loadedProject.expoConfig);
   const expoSchemes = collectExpoSchemes(loadedProject.expoConfig);
   const dependencyRecords = new Map<string, DetectedDependency>();
@@ -74,6 +86,21 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
     expoSdkVersion,
     dependencies,
     matrix,
+    targetTier,
+  );
+  const capabilities = getCapabilityDefinitionsForProject(loadedProject.packageJson).map(
+    (definition): ProjectCapabilityReport => ({
+      id: definition.id,
+      packageName: definition.packageName,
+      status: definition.status,
+      supportTier: definition.supportTier,
+      note: definition.note,
+      docsUrl: definition.docsUrl,
+      nativePackageNames: [...definition.nativePackageNames],
+      harmonyPermissions: [...definition.harmonyPermissions],
+      sampleRoute: definition.sampleRoute,
+      acceptanceChecklist: [...definition.acceptanceChecklist],
+    }),
   );
   const blockingDependencyNames = new Set(
     blockingIssues
@@ -100,6 +127,7 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
     rnohVersion: RNOH_VERSION,
     rnohCliVersion: RNOH_CLI_VERSION,
     expoSdkVersion,
+    targetTier,
     expoConfig: {
       name: loadedProject.expoConfig.name ?? null,
       slug: loadedProject.expoConfig.slug ?? null,
@@ -116,6 +144,13 @@ export async function buildDoctorReport(projectRoot: string): Promise<DoctorRepo
       manual: resolvedDependencies.filter((dependency) => dependency.status === 'manual').length,
       unknown: resolvedDependencies.filter((dependency) => dependency.status === 'unknown').length,
     },
+    supportSummary: {
+      verified: resolvedDependencies.filter((dependency) => dependency.supportTier === 'verified').length,
+      preview: resolvedDependencies.filter((dependency) => dependency.supportTier === 'preview').length,
+      experimental: resolvedDependencies.filter((dependency) => dependency.supportTier === 'experimental').length,
+      unsupported: resolvedDependencies.filter((dependency) => dependency.supportTier === 'unsupported').length,
+    },
+    capabilities,
     blockingIssues,
     advisories,
     warnings,
@@ -143,19 +178,35 @@ export function renderDoctorReport(report: DoctorReport): string {
     `Config: ${report.appConfigPath ?? 'not found'}`,
     `Expo SDK: ${report.expoSdkVersion ?? 'unknown'} (recognized ${SUPPORTED_EXPO_SDKS.join(', ')})`,
     `Matrix: ${report.matrixId ?? 'none'}`,
+    `Target tier: ${report.targetTier}`,
     `Eligibility: ${report.eligibility}`,
     `Schemes: ${report.expoConfig.schemes.join(', ') || 'none'}`,
     `Plugins: ${report.expoConfig.plugins.join(', ') || 'none'}`,
     `RNOH template: ${report.templateVersion} / runtime ${report.rnohVersion}`,
     `Summary: ${report.summary.supported} supported, ${report.summary.manual} manual, ${report.summary.unknown} unknown (${report.summary.total} total)`,
+    `Support tiers: ${report.supportSummary.verified} verified, ${report.supportSummary.preview} preview, ${report.supportSummary.experimental} experimental, ${report.supportSummary.unsupported} unsupported`,
     '',
     `Dependencies:`,
     ...report.dependencies.map((dependency) => {
       const replacement = dependency.replacement ? ` | replacement: ${dependency.replacement}` : '';
       const blocking = dependency.blocking ? ' | blocking: yes' : '';
-      return `- [${dependency.status}] ${dependency.name}@${dependency.version} (${dependency.source}) - ${dependency.note}${replacement}${blocking}`;
+      return `- [${dependency.status}/${dependency.supportTier}] ${dependency.name}@${dependency.version} (${dependency.source}) - ${dependency.note}${replacement}${blocking}`;
     }),
   ];
+
+  if (report.capabilities.length > 0) {
+    sections.push(
+      '',
+      'Capabilities:',
+      ...report.capabilities.map((capability) => {
+        const permissions =
+          capability.harmonyPermissions.length > 0
+            ? ` | permissions: ${capability.harmonyPermissions.join(', ')}`
+            : '';
+        return `- [${capability.status}/${capability.supportTier}] ${capability.packageName} -> ${capability.nativePackageNames.join(', ') || 'toolkit-managed bridge'} | sample: ${capability.sampleRoute}${permissions}`;
+      }),
+    );
+  }
 
   if (report.blockingIssues.length > 0) {
     sections.push(
@@ -190,6 +241,7 @@ function createDependencyRecord(
     version,
     source,
     status: matrixRecord.status,
+    supportTier: matrixRecord.supportTier,
     blocking: false,
     note: matrixRecord.note,
     replacement: matrixRecord.replacement,
@@ -206,6 +258,7 @@ async function collectBlockingIssues(
   expoSdkVersion: number | null,
   dependencies: DetectedDependency[],
   matrix: ValidatedReleaseMatrix,
+  targetTier: DoctorTargetTier,
 ): Promise<BlockingIssue[]> {
   const issues: BlockingIssue[] = [];
   const dependencyMap = new Map(dependencies.map((dependency) => [dependency.name, dependency]));
@@ -251,10 +304,10 @@ async function collectBlockingIssues(
   }
 
   for (const dependency of dependencies) {
-    if (!matrix.allowedDependencies.includes(dependency.name)) {
+    if (!isDependencyAllowedForTargetTier(dependency.name, matrix, targetTier)) {
       issues.push({
         code: 'dependency.not_allowed',
-        message: `${dependency.name} is outside the validated ${matrix.id} allowlist.`,
+        message: `${dependency.name} is outside the ${targetTier} support tier for ${matrix.id}.`,
         subject: dependency.name,
       });
     }
@@ -398,6 +451,18 @@ function buildWarnings(
     );
   }
 
+  if (dependencies.some((dependency) => dependency.supportTier === 'preview')) {
+    warnings.push(
+      'Preview-tier dependencies were detected. The toolkit can scaffold and bundle them, but runtime behavior is not part of the verified public promise yet.',
+    );
+  }
+
+  if (dependencies.some((dependency) => dependency.supportTier === 'experimental')) {
+    warnings.push(
+      'Experimental-tier dependencies were detected. Expect bridge drift, runtime gaps, or additional manual validation before claiming release readiness.',
+    );
+  }
+
   if (dependencies.some((dependency) => dependency.status === 'unknown')) {
     warnings.push(
       'Unknown dependencies were detected. The toolkit can scaffold the project, but runtime portability is not guaranteed.',
@@ -417,6 +482,24 @@ function buildAdvisories(expoConfig: Record<string, any>): string[] {
   }
 
   return advisories;
+}
+
+function isDependencyAllowedForTargetTier(
+  dependencyName: string,
+  matrix: ValidatedReleaseMatrix,
+  targetTier: DoctorTargetTier,
+): boolean {
+  if (matrix.allowedDependencies.includes(dependencyName)) {
+    return true;
+  }
+
+  const capability = CAPABILITY_BY_PACKAGE[dependencyName];
+
+  if (!capability) {
+    return false;
+  }
+
+  return isSupportTierAllowed(capability.supportTier, targetTier);
 }
 
 function matchesVersionRange(rawVersion: string, range: string): boolean {

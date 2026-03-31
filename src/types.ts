@@ -1,5 +1,7 @@
 export type CompatibilityStatus = 'supported' | 'manual' | 'unknown';
 export type EligibilityStatus = 'eligible' | 'ineligible';
+export type SupportTier = 'verified' | 'preview' | 'experimental' | 'unsupported';
+export type DoctorTargetTier = Exclude<SupportTier, 'unsupported'>;
 export type DependencySource =
   | 'dependency'
   | 'devDependency'
@@ -15,6 +17,7 @@ export interface ExpoHarmonyPluginProps {
 
 export interface CompatibilityRecord {
   status: CompatibilityStatus;
+  supportTier: SupportTier;
   note: string;
   replacement?: string;
   docsUrl?: string;
@@ -74,6 +77,7 @@ export interface DetectedDependency {
   version: string;
   source: DependencySource;
   status: CompatibilityStatus;
+  supportTier: SupportTier;
   blocking: boolean;
   note: string;
   replacement?: string;
@@ -87,6 +91,39 @@ export interface DoctorSummary {
   unknown: number;
 }
 
+export interface SupportTierSummary {
+  verified: number;
+  preview: number;
+  experimental: number;
+  unsupported: number;
+}
+
+export interface CapabilityDefinition {
+  id: string;
+  packageName: string;
+  status: CompatibilityStatus;
+  supportTier: DoctorTargetTier;
+  note: string;
+  docsUrl?: string;
+  nativePackageNames: string[];
+  harmonyPermissions: string[];
+  sampleRoute: string;
+  acceptanceChecklist: string[];
+}
+
+export interface ProjectCapabilityReport {
+  id: string;
+  packageName: string;
+  status: CompatibilityStatus;
+  supportTier: DoctorTargetTier;
+  note: string;
+  docsUrl?: string;
+  nativePackageNames: string[];
+  harmonyPermissions: string[];
+  sampleRoute: string;
+  acceptanceChecklist: string[];
+}
+
 export interface DoctorReport {
   generatedAt: string;
   projectRoot: string;
@@ -98,6 +135,7 @@ export interface DoctorReport {
   rnohVersion: string;
   rnohCliVersion: string;
   expoSdkVersion: number | null;
+  targetTier: DoctorTargetTier;
   expoConfig: {
     name: string | null;
     slug: string | null;
@@ -109,6 +147,8 @@ export interface DoctorReport {
   };
   dependencies: DetectedDependency[];
   summary: DoctorSummary;
+  supportSummary: SupportTierSummary;
+  capabilities: ProjectCapabilityReport[];
   blockingIssues: BlockingIssue[];
   advisories: string[];
   warnings: string[];
@@ -185,6 +225,8 @@ export interface ToolkitConfig {
   rnohCliVersion: string;
   bundleName: string;
   entryModuleName: string;
+  capabilities: string[];
+  requestedHarmonyPermissions: string[];
   project: {
     name: string;
     slug: string;

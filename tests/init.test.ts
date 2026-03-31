@@ -5,10 +5,17 @@ import { initProject, syncProjectTemplate } from '../src/core/template';
 import { readManifest, readToolkitConfig } from '../src/core/metadata';
 
 const fixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
+const nativePreviewFixtureRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
 
 async function createTempFixture(): Promise<string> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-toolkit-'));
   await fs.copy(fixtureRoot, tempRoot);
+  return tempRoot;
+}
+
+async function createTempPreviewFixture(): Promise<string> {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-preview-toolkit-'));
+  await fs.copy(nativePreviewFixtureRoot, tempRoot);
   return tempRoot;
 }
 
@@ -29,9 +36,9 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
     expect(packageJson.pnpm?.overrides).toBeUndefined();
-    expect(manifest?.toolkitVersion).toBe('1.5.2');
+    expect(manifest?.toolkitVersion).toBe('1.6.0');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.5.2');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.6.0');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
@@ -81,6 +88,38 @@ describe('init project', () => {
 
     expect(syncResult.warnings.some((warning) => warning.includes('Existing manifest matrix legacy-v0.2'))).toBe(
       true,
+    );
+  });
+
+  it('injects preview capability permissions and shims into managed outputs', async () => {
+    const projectRoot = await createTempPreviewFixture();
+
+    await syncProjectTemplate(projectRoot, true);
+
+    const moduleConfig = await fs.readFile(
+      path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'module.json5'),
+      'utf8',
+    );
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+    const fileSystemShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-file-system', 'index.js'),
+      'utf8',
+    );
+    const imagePickerShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-image-picker', 'index.js'),
+      'utf8',
+    );
+    const toolkitConfig = await readToolkitConfig(projectRoot);
+
+    expect(moduleConfig).toContain('ohos.permission.CAMERA');
+    expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-file-system");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-image-picker");
+    expect(fileSystemShim).toContain('ERR_EXPO_HARMONY_PREVIEW');
+    expect(imagePickerShim).toContain('launchImageLibraryAsync');
+    expect(toolkitConfig?.capabilities).toEqual(['expo-file-system', 'expo-image-picker']);
+    expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(
+      expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO']),
     );
   });
 });

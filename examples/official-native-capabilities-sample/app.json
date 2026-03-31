@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Expo Harmony Native Capabilities Sample",
+    "slug": "expo-harmony-native-capabilities-sample",
+    "version": "1.0.0",
+    "scheme": "expoharmonynativepreview",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.expoharmonynativepreview"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonynativepreview"
+    }
+  }
+}
