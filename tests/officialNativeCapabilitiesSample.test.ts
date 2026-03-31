@@ -33,12 +33,19 @@ describe('official native capabilities sample', () => {
     expect(report.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(report.eligibility).toBe('eligible');
     expect(report.capabilities.map((capability) => capability.id)).toEqual(
-      expect.arrayContaining(['expo-file-system', 'expo-image-picker']),
+      expect.arrayContaining([
+        'expo-file-system',
+        'expo-image-picker',
+        'expo-location',
+        'expo-camera',
+      ]),
     );
 
     const syncResult = await syncProjectTemplate(sampleRoot, true);
     expect(syncResult.writtenFiles).toContain('.expo-harmony/shims/expo-file-system/index.js');
     expect(syncResult.writtenFiles).toContain('.expo-harmony/shims/expo-image-picker/index.js');
+    expect(syncResult.writtenFiles).toContain('.expo-harmony/shims/expo-location/index.js');
+    expect(syncResult.writtenFiles).toContain('.expo-harmony/shims/expo-camera/index.js');
 
     const moduleConfig = await fs.readFile(
       path.join(sampleRoot, 'harmony', 'entry', 'src', 'main', 'module.json5'),
@@ -46,6 +53,8 @@ describe('official native capabilities sample', () => {
     );
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
     expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
+    expect(moduleConfig).toContain('ohos.permission.LOCATION');
+    expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
 
     const bundleOutput = path.join(
       sampleRoot,
@@ -71,5 +80,7 @@ describe('official native capabilities sample', () => {
     expect(bundleContents).toContain('ERR_EXPO_HARMONY_PREVIEW');
     expect(bundleContents).toContain('expo-file-system');
     expect(bundleContents).toContain('expo-image-picker');
+    expect(bundleContents).toContain('expo-location');
+    expect(bundleContents).toContain('expo-camera');
   }, 180000);
 });

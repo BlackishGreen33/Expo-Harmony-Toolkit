@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.6.0` 开始，toolkit 的公开叙事升级为 `verified + preview + experimental` 支持分层，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.7.0` 延续 `verified + preview + experimental` 支持分层，并把 Batch B 设备能力推进到 preview 接入路径，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
@@ -32,6 +32,13 @@ expo-harmony build-hap --mode debug
 - `env --strict` 负责构建机是否 ready
 - `bundle` 负责 `bundle.harmony.js`
 - `build-hap` 负责串起 bundle、`ohpm`、`hvigor`
+
+当前 preview capability onboarding 范围：
+
+- `expo-file-system`
+- `expo-image-picker`
+- `expo-location`
+- `expo-camera`
 
 ## UI stack 依赖安装注意事项
 

@@ -1110,6 +1110,10 @@ function renderCapabilityModuleShim(capability: CapabilityDefinition): string {
       return renderExpoFileSystemPreviewShim(capability);
     case 'expo-image-picker':
       return renderExpoImagePickerPreviewShim(capability);
+    case 'expo-location':
+      return renderExpoLocationPreviewShim(capability);
+    case 'expo-camera':
+      return renderExpoCameraPreviewShim(capability);
     default:
       return renderUnsupportedCapabilityShim(capability);
   }
@@ -1471,6 +1475,179 @@ module.exports = {
   },
   launchImageLibraryAsync(options) {
     return unavailable('launchImageLibraryAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+};
+`;
+}
+
+function renderExpoLocationPreviewShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { CodedError } = require('expo-modules-core');
+
+const PREVIEW_MESSAGE =
+  '${capability.packageName} is routed through the Expo Harmony ${capability.supportTier} bridge. Bundling is supported, but foreground permission, current-position, and watch flows still need device-side validation.';
+const DEFAULT_PERMISSION_RESPONSE = {
+  status: 'undetermined',
+  granted: false,
+  canAskAgain: true,
+  expires: 'never',
+};
+
+function createPreviewError(operationName) {
+  return new CodedError(
+    'ERR_EXPO_HARMONY_PREVIEW',
+    PREVIEW_MESSAGE + ' Attempted operation: ' + operationName + '.',
+  );
+}
+
+async function unavailable(operationName) {
+  throw createPreviewError(operationName);
+}
+
+function getPermissionResponse() {
+  return { ...DEFAULT_PERMISSION_RESPONSE };
+}
+
+module.exports = {
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  PermissionStatus: {
+    DENIED: 'denied',
+    GRANTED: 'granted',
+    UNDETERMINED: 'undetermined',
+  },
+  requestForegroundPermissionsAsync() {
+    return unavailable('requestForegroundPermissionsAsync');
+  },
+  getForegroundPermissionsAsync() {
+    return Promise.resolve(getPermissionResponse());
+  },
+  requestBackgroundPermissionsAsync() {
+    return unavailable('requestBackgroundPermissionsAsync');
+  },
+  getBackgroundPermissionsAsync() {
+    return Promise.resolve(getPermissionResponse());
+  },
+  hasServicesEnabledAsync() {
+    return Promise.resolve(false);
+  },
+  getCurrentPositionAsync(options) {
+    return unavailable('getCurrentPositionAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+  getLastKnownPositionAsync(options) {
+    return unavailable('getLastKnownPositionAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+  watchPositionAsync(options) {
+    return unavailable('watchPositionAsync(' + JSON.stringify(options ?? {}) + ')');
+  },
+};
+`;
+}
+
+function renderExpoCameraPreviewShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const React = require('react');
+const { Text, View } = require('react-native');
+const { CodedError } = require('expo-modules-core');
+
+const PREVIEW_MESSAGE =
+  '${capability.packageName} is routed through the Expo Harmony ${capability.supportTier} bridge. Bundling is supported, and a managed preview surface can render, but device-side camera permission and capture flows still need validation.';
+const DEFAULT_PERMISSION_RESPONSE = {
+  status: 'undetermined',
+  granted: false,
+  canAskAgain: true,
+  expires: 'never',
+};
+
+function createPreviewError(operationName) {
+  return new CodedError(
+    'ERR_EXPO_HARMONY_PREVIEW',
+    PREVIEW_MESSAGE + ' Attempted operation: ' + operationName + '.',
+  );
+}
+
+async function unavailable(operationName) {
+  throw createPreviewError(operationName);
+}
+
+function getPermissionResponse() {
+  return { ...DEFAULT_PERMISSION_RESPONSE };
+}
+
+const CameraView = React.forwardRef(function ExpoHarmonyCameraPreview(props, ref) {
+  React.useImperativeHandle(ref, () => ({
+    takePictureAsync(options) {
+      return unavailable('CameraView.takePictureAsync(' + JSON.stringify(options ?? {}) + ')');
+    },
+  }));
+
+  return React.createElement(
+    View,
+    {
+      style: [
+        {
+          minHeight: 220,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 20,
+          borderWidth: 1,
+          borderStyle: 'dashed',
+          borderColor: '#14b8a6',
+          backgroundColor: '#ccfbf1',
+          padding: 20,
+        },
+        props.style,
+      ],
+      accessibilityLabel: 'Expo Harmony preview camera surface',
+    },
+    React.createElement(
+      Text,
+      {
+        style: {
+          color: '#0f766e',
+          fontSize: 14,
+          fontWeight: '600',
+          textAlign: 'center',
+        },
+      },
+      'Expo Harmony preview camera surface',
+    ),
+  );
+});
+
+CameraView.displayName = 'ExpoHarmonyCameraPreview';
+
+module.exports = {
+  CameraType: {
+    front: 'front',
+    back: 'back',
+  },
+  FlashMode: {
+    off: 'off',
+    on: 'on',
+    auto: 'auto',
+    torch: 'torch',
+  },
+  CameraView,
+  requestCameraPermissionsAsync() {
+    return unavailable('requestCameraPermissionsAsync');
+  },
+  getCameraPermissionsAsync() {
+    return Promise.resolve(getPermissionResponse());
+  },
+  requestMicrophonePermissionsAsync() {
+    return unavailable('requestMicrophonePermissionsAsync');
+  },
+  getMicrophonePermissionsAsync() {
+    return Promise.resolve(getPermissionResponse());
   },
 };
 `;

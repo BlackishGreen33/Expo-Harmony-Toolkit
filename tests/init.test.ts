@@ -36,9 +36,9 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
     expect(packageJson.pnpm?.overrides).toBeUndefined();
-    expect(manifest?.toolkitVersion).toBe('1.6.0');
+    expect(manifest?.toolkitVersion).toBe('1.7.0');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.6.0');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.7.0');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
@@ -109,17 +109,41 @@ describe('init project', () => {
       path.join(projectRoot, '.expo-harmony', 'shims', 'expo-image-picker', 'index.js'),
       'utf8',
     );
+    const locationShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-location', 'index.js'),
+      'utf8',
+    );
+    const cameraShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-camera', 'index.js'),
+      'utf8',
+    );
     const toolkitConfig = await readToolkitConfig(projectRoot);
 
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
     expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
+    expect(moduleConfig).toContain('ohos.permission.LOCATION');
+    expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
     expect(metroConfig).toContain(".expo-harmony/shims/expo-file-system");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-image-picker");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-location");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-camera");
     expect(fileSystemShim).toContain('ERR_EXPO_HARMONY_PREVIEW');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
-    expect(toolkitConfig?.capabilities).toEqual(['expo-file-system', 'expo-image-picker']);
+    expect(locationShim).toContain('watchPositionAsync');
+    expect(cameraShim).toContain('Expo Harmony preview camera surface');
+    expect(toolkitConfig?.capabilities).toEqual([
+      'expo-camera',
+      'expo-file-system',
+      'expo-image-picker',
+      'expo-location',
+    ]);
     expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(
-      expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO']),
+      expect.arrayContaining([
+        'ohos.permission.CAMERA',
+        'ohos.permission.READ_IMAGEVIDEO',
+        'ohos.permission.LOCATION',
+        'ohos.permission.APPROXIMATELY_LOCATION',
+      ]),
     );
   });
 });

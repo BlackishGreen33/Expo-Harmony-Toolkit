@@ -1,6 +1,6 @@
-# v1.6 支持矩阵
+# v1.7 支持矩阵
 
-`v1.6` 开始，toolkit 不再只暴露“单一 allowlist”这一种语言，而是同时公开：
+`v1.7` 延续并扩张 tiered support model：
 
 - 一条 `verified` 正式承诺矩阵
 - 一组 `preview` 预览能力
@@ -30,7 +30,7 @@
 | 层级 | 含义 | `doctor --strict` | `doctor --target-tier <tier>` |
 | --- | --- | --- | --- |
 | `verified` | 已进入正式公开承诺，要求完整样例、构建、人工验收 | 允许 | 允许 |
-| `preview` | 已具备 managed bridge / bundle 路径，但运行时仍待完整验收 | 阻断 | `preview` / `experimental` 允许 |
+| `preview` | 已具备 managed bridge / bundle / debug build 路径，但运行时仍待完整验收 | 阻断 | `preview` / `experimental` 允许 |
 | `experimental` | 允许继续探索，但预期会有 bridge 漂移或设备侧缺口 | 阻断 | 仅 `experimental` 允许 |
 | `unsupported` | 不在 catalog 内，toolkit 无法给出可靠承诺 | 阻断 | 阻断 |
 
@@ -60,19 +60,19 @@
 | --- | --- | --- | --- | --- |
 | `expo-file-system` | `preview` | `react-native-fs` | 无新增必需权限 | `/file-system` |
 | `expo-image-picker` | `preview` | `react-native-image-picker` + `react-native-permissions` | `ohos.permission.CAMERA`、`ohos.permission.READ_IMAGEVIDEO` | `/image-picker` |
+| `expo-location` | `preview` | `@react-native-community/geolocation` + `react-native-permissions` | `ohos.permission.LOCATION`、`ohos.permission.APPROXIMATELY_LOCATION` | `/location` |
+| `expo-camera` | `preview` | `react-native-camera-kit` + `react-native-permissions` | `ohos.permission.CAMERA` | `/camera` |
 
 说明：
 
 - preview 能力会进入 `DoctorReport.capabilities`
-- toolkit 会生成对应 Metro alias shim，确保 preview 项目能稳定 bundle
+- toolkit 会生成对应 Metro alias shim，确保 preview 项目能稳定 `bundle` 与 `build-hap --mode debug`
 - preview 不等于 verified；没有运行时与设备侧证据前，不可对外宣称完全可用
 
 ## Experimental 能力
 
 | Expo 能力 / 依赖 | 当前层级 | 说明 |
 | --- | --- | --- |
-| `expo-location` | `experimental` | 规划走共享 permission bridge + geolocation 方案 |
-| `expo-camera` | `experimental` | 相机预览与拍照仍需稳定 Harmony 原生桥 |
 | `expo-notifications` | `experimental` | 服务链路与交付故事未打通 |
 | `react-native-gesture-handler` | `experimental` | 继续保留本地探索 shim，但不在公开 verified 矩阵内 |
 
@@ -144,7 +144,7 @@ toolkit 受管的核心产物仍包括：
 - `harmony/entry/src/main/module.json5`
 - `.expo-harmony/shims/*`
 
-新增约束：
+当前约束：
 
 - `entry/src/main/module.json5` 的 `requestPermissions` 由 toolkit 根据已启用能力自动补齐
 - preview / experimental 能力的 Metro import path 通过 `.expo-harmony/shims/<package>` 接管
@@ -163,7 +163,8 @@ toolkit 受管的核心产物仍包括：
 
 - `official-native-capabilities-sample` 在 `--target-tier preview` 下通过 `doctor`
 - `sync-template` 生成对应 preview shims 与 Harmony permissions
-- `bundle` 成功产出 `bundle.harmony.js`
+- Batch A+B route 成功产出 `bundle.harmony.js`
+- Batch A+B route 可进入 `build-hap --mode debug`
 
 ### Verified promotion gate
 

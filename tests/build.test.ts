@@ -10,6 +10,12 @@ import { initProject, syncProjectTemplate } from '../src/core/template';
 const minimalSampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
 const appShellSampleRoot = path.join(__dirname, '..', 'examples', 'official-app-shell-sample');
 const uiStackSampleRoot = path.join(__dirname, '..', 'examples', 'official-ui-stack-sample');
+const nativeCapabilitiesSampleRoot = path.join(
+  __dirname,
+  '..',
+  'examples',
+  'official-native-capabilities-sample',
+);
 const execFileAsync = promisify(execFile);
 
 async function createTempFixture(sourceRoot: string): Promise<string> {
@@ -150,6 +156,29 @@ describe('bundle and HAP build reports', () => {
     expect(minimalReport.entryFile).toBe(path.join(minimalRoot, 'index.js'));
     expect(routerReport.status).toBe('succeeded');
     expect(routerReport.entryFile).toBe(path.join(routerRoot, 'index.harmony.js'));
+  }, 120000);
+
+  it('builds a debug HAP for the official native capabilities sample with preview routes enabled', async () => {
+    const projectRoot = await createTempFixture(nativeCapabilitiesSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    const runner = createSuccessfulRunner();
+
+    await initProject(projectRoot, true);
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
   }, 120000);
 
   it('force-refreshes build-required autolinking files without overwriting unrelated drifted templates', async () => {

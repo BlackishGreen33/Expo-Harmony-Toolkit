@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.6.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> Starting with `v1.6`, the toolkit exposes `verified + preview + experimental` support tiers. `expo55-rnoh082-ui-stack` remains the only `verified` public matrix, while `expo-file-system` and `expo-image-picker` move into `preview`. This is still not a claim that arbitrary Expo apps can be published to HarmonyOS unchanged.
+> `v1.7` keeps the `verified + preview + experimental` model and moves `expo-location` and `expo-camera` into `preview`. The public path is still "Core Expo Full Coverage first, long-tail third-party native modules second"; this is still not a claim that arbitrary Expo apps can be published to HarmonyOS unchanged.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -47,13 +47,13 @@
 
 | Item | Status |
 | --- | --- |
-| Current version | `v1.6.0` |
+| Current version | `v1.7.0` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
-| `preview` native capabilities | `expo-file-system`, `expo-image-picker` |
-| `experimental` capabilities | `expo-location`, `expo-camera`, `expo-notifications`, `react-native-gesture-handler` |
+| `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera` |
+| `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
@@ -63,10 +63,9 @@
 <summary><strong>Still outside the verified public promise</strong></summary>
 
 - bare Expo
-- `expo-file-system` and `expo-image-picker` remain `preview`
-- `expo-location`
-- `expo-camera`
+- `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` remain `preview`
 - `expo-notifications`
+- `react-native-gesture-handler`
 - multiple public matrices
 
 </details>
@@ -169,11 +168,11 @@ Common decision points:
 
 ## Support Matrix
 
-`v1.6` moves to tiered support:
+`v1.7` keeps tiered support:
 
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
-- `preview`: `expo-file-system`, `expo-image-picker`
-- `experimental`: `expo-location`, `expo-camera`, `expo-notifications`, `react-native-gesture-handler`
+- `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
+- `experimental`: `expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
 
@@ -184,7 +183,7 @@ See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, p
 - `examples/official-ui-stack-sample`
   The primary public sample for `v1.5.0`, covering router, linking, constants, SVG, reanimated, and Harmony sidecar build flow.
 - `examples/official-native-capabilities-sample`
-  The new preview sample for `v1.6`, covering the `expo-file-system` and `expo-image-picker` bridge, permission generation, and bundle-time alias flow.
+  The `v1.7` Batch A+B preview sample, covering `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` bridge, permission, bundle, and debug-build validation.
 - `examples/official-app-shell-sample`
   The `v1.1` App Shell regression baseline that protects router behavior while UI-stack support is finalized.
 - `examples/official-minimal-sample`
@@ -247,7 +246,7 @@ Manual Harmony acceptance still requires:
 - pressing the home-screen motion rail triggers visible animation
 - routing still works after the animation completes
 - `Build Debug Hap(s)` succeeds
-- `official-native-capabilities-sample` at least proves preview route bundling and generated Harmony permissions
+- `official-native-capabilities-sample` at least proves Batch A+B preview route bundling, generated Harmony permissions, and the debug build path
 
 See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.md](./docs/signing-and-release.md).
 
@@ -261,6 +260,7 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
 - [npm Release Notes](./docs/npm-release.md)
 - [Signing and Release Notes](./docs/signing-and-release.md)
+- [v1.7.0 Acceptance Log (In Progress)](./docs/v1.7.0-acceptance.md)
 - [Roadmap](./docs/roadmap.md)
 
 ## License

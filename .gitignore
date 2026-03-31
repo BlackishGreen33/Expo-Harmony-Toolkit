@@ -4,5 +4,9 @@ coverage
 .DS_Store
 *.log
 .tmp-acceptance/
+examples/*/.expo-harmony/
+examples/*/harmony/
+examples/*/index.harmony.js
+examples/*/metro.harmony.config.js
 **/expo-harmony-local-deps/
 **/.expo-harmony/ohpm-local-deps/

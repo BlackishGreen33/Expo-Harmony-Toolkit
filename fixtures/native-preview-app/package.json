@@ -7,8 +7,10 @@
     "@react-native-oh/react-native-harmony": "0.82.18",
     "@react-native-oh/react-native-harmony-cli": "0.82.18",
     "expo": "^55.0.8",
+    "expo-camera": "~55.0.11",
     "expo-file-system": "~19.0.10",
     "expo-image-picker": "~17.0.8",
+    "expo-location": "~55.1.4",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.1",
     "react-native": "0.82.1"

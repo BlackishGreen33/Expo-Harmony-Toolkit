@@ -10,13 +10,19 @@ export default function HomeScreen() {
         <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
         <Text style={styles.title}>Official Native Capabilities Sample</Text>
         <Text style={styles.body}>
-          This sample tracks preview-tier native capability bridges. It is expected to bundle on Harmony before the runtime implementation is promoted to verified.
+          This sample tracks Batch A+B preview-tier native capability bridges. It is expected to bundle on Harmony and render stable preview routes before each runtime implementation is promoted to verified.
         </Text>
         <Link href="/file-system" style={styles.link}>
           Open file-system preview route
         </Link>
         <Link href="/image-picker" style={styles.link}>
           Open image-picker preview route
+        </Link>
+        <Link href="/location" style={styles.link}>
+          Open location preview route
+        </Link>
+        <Link href="/camera" style={styles.link}>
+          Open camera preview route
         </Link>
       </View>
     </SafeAreaView>

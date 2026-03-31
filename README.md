@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.6.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.6` 开始，toolkit 采用 `verified + preview + experimental` 三层支持模型。`expo55-rnoh082-ui-stack` 仍是唯一 `verified` 公开矩阵；`expo-file-system` 与 `expo-image-picker` 进入 `preview`，但这仍然不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明。
+> `v1.7` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 推进到 `preview`。当前对外路线仍然是先做到 `Core Expo Full Coverage`，再去覆盖长尾第三方 native module；这依然不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -47,13 +47,13 @@
 
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.6.0` |
+| 当前版本 | `v1.7.0` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
 | `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
-| `preview` 原生能力 | `expo-file-system`、`expo-image-picker` |
-| `experimental` 能力 | `expo-location`、`expo-camera`、`expo-notifications`、`react-native-gesture-handler` |
+| `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` |
+| `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
@@ -63,10 +63,9 @@
 <summary><strong>当前仍不在 verified 正式承诺范围</strong></summary>
 
 - bare Expo
-- `expo-file-system`、`expo-image-picker` 仍只属于 `preview`
-- `expo-location`
-- `expo-camera`
+- `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 仍只属于 `preview`
 - `expo-notifications`
+- `react-native-gesture-handler`
 - 多矩阵并行支持
 
 </details>
@@ -169,11 +168,11 @@ pnpm exec expo-harmony build-hap --mode release
 
 ## 支持矩阵
 
-`v1.6` 开始改成支持分层：
+`v1.7` 继续采用支持分层：
 
 - `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
-- `preview`：`expo-file-system`、`expo-image-picker`
-- `experimental`：`expo-location`、`expo-camera`、`expo-notifications`、`react-native-gesture-handler`
+- `preview`：`expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`
+- `experimental`：`expo-notifications`、`react-native-gesture-handler`
 
 `doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
 
@@ -184,7 +183,7 @@ pnpm exec expo-harmony build-hap --mode release
 - `examples/official-ui-stack-sample`
   当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-native-capabilities-sample`
-  v1.6 新增的 preview sample，用来承接 `expo-file-system` 与 `expo-image-picker` 的 bridge、permission 与 bundle 骨架验收。
+  `v1.7` 的 Batch A+B preview sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的 bridge、permission、bundle 与 debug build 验收。
 - `examples/official-app-shell-sample`
   `v1.1` App Shell 回归基线，用来防止 UI-stack 收口引入 router 退化。
 - `examples/official-minimal-sample`
@@ -247,7 +246,7 @@ pnpm exec expo-harmony build-hap --mode release
 - 点击首页 motion rail 后能触发可见动画
 - 动画完成后路由跳转仍正常
 - `Build Debug Hap(s)` 成功
-- `official-native-capabilities-sample` 至少完成 preview route 的 bundle 与 permission 产物检查
+- `official-native-capabilities-sample` 至少完成 Batch A+B preview route 的 bundle、permission 与 debug build 检查
 
 详见 [docs/npm-release.md](./docs/npm-release.md) 与 [docs/signing-and-release.md](./docs/signing-and-release.md)。
 
@@ -261,6 +260,7 @@ pnpm exec expo-harmony build-hap --mode release
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
 - [npm 发布说明](./docs/npm-release.md)
 - [签名与 Release 说明](./docs/signing-and-release.md)
+- [v1.7.0 验收记录（进行中）](./docs/v1.7.0-acceptance.md)
 - [路线图](./docs/roadmap.md)
 
 ## License

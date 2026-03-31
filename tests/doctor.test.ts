@@ -63,16 +63,16 @@ describe('doctor report', () => {
     expect(byName.get('expo')?.status).toBe('supported');
     expect(byName.get('expo-constants')?.status).toBe('supported');
     expect(byName.get('expo-camera')?.status).toBe('manual');
-    expect(byName.get('expo-camera')?.supportTier).toBe('experimental');
+    expect(byName.get('expo-camera')?.supportTier).toBe('preview');
     expect(byName.get('react-native-reanimated')?.status).toBe('supported');
     expect(byName.get('expo-camera')?.blocking).toBe(true);
     expect(report.summary.manual).toBeGreaterThan(0);
-    expect(report.supportSummary.experimental).toBeGreaterThan(0);
+    expect(report.supportSummary.preview).toBeGreaterThan(0);
     expect(issueCodes).toContain('matrix.expo_sdk.unsupported');
     expect(issueCodes).toContain('dependency.not_allowed');
     expect(issueCodes).toContain('dependency.required_missing');
     expect(report.warnings).toContain(
-      'Experimental-tier dependencies were detected. Expect bridge drift, runtime gaps, or additional manual validation before claiming release readiness.',
+      'Preview-tier dependencies were detected. The toolkit can scaffold and bundle them, but runtime behavior is not part of the verified public promise yet.',
     );
   });
 
@@ -120,13 +120,25 @@ describe('doctor report', () => {
     expect(byName.get('expo-file-system')?.status).toBe('manual');
     expect(byName.get('expo-file-system')?.supportTier).toBe('preview');
     expect(byName.get('expo-image-picker')?.supportTier).toBe('preview');
+    expect(byName.get('expo-location')?.supportTier).toBe('preview');
+    expect(byName.get('expo-camera')?.supportTier).toBe('preview');
     expect(report.capabilities.map((capability) => capability.id)).toEqual(
-      expect.arrayContaining(['expo-file-system', 'expo-image-picker']),
+      expect.arrayContaining([
+        'expo-file-system',
+        'expo-image-picker',
+        'expo-location',
+        'expo-camera',
+      ]),
     );
     expect(report.supportSummary.preview).toBeGreaterThan(0);
     expect(
       report.blockingIssues.some(
         (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-file-system',
+      ),
+    ).toBe(true);
+    expect(
+      report.blockingIssues.some(
+        (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-location',
       ),
     ).toBe(true);
   });
@@ -140,10 +152,16 @@ describe('doctor report', () => {
     expect(report.targetTier).toBe('preview');
     expect(report.eligibility).toBe('eligible');
     expect(report.blockingIssues).toHaveLength(0);
-    expect(report.capabilities).toHaveLength(2);
+    expect(report.capabilities).toHaveLength(4);
     expect(capabilityById.get('expo-file-system')?.harmonyPermissions).toEqual([]);
     expect(capabilityById.get('expo-image-picker')?.harmonyPermissions).toEqual(
       expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO']),
+    );
+    expect(capabilityById.get('expo-location')?.harmonyPermissions).toEqual(
+      expect.arrayContaining(['ohos.permission.LOCATION', 'ohos.permission.APPROXIMATELY_LOCATION']),
+    );
+    expect(capabilityById.get('expo-camera')?.harmonyPermissions).toEqual(
+      expect.arrayContaining(['ohos.permission.CAMERA']),
     );
   });
 
@@ -175,7 +193,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.6.0',
+      [TOOLKIT_PACKAGE_NAME]: '1.7.0',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -307,7 +325,12 @@ describe('doctor report', () => {
     expect(report.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(report.eligibility).toBe('eligible');
     expect(report.capabilities.map((capability) => capability.id)).toEqual(
-      expect.arrayContaining(['expo-file-system', 'expo-image-picker']),
+      expect.arrayContaining([
+        'expo-file-system',
+        'expo-image-picker',
+        'expo-location',
+        'expo-camera',
+      ]),
     );
   });
 });

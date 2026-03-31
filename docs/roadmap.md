@@ -30,50 +30,74 @@
 - `official-ui-stack-sample` 升级为主 sample
 - npm 首次公开发布准备：`release:check`、tarball smoke、release workflow
 
-## 当前主线
-
 ### v1.6 Support Tiers + Core Native Bridge
 
-目标：在不放弃单一 verified 矩阵的前提下，把能力扩张路径产品化。
-
-- 保留 `expo55-rnoh082-ui-stack` 作为唯一 `verified` 公开矩阵
 - 新增 `preview` 与 `experimental` 支持层级
 - `doctor --target-tier <verified|preview|experimental>`
 - `DoctorReport` 增加 `supportTier`、`supportSummary`、`capabilities`
-- 建立 Expo 原生能力桥接骨架，沿用受管 Metro alias 与 `expo-modules-core` shim
 - 首批 `preview` 能力：`expo-file-system`、`expo-image-picker`
 - 共享 Harmony permission 生成链
 - 新增 `official-native-capabilities-sample`
 
-### v1.7 Device APIs Batch B
+## 当前主线
 
-目标：在同一套桥接与权限模型上补齐第二批高频设备能力。
+### v1.7 Device APIs Batch B + Capability Onboarding
 
-- `expo-location`
-- `expo-camera`
-- 前台定位权限、当前定位、watchPosition
-- 相机权限、预览、拍照验收
-- 将已完成端到端验收的 `preview` 能力提升为 `verified`
+目标：把第二批高频设备能力推进到 `preview`，并把 capability 接入、验证、晋升流程产品化。
 
-### v1.8 Delivery Hardening
+- `expo-location`、`expo-camera` 进入 `preview`
+- 共用 managed capability bridge 行为：
+  可 `doctor`、可 `sync-template`、可 `bundle`、可 `build-hap --mode debug`
+- `expo-location` 至少覆盖：
+  前台权限、当前定位、`watchPosition`
+- `expo-camera` 至少覆盖：
+  相机权限、预览 surface、单次拍照入口
+- `official-native-capabilities-sample` 扩成 Batch A+B 统一验证入口
+- 为 Batch A+B 维护 fixture、sample、文档、验收记录同步更新
+- `expo-file-system`、`expo-image-picker` 只有在同版补齐完整证据时才晋升 `verified`
 
-目标：把“能 bundle / 能 debug build”推进到“交付路径可依赖”。
+### v1.8 Verification and Release Hardening
+
+目标：把 capability coverage 与 release reliability 合并成可重复执行的 gate。
 
 - 完整 deep link lifecycle 验收
 - 更强的 signing / profile / release lint
 - 快速 smoke 与 capability acceptance 双层验证
 - 具备 Harmony 工具链的 runner 上增加 debug HAP 真构建 gate
+- capability promotion gate 固化到 sample、fixture、build、device acceptance 流程
 - release gate 只放在有签名环境的专用流程
 
-### v2.0 Practical Full Coverage
+### v1.9 Core Expo Production Modules
 
-定义：不是 Expo / React Native 全生态的绝对 100% 覆盖，而是 Managed/CNG Expo 项目的“实用全兼容”。
+目标：优先补齐能解锁最多真实项目的 Expo 官方生产能力，而不是先追长尾第三方 native package。
 
-- 大多数 Expo 生产项目可通过 `doctor -> init -> bundle -> build-hap`
-- 常见 UI stack、常见设备 API、常见交付链至少达到 `preview`
+- 存储、安全、设备信息、资产、多媒体、剪贴板、触感等高频官方模块
+- 每个能力都必须沿用 v1.7 建立的 onboarding / acceptance 模型
+- 继续保持单一 `verified` runtime matrix，对外承诺不膨胀
+
+### v2.0 Core Expo Full Coverage
+
+定义：在单一 `verified` runtime matrix 下，把“核心 Expo 生产项目”推进到完整可用、可构建、可交付。
+
+- 官方 Expo 常用能力达到明确公开支持
+- 主流 UI stack、常见设备 API、常见交付链形成完整故事
 - 高频能力达到 `verified`
-- 明确 release readiness 路径
-- `expo-notifications` 在端到端服务故事未打通前继续停留在 `preview` 或更低层级
+- 具备明确 release readiness 路径
+- roadmap 对外叙事从“能跑 sample”升级为“核心 Expo 项目可稳定交付”
+
+### v2.x Long-tail Native Module Extension
+
+目标：在完成核心 Expo 全覆盖后，再去逼近“任何 Expo 项目都能打包成鸿蒙 APP”的长期目标。
+
+- 引入长尾第三方 native module 的 extension / onboarding 模型
+- 为第三方适配建立 capability registry、adapter、fixture、acceptance 规范
+- 不对未知或未验证 native package 提前给出正式可用承诺
+
+## 长期方向
+
+- 先做到 `Core Expo Full Coverage`
+- 再做到 `Long-tail Native Module Coverage`
+- “推进速度”与“完全可用”并行，而不是先扩承诺再补证据
 
 ## 路线约束
 
