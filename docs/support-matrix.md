@@ -74,7 +74,6 @@
 为了避免把“只差真机”与“当前子 API 还没实现到位”混在一起，`v1.7.x` 文档额外使用以下标记：
 
 - `🟡 可用待晋升`：当前子集已经有可信实现，样例和模拟器路径可用；下一步主要缺真机 / release 证据
-- `🟠 未纳入当前子集`：包本身已进入 `preview`，但这个具体子 API 还没有到可信对外承诺；这不是“只差真机”
 - `⛔ 完全不支持`：能力仍在 catalog 外，或根本不在当前公开承诺范围
 
 ## Preview 能力
@@ -82,24 +81,22 @@
 | Expo 能力 | 当前层级 | runtimeMode | evidence | Harmony 依赖方向 | 受管权限 | 官方 sample route |
 | --- | --- | --- | --- | --- | --- | --- |
 | `expo-file-system` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed sandbox file adapter | 无新增必需权限 | `/file-system` |
-| `expo-image-picker` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed Harmony media picker adapter | `ohos.permission.CAMERA`、`ohos.permission.READ_IMAGEVIDEO` | `/image-picker` |
-| `expo-location` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed `@ohos.geoLocationManager` TurboModule | `ohos.permission.LOCATION`、`ohos.permission.APPROXIMATELY_LOCATION` | `/location` |
-| `expo-camera` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed `@ohos.multimedia.cameraPicker` TurboModule | `ohos.permission.CAMERA` | `/camera` |
+| `expo-image-picker` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed Harmony media picker adapter | `ohos.permission.CAMERA`、`ohos.permission.MICROPHONE`、`ohos.permission.READ_IMAGEVIDEO` | `/image-picker` |
+| `expo-location` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed `@ohos.geoLocationManager` TurboModule | `ohos.permission.LOCATION`、`ohos.permission.APPROXIMATELY_LOCATION`、`ohos.permission.LOCATION_IN_BACKGROUND`、`ohos.permission.ACCELEROMETER` | `/location` |
+| `expo-camera` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed embedded camera preview + control TurboModule | `ohos.permission.CAMERA`、`ohos.permission.MICROPHONE` | `/camera` |
 
 说明：
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - 四项 preview capability 都已经进入 `adapter` 路径；`device=yes` 只表示已有样例侧与运行时路径证据，仍不代表 verified 或 release-ready
 - `expo-file-system`
-  - `🟡` 当前主路径是 UTF-8 sandbox I/O，包括目录创建、读写、复制、移动与删除
+  - `🟡` 当前主路径是 UTF-8/base64 sandbox I/O、append/partial read、`getInfoAsync({ md5: true })` 与 `downloadAsync`
 - `expo-image-picker`
-  - `🟡` 当前主路径是单图图库选择、单次系统相机拍照，以及 denied / canceled / successful asset 结果展示
+  - `🟡` 当前主路径是单选、多选、mixed library selection、system photo/video capture、pending result 恢复，以及 image/video metadata 展示
 - `expo-location`
-  - `🟡` 当前主路径是前台权限、current / last-known / geocode / reverse-geocode
-  - `🟠` `watchPositionAsync`、背景权限与 heading API 当前未纳入 v1.7.x 可承诺子集；这不是“只差真机”，而是实现还没补齐到可信状态
+  - `🟡` 当前主路径是 foreground/background permission、current / watch、heading snapshot/watch、geocode / reverse-geocode
 - `expo-camera`
-  - `🟡` 当前主路径是相机权限与通过系统相机 UI 的 still capture
-  - `🟠` embedded preview、preview pause/resume、microphone、video 当前未纳入 v1.7.x 可承诺子集；这不是“只差真机”，而是实现还没补齐到可信状态
+  - `🟡` 当前主路径是 embedded preview、preview pause/resume、still capture、video recording 与 microphone permission
 
 ## Experimental 能力
 

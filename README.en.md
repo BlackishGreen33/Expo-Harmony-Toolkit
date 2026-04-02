@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.1-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.2-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -47,7 +47,7 @@
 
 | Item | Status |
 | --- | --- |
-| Current version | `v1.7.1` |
+| Current version | `v1.7.2` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
@@ -276,7 +276,7 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
 - [npm Release Notes](./docs/npm-release.md)
 - [Signing and Release Notes](./docs/signing-and-release.md)
-- [v1.7.1 Acceptance Log](./docs/v1.7.1-acceptance.md)
+- [v1.7.2 Acceptance Log](./docs/v1.7.2-acceptance.md)
 - [Roadmap](./docs/roadmap.md)
 
 ## License

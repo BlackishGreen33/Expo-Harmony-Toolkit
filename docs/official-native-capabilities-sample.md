@@ -2,12 +2,11 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 是 `v1.7.x` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把“当前真实支持的核心路径”和“当前明确不支持的边界”都讲清楚。
+这个 sample 是 `v1.7.2` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
 
 标记说明：
 
 - `🟡` 当前可用子集：这部分已经有可信实现，样例和模拟器路径可用；下一步主要缺真机 / release 证据
-- `🟠` 当前未纳入子集：包本身已进入 `preview`，但这个具体子 API 还没有到可信对外承诺；这不是“只差真机”
 
 ## 当前覆盖
 
@@ -29,20 +28,13 @@
 
 `🟡 当前可用子集`：
 
-- 创建 sandbox 目录
-- UTF-8 写入
-- 读回内容
-- `getInfoAsync`
-- `readDirectoryAsync`
-- `copyAsync`
-- `moveAsync`
-- 删除生成产物
-
-`🟠 当前未纳入子集`：
-
-- `base64`
+- sandbox 目录创建
+- UTF-8 写入 / 读回
+- base64 roundtrip
+- append / partial read
+- `getInfoAsync({ md5: true })`
 - `downloadAsync`
-- 更广的 Expo parity
+- 清理生成产物
 
 ### `/image-picker`
 
@@ -50,52 +42,42 @@
 
 - media permission
 - camera permission
-- 单图图库选择
-- 单次系统相机拍照
-- denied / canceled / successful asset 三类结果展示
-
-`🟠 当前未纳入子集`：
-
-- `getPendingResultAsync` 的完整 Expo parity
-- 多选、多媒体、更深一层的系统恢复语义
+- 单选图库选择
+- 多选图库选择
+- mixed image+video library selection
+- system photo capture
+- system video capture
+- pending result 恢复
+- image / video asset metadata 展示
 
 ### `/location`
 
 `🟡 当前可用子集`：
 
 - foreground permission
+- background permission
 - `getCurrentPositionAsync`
-- `getLastKnownPositionAsync`
+- `watchPositionAsync`
+- `getHeadingAsync`
+- `watchHeadingAsync`
 - `geocodeAsync`
 - `reverseGeocodeAsync`
 
-`🟠 当前未纳入子集`：
+说明：
 
-- `watchPositionAsync`
-- background permission parity
-- `watchHeadingAsync`
-- `getHeadingAsync`
-
-这些 `🟠` 项不是“已经实现，只差真机验证”，而是当前还没补齐到可信实现，所以暂时不纳入对外可承诺子集。
+- 背景权限按 Harmony 的独立后台权限契约暴露，不伪装成 Expo 的完全同构平台行为
+- heading 使用 Harmony 传感器方向语义，属于最接近 Expo 的等价语义，不复用 GPS `direction`
 
 ### `/camera`
 
 `🟡 当前可用子集`：
 
-- camera permission
-- 通过 Harmony system camera UI 完成 still-photo capture
-- 把返回 asset metadata 回传给 JS
-- denied / canceled / successful capture 三类结果展示
-
-`🟠 当前未纳入子集`：
-
-- embedded live preview
+- embedded `CameraView` preview
 - `pausePreview` / `resumePreview`
-- microphone permission parity
-- video recording
-- scanning APIs 之外的更深 Expo parity
-
-这些 `🟠` 项不是“已经实现，只差真机验证”，而是当前还没补齐到可信实现，所以暂时不纳入对外可承诺子集。
+- still photo capture
+- video recording start / stop / toggle
+- microphone permission snapshot
+- denied / canceled / successful result 展示
 
 ## 推荐命令
 
@@ -142,7 +124,5 @@ pnpm run harmony:build:release
 
 - 这个 sample 属于 `preview` 主线，不等于已经进入 `verified`
 - `doctor-report.json` 与 `toolkit-config.json` 中的 `runtimeMode` / `evidence.*` 会如实反映这些能力距离 verified 还缺哪些证据
-- `🟡` 项可以理解为“只差真机 / release 证据的下一步”
-- `🟠` 项不能理解成“只差真机”，因为当前实现边界本身还没有补齐
 - 当前重点是“模拟器下真正可用、核心流清楚、文档一致”
 - 等未来补齐真机 gate 后，才讨论 capability promotion
