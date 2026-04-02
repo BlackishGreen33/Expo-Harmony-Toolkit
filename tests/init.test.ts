@@ -19,6 +19,30 @@ async function createTempPreviewFixture(): Promise<string> {
   return tempRoot;
 }
 
+async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
+  await fs.outputJson(
+    path.join(projectRoot, '.expo-harmony', 'signing.local.json'),
+    {
+      signingConfigs: [
+        {
+          name: 'default',
+          type: 'HarmonyOS',
+          material: {
+            storeFile: './signing/release.p12',
+          },
+        },
+      ],
+      products: [
+        {
+          name: 'default',
+          signingConfig: 'default',
+        },
+      ],
+    },
+    { spaces: 2 },
+  );
+}
+
 describe('init project', () => {
   it('writes scaffold files and remains idempotent on the second run', async () => {
     const projectRoot = await createTempFixture();
@@ -74,6 +98,22 @@ describe('init project', () => {
     ).toBe(true);
   });
 
+  it('merges local signing input into the managed Harmony build profile', async () => {
+    const projectRoot = await createTempFixture();
+    await writeLocalSigningConfig(projectRoot);
+
+    await initProject(projectRoot, true);
+
+    const buildProfileContents = await fs.readFile(
+      path.join(projectRoot, 'harmony', 'build-profile.json5'),
+      'utf8',
+    );
+
+    expect(buildProfileContents).toContain('"signingConfigs"');
+    expect(buildProfileContents).toContain('"storeFile": "./signing/release.p12"');
+    expect(buildProfileContents).toContain('"signingConfig": "default"');
+  });
+
   it('surfaces metadata matrix drift in doctor and sync warnings', async () => {
     const projectRoot = await createTempFixture();
 
@@ -127,16 +167,26 @@ describe('init project', () => {
     expect(metroConfig).toContain(".expo-harmony/shims/expo-image-picker");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-location");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-camera");
-    expect(fileSystemShim).toContain('ERR_EXPO_HARMONY_PREVIEW');
+    expect(fileSystemShim).toContain('ExpoHarmonyFileSystem');
+    expect(fileSystemShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
     expect(locationShim).toContain('watchPositionAsync');
-    expect(cameraShim).toContain('Expo Harmony preview camera surface');
-    expect(toolkitConfig?.capabilities).toEqual([
+    expect(cameraShim).toContain('Expo Harmony camera capture surface');
+    expect(toolkitConfig?.capabilities.map((capability) => capability.id)).toEqual([
       'expo-camera',
       'expo-file-system',
       'expo-image-picker',
       'expo-location',
     ]);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.runtimeMode === 'adapter')).toBe(
+      true,
+    );
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.device)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.release === false)).toBe(
+      true,
+    );
     expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(
       expect.arrayContaining([
         'ohos.permission.CAMERA',

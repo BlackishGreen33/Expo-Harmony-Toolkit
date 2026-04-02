@@ -45,6 +45,10 @@ import {
 } from './project';
 import { normalizeKnownJavaScriptDependencies } from './javascriptDependencies';
 import { buildDoctorReport, writeDoctorReport } from './report';
+import {
+  mergeSigningLocalConfigIntoBuildProfile,
+  readSigningLocalConfig,
+} from './signing';
 
 const TEMPLATE_ROOT = path.resolve(__dirname, '..', '..', 'templates', 'harmony');
 
@@ -224,7 +228,11 @@ async function buildManagedFiles(
 ): Promise<TemplateFileDefinition[]> {
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
   const enabledCapabilities = getCapabilityDefinitionsForProject(loadedProject.packageJson);
+  const hasManagedExpoHarmonyPackage = enabledCapabilities.some(
+    (capability) => capability.runtimeMode !== 'shim',
+  );
   const requestedHarmonyPermissions = collectCapabilityHarmonyPermissions(loadedProject.packageJson);
+  const signingLocalConfig = await readSigningLocalConfig(loadedProject.projectRoot);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const renderedHarmonyRootPackage = renderTemplate(
     await fs.readFile(path.join(TEMPLATE_ROOT, 'oh-package.json5'), 'utf8'),
@@ -244,7 +252,12 @@ async function buildManagedFiles(
       return {
         relativePath: path.join('harmony', relativePath),
         contents:
-          relativePath === 'entry/src/main/module.json5'
+          relativePath === 'build-profile.json5'
+            ? mergeSigningLocalConfigIntoBuildProfile(
+                contents.toString('utf8'),
+                signingLocalConfig,
+              )
+            : relativePath === 'entry/src/main/module.json5'
             ? renderEntryModuleConfig(identifiers.entryModuleName, requestedHarmonyPermissions)
             : relativePath === 'entry/src/main/resources/base/element/string.json'
               ? renderEntryStringResources(
@@ -252,7 +265,15 @@ async function buildManagedFiles(
                   identifiers.appName,
                   requestedHarmonyPermissions,
                 )
-            : contents,
+              : relativePath === 'entry/src/main/ets/PackageProvider.ets'
+                ? renderPackageProvider({
+                    hasManagedExpoHarmonyPackage,
+                  })
+                : relativePath === 'entry/src/main/cpp/PackageProvider.cpp'
+                  ? renderPackageProviderCpp({
+                      hasManagedExpoHarmonyPackage,
+                    })
+                  : contents,
         binary,
       };
     }),
@@ -271,7 +292,13 @@ async function buildManagedFiles(
     rnohCliVersion: RNOH_CLI_VERSION,
     bundleName: identifiers.bundleName,
     entryModuleName: identifiers.entryModuleName,
-    capabilities: enabledCapabilities.map((capability) => capability.id),
+    capabilities: enabledCapabilities.map((capability) => ({
+      id: capability.id,
+      packageName: capability.packageName,
+      supportTier: capability.supportTier,
+      runtimeMode: capability.runtimeMode,
+      evidence: { ...capability.evidence },
+    })),
     requestedHarmonyPermissions,
     project: {
       name: loadedProject.expoConfig.name ?? identifiers.appName,
@@ -317,6 +344,82 @@ async function buildManagedFiles(
           {
             relativePath: HARMONY_ROUTER_ENTRY_FILENAME,
             contents: renderRouterHarmonyEntry(identifiers),
+          } satisfies TemplateFileDefinition,
+        ]
+      : []),
+    ...(hasManagedExpoHarmonyPackage
+      ? [
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'cpp',
+              'expoHarmony',
+              'ExpoHarmonyPackage.h',
+            ),
+            contents: renderExpoHarmonyCppPackage(),
+          } satisfies TemplateFileDefinition,
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'ets',
+              'expoHarmony',
+              'ExpoHarmonyPackage.ets',
+            ),
+            contents: renderExpoHarmonyPackage(),
+          } satisfies TemplateFileDefinition,
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'ets',
+              'expoHarmony',
+              'ExpoHarmonyFileSystemTurboModule.ts',
+            ),
+            contents: renderExpoHarmonyFileSystemTurboModule(),
+          } satisfies TemplateFileDefinition,
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'ets',
+              'expoHarmony',
+              'ExpoHarmonyImagePickerTurboModule.ts',
+            ),
+            contents: renderExpoHarmonyImagePickerTurboModule(),
+          } satisfies TemplateFileDefinition,
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'ets',
+              'expoHarmony',
+              'ExpoHarmonyLocationTurboModule.ts',
+            ),
+            contents: renderExpoHarmonyLocationTurboModule(),
+          } satisfies TemplateFileDefinition,
+          {
+            relativePath: path.join(
+              'harmony',
+              'entry',
+              'src',
+              'main',
+              'ets',
+              'expoHarmony',
+              'ExpoHarmonyCameraTurboModule.ts',
+            ),
+            contents: renderExpoHarmonyCameraTurboModule(),
           } satisfies TemplateFileDefinition,
         ]
       : []),
@@ -1104,16 +1207,240 @@ function renderEntryStringResources(
   ) + '\n';
 }
 
+function renderPackageProvider(options: { hasManagedExpoHarmonyPackage: boolean }): string {
+  const managedImports = options.hasManagedExpoHarmonyPackage
+    ? "import { ExpoHarmonyPackage } from './expoHarmony/ExpoHarmonyPackage';\n"
+    : '';
+  const managedPackages = options.hasManagedExpoHarmonyPackage ? ', new ExpoHarmonyPackage(ctx)' : '';
+
+  return `import type { RNPackageContext, RNPackage } from '@rnoh/react-native-openharmony';
+import { createRNOHPackages as createRNOHPackagesAutolinking } from './RNOHPackagesFactory';
+${managedImports}
+export function getRNOHPackages(ctx: RNPackageContext): RNPackage[] {
+  return [...createRNOHPackagesAutolinking(ctx)${managedPackages}];
+}
+`;
+}
+
+function renderPackageProviderCpp(options: { hasManagedExpoHarmonyPackage: boolean }): string {
+  const managedInclude = options.hasManagedExpoHarmonyPackage
+    ? '#include "expoHarmony/ExpoHarmonyPackage.h"\n'
+    : '';
+  const managedPackage = options.hasManagedExpoHarmonyPackage
+    ? '  packages.push_back(std::make_shared<ExpoHarmonyPackage>(ctx));\n'
+    : '';
+
+  return `#include "RNOH/PackageProvider.h"
+#include "RNOHPackagesFactory.h"
+#include "generated/RNOHGeneratedPackage.h"
+${managedInclude}
+using namespace rnoh;
+
+std::vector<std::shared_ptr<Package>> PackageProvider::getPackages(
+    Package::Context ctx) {
+  auto packages = createRNOHPackages(ctx);
+  packages.push_back(std::make_shared<RNOHGeneratedPackage>(ctx));
+${managedPackage}  return packages;
+}
+`;
+}
+
+function renderExpoHarmonyCppPackage(): string {
+  return `#pragma once
+
+#include <ReactCommon/TurboModule.h>
+#include "RNOH/ArkTSTurboModule.h"
+#include "RNOH/Package.h"
+
+namespace rnoh {
+using namespace facebook;
+
+static jsi::Value __hostFunction_ExpoHarmonyFileSystemTurboModule_getConstants(
+    jsi::Runtime& rt,
+    react::TurboModule& turboModule,
+    const jsi::Value* args,
+    size_t count) {
+  return static_cast<ArkTSTurboModule&>(turboModule)
+      .call(rt, "getConstants", args, count);
+}
+
+static jsi::Value __hostFunction_ExpoHarmonyImagePickerTurboModule_getConstants(
+    jsi::Runtime& rt,
+    react::TurboModule& turboModule,
+    const jsi::Value* args,
+    size_t count) {
+  return static_cast<ArkTSTurboModule&>(turboModule)
+      .call(rt, "getConstants", args, count);
+}
+
+static jsi::Value __hostFunction_ExpoHarmonyLocationTurboModule_getConstants(
+    jsi::Runtime& rt,
+    react::TurboModule& turboModule,
+    const jsi::Value* args,
+    size_t count) {
+  return static_cast<ArkTSTurboModule&>(turboModule)
+      .call(rt, "getConstants", args, count);
+}
+
+static jsi::Value __hostFunction_ExpoHarmonyCameraTurboModule_getConstants(
+    jsi::Runtime& rt,
+    react::TurboModule& turboModule,
+    const jsi::Value* args,
+    size_t count) {
+  return static_cast<ArkTSTurboModule&>(turboModule)
+      .call(rt, "getConstants", args, count);
+}
+
+class JSI_EXPORT ExpoHarmonyFileSystemTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyFileSystemTurboModule(
+      const ArkTSTurboModule::Context ctx,
+      const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getConstants"] = MethodMetadata{
+        0, __hostFunction_ExpoHarmonyFileSystemTurboModule_getConstants};
+    methodMap_["getInfo"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(getInfo)};
+    methodMap_["readAsString"] = MethodMetadata{
+        2, ARK_ASYNC_METHOD_CALLER(readAsString)};
+    methodMap_["writeAsString"] = MethodMetadata{
+        3, ARK_ASYNC_METHOD_CALLER(writeAsString)};
+    methodMap_["deletePath"] = MethodMetadata{
+        2, ARK_ASYNC_METHOD_CALLER(deletePath)};
+    methodMap_["makeDirectory"] = MethodMetadata{
+        2, ARK_ASYNC_METHOD_CALLER(makeDirectory)};
+    methodMap_["readDirectory"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(readDirectory)};
+    methodMap_["copy"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(copy)};
+    methodMap_["move"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(move)};
+  }
+};
+
+class JSI_EXPORT ExpoHarmonyImagePickerTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyImagePickerTurboModule(
+      const ArkTSTurboModule::Context ctx,
+      const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getConstants"] = MethodMetadata{
+        0, __hostFunction_ExpoHarmonyImagePickerTurboModule_getConstants};
+    methodMap_["getMediaLibraryPermissionStatus"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(getMediaLibraryPermissionStatus)};
+    methodMap_["requestMediaLibraryPermission"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(requestMediaLibraryPermission)};
+    methodMap_["getCameraPermissionStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getCameraPermissionStatus)};
+    methodMap_["requestCameraPermission"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(requestCameraPermission)};
+    methodMap_["launchImageLibrary"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(launchImageLibrary)};
+    methodMap_["launchCamera"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(launchCamera)};
+  }
+};
+
+class JSI_EXPORT ExpoHarmonyLocationTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyLocationTurboModule(
+      const ArkTSTurboModule::Context ctx,
+      const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getConstants"] = MethodMetadata{
+        0, __hostFunction_ExpoHarmonyLocationTurboModule_getConstants};
+    methodMap_["getForegroundPermissionStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getForegroundPermissionStatus)};
+    methodMap_["requestForegroundPermission"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(requestForegroundPermission)};
+    methodMap_["getBackgroundPermissionStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getBackgroundPermissionStatus)};
+    methodMap_["requestBackgroundPermission"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(requestBackgroundPermission)};
+    methodMap_["hasServicesEnabled"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(hasServicesEnabled)};
+    methodMap_["getProviderStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getProviderStatus)};
+    methodMap_["getCurrentPosition"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(getCurrentPosition)};
+    methodMap_["getLastKnownPosition"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(getLastKnownPosition)};
+    methodMap_["geocode"] = MethodMetadata{1, ARK_ASYNC_METHOD_CALLER(geocode)};
+    methodMap_["reverseGeocode"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(reverseGeocode)};
+  }
+};
+
+class JSI_EXPORT ExpoHarmonyCameraTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyCameraTurboModule(
+      const ArkTSTurboModule::Context ctx,
+      const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getConstants"] = MethodMetadata{
+        0, __hostFunction_ExpoHarmonyCameraTurboModule_getConstants};
+    methodMap_["getCameraPermissionStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getCameraPermissionStatus)};
+    methodMap_["requestCameraPermission"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(requestCameraPermission)};
+    methodMap_["getMicrophonePermissionStatus"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(getMicrophonePermissionStatus)};
+    methodMap_["requestMicrophonePermission"] = MethodMetadata{
+        0, ARK_ASYNC_METHOD_CALLER(requestMicrophonePermission)};
+    methodMap_["takePicture"] = MethodMetadata{
+        1, ARK_ASYNC_METHOD_CALLER(takePicture)};
+  }
+};
+
+class ExpoHarmonyTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {
+ public:
+  SharedTurboModule createTurboModule(Context ctx, const std::string& name)
+      const override {
+    if (name == "ExpoHarmonyFileSystem") {
+      return std::make_shared<ExpoHarmonyFileSystemTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonyImagePicker") {
+      return std::make_shared<ExpoHarmonyImagePickerTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonyLocation") {
+      return std::make_shared<ExpoHarmonyLocationTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonyCamera") {
+      return std::make_shared<ExpoHarmonyCameraTurboModule>(ctx, name);
+    }
+
+    return nullptr;
+  }
+};
+
+class ExpoHarmonyPackage : public Package {
+ public:
+  explicit ExpoHarmonyPackage(Package::Context ctx) : Package(ctx) {}
+
+  std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate()
+      override {
+    return std::make_unique<ExpoHarmonyTurboModuleFactoryDelegate>();
+  }
+};
+} // namespace rnoh
+`;
+}
+
 function renderCapabilityModuleShim(capability: CapabilityDefinition): string {
   switch (capability.packageName) {
     case 'expo-file-system':
-      return renderExpoFileSystemPreviewShim(capability);
+      return capability.runtimeMode !== 'shim'
+        ? renderExpoFileSystemHarmonyAdapterShim(capability)
+        : renderExpoFileSystemPreviewShim(capability);
     case 'expo-image-picker':
-      return renderExpoImagePickerPreviewShim(capability);
+      return capability.runtimeMode !== 'shim'
+        ? renderExpoImagePickerHarmonyAdapterShim(capability)
+        : renderExpoImagePickerPreviewShim(capability);
     case 'expo-location':
-      return renderExpoLocationPreviewShim(capability);
+      return capability.runtimeMode !== 'shim'
+        ? renderExpoLocationHarmonyAdapterShim(capability)
+        : renderExpoLocationPreviewShim(capability);
     case 'expo-camera':
-      return renderExpoCameraPreviewShim(capability);
+      return capability.runtimeMode !== 'shim'
+        ? renderExpoCameraHarmonyAdapterShim(capability)
+        : renderExpoCameraPreviewShim(capability);
     default:
       return renderUnsupportedCapabilityShim(capability);
   }
@@ -1363,6 +1690,1558 @@ module.exports = new Proxy(
 `;
 }
 
+function renderExpoHarmonyPackage(): string {
+  return `import type {
+  AnyThreadTurboModule,
+  AnyThreadTurboModuleContext,
+  UITurboModule,
+  UITurboModuleContext,
+} from '@rnoh/react-native-openharmony';
+import {
+  RNOHPackage,
+} from '@rnoh/react-native-openharmony';
+import { ExpoHarmonyFileSystemTurboModule } from './ExpoHarmonyFileSystemTurboModule';
+import { ExpoHarmonyImagePickerTurboModule } from './ExpoHarmonyImagePickerTurboModule';
+import { ExpoHarmonyLocationTurboModule } from './ExpoHarmonyLocationTurboModule';
+import { ExpoHarmonyCameraTurboModule } from './ExpoHarmonyCameraTurboModule';
+
+export class ExpoHarmonyPackage extends RNOHPackage {
+  override getAnyThreadTurboModuleFactoryByNameMap(): Map<
+    string,
+    (ctx: AnyThreadTurboModuleContext) => AnyThreadTurboModule | null
+  > {
+    return new Map<string, (ctx: AnyThreadTurboModuleContext) => AnyThreadTurboModule | null>()
+      .set(
+        ExpoHarmonyFileSystemTurboModule.NAME,
+        (ctx) => new ExpoHarmonyFileSystemTurboModule(ctx),
+      )
+      .set(
+        ExpoHarmonyLocationTurboModule.NAME,
+        (ctx) => new ExpoHarmonyLocationTurboModule(ctx),
+      );
+  }
+
+  override getUITurboModuleFactoryByNameMap(): Map<
+    string,
+    (ctx: UITurboModuleContext) => UITurboModule | null
+  > {
+    return new Map<string, (ctx: UITurboModuleContext) => UITurboModule | null>()
+      .set(
+        ExpoHarmonyImagePickerTurboModule.NAME,
+        (ctx) => new ExpoHarmonyImagePickerTurboModule(ctx),
+      )
+      .set(
+        ExpoHarmonyCameraTurboModule.NAME,
+        (ctx) => new ExpoHarmonyCameraTurboModule(ctx),
+      );
+  }
+
+  override getDebugName() {
+    return 'expo-harmony';
+  }
+}
+`;
+}
+
+function renderExpoHarmonyFileSystemTurboModule(): string {
+  return `import fs from '@ohos.file.fs';
+import { AnyThreadTurboModuleContext, AnyThreadTurboModule } from '@rnoh/react-native-openharmony/ts';
+
+type FileInfoOptions = {
+  md5?: boolean;
+};
+
+type WriteOptions = {
+  encoding?: string;
+};
+
+type MakeDirectoryOptions = {
+  intermediates?: boolean;
+};
+
+type DeleteOptions = {
+  idempotent?: boolean;
+};
+
+type FileInfoResult = {
+  exists: boolean;
+  path: string;
+  isDirectory: boolean;
+  size?: number;
+  modificationTime?: number;
+  md5?: string;
+};
+
+export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
+  public static readonly NAME = 'ExpoHarmonyFileSystem';
+
+  public constructor(ctx: AnyThreadTurboModuleContext) {
+    super(ctx);
+    this.ensureManagedDirectoriesSync();
+  }
+
+  getConstants(): {
+    documentDirectoryPath: string;
+    cacheDirectoryPath: string;
+    bundleDirectoryPath: string | null;
+  } {
+    const abilityContext = this.ctx.uiAbilityContext as {
+      bundleCodeDir?: string;
+    };
+
+    return {
+      documentDirectoryPath: this.documentDirectoryPath,
+      cacheDirectoryPath: this.cacheDirectoryPath,
+      bundleDirectoryPath:
+        typeof abilityContext.bundleCodeDir === 'string' && abilityContext.bundleCodeDir.length > 0
+          ? abilityContext.bundleCodeDir
+          : null,
+    };
+  }
+
+  async getInfo(path: string, _options?: FileInfoOptions): Promise<FileInfoResult> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    const stat = await this.getStatOrNull(normalizedPath);
+
+    if (!stat) {
+      return {
+        exists: false,
+        path: normalizedPath,
+        isDirectory: false,
+      };
+    }
+
+    return {
+      exists: true,
+      path: normalizedPath,
+      isDirectory: stat.isDirectory(),
+      size: Number(stat.size),
+      modificationTime: Number(stat.mtime),
+    };
+  }
+
+  async readAsString(path: string, options?: { encoding?: string }): Promise<string> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    const encoding = options?.encoding ?? 'utf8';
+
+    if (encoding !== 'utf8') {
+      throw new Error('ExpoHarmonyFileSystem currently supports only UTF-8 string reads.');
+    }
+
+    return fs.readText(normalizedPath, {
+      encoding: 'utf-8',
+    });
+  }
+
+  async writeAsString(path: string, contents: string, options?: WriteOptions): Promise<void> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    const encoding = options?.encoding ?? 'utf8';
+
+    if (encoding !== 'utf8') {
+      throw new Error('ExpoHarmonyFileSystem currently supports only UTF-8 string writes.');
+    }
+
+    await this.ensureParentDirectory(normalizedPath);
+
+    const file = await fs.open(
+      normalizedPath,
+      fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC,
+    );
+
+    try {
+      await fs.write(file.fd, contents);
+    } finally {
+      await fs.close(file);
+    }
+  }
+
+  async deletePath(path: string, options?: DeleteOptions): Promise<void> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    await this.deleteInternal(normalizedPath, options?.idempotent === true);
+  }
+
+  async makeDirectory(path: string, options?: MakeDirectoryOptions): Promise<void> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    await fs.mkdir(normalizedPath, options?.intermediates === true);
+  }
+
+  async readDirectory(path: string): Promise<string[]> {
+    const normalizedPath = this.normalizeSandboxPath(path);
+    const stat = await fs.stat(normalizedPath);
+
+    if (!stat.isDirectory()) {
+      throw new Error('readDirectory expects a directory path.');
+    }
+
+    return fs.listFile(normalizedPath);
+  }
+
+  async copy(from: string, to: string): Promise<void> {
+    const fromPath = this.normalizeSandboxPath(from);
+    const toPath = this.normalizeSandboxPath(to);
+    await this.copyInternal(fromPath, toPath);
+  }
+
+  async move(from: string, to: string): Promise<void> {
+    const fromPath = this.normalizeSandboxPath(from);
+    const toPath = this.normalizeSandboxPath(to);
+    const stat = await fs.stat(fromPath);
+
+    await this.ensureParentDirectory(toPath);
+
+    if (stat.isDirectory()) {
+      await this.copyInternal(fromPath, toPath);
+      await this.deleteInternal(fromPath, false);
+      return;
+    }
+
+    await fs.moveFile(fromPath, toPath);
+  }
+
+  private get documentDirectoryPath(): string {
+    return \`\${this.ctx.uiAbilityContext.filesDir}/expo-harmony/document\`;
+  }
+
+  private get cacheDirectoryPath(): string {
+    return \`\${this.ctx.uiAbilityContext.cacheDir}/expo-harmony/cache\`;
+  }
+
+  private ensureManagedDirectoriesSync(): void {
+    this.ensureDirectorySync(this.documentDirectoryPath);
+    this.ensureDirectorySync(this.cacheDirectoryPath);
+  }
+
+  private ensureDirectorySync(directoryPath: string): void {
+    if (!fs.accessSync(directoryPath)) {
+      fs.mkdirSync(directoryPath, true);
+    }
+  }
+
+  private async ensureParentDirectory(targetPath: string): Promise<void> {
+    const parentPath = this.getParentPath(targetPath);
+
+    if (!parentPath) {
+      return;
+    }
+
+    const parentStat = await this.getStatOrNull(parentPath);
+
+    if (parentStat) {
+      if (!parentStat.isDirectory()) {
+        throw new Error(\`Expected parent path to be a directory: \${parentPath}\`);
+      }
+
+      return;
+    }
+
+    await fs.mkdir(parentPath, true);
+  }
+
+  private getParentPath(targetPath: string): string | null {
+    let normalizedPath = targetPath;
+
+    while (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
+      normalizedPath = normalizedPath.slice(0, -1);
+    }
+    const slashIndex = normalizedPath.lastIndexOf('/');
+
+    if (slashIndex <= 0) {
+      return null;
+    }
+
+    return normalizedPath.slice(0, slashIndex);
+  }
+
+  private async deleteInternal(targetPath: string, idempotent: boolean): Promise<void> {
+    const stat = await this.getStatOrNull(targetPath);
+
+    if (!stat) {
+      if (idempotent) {
+        return;
+      }
+
+      throw new Error(\`No file or directory exists at \${targetPath}.\`);
+    }
+
+    if (stat.isDirectory()) {
+      const entries = await fs.listFile(targetPath);
+
+      for (const entryName of entries) {
+        await this.deleteInternal(\`\${targetPath}/\${entryName}\`, idempotent);
+      }
+
+      await fs.rmdir(targetPath);
+      return;
+    }
+
+    await fs.unlink(targetPath);
+  }
+
+  private async copyInternal(fromPath: string, toPath: string): Promise<void> {
+    const stat = await fs.stat(fromPath);
+
+    await this.ensureParentDirectory(toPath);
+
+    if (stat.isDirectory()) {
+      await fs.mkdir(toPath, true);
+      const entries = await fs.listFile(fromPath);
+
+      for (const entryName of entries) {
+        await this.copyInternal(\`\${fromPath}/\${entryName}\`, \`\${toPath}/\${entryName}\`);
+      }
+
+      return;
+    }
+
+    await fs.copyFile(fromPath, toPath);
+  }
+
+  private async getStatOrNull(targetPath: string): Promise<fs.Stat | null> {
+    try {
+      return await fs.stat(targetPath);
+    } catch (error) {
+      if (this.isNoSuchFileError(error)) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  private isNoSuchFileError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      Number((error as { code?: number }).code) === 13900002
+    );
+  }
+
+  private normalizeSandboxPath(inputPath: string): string {
+    if (typeof inputPath !== 'string' || inputPath.length === 0) {
+      throw new Error('ExpoHarmonyFileSystem expected a non-empty sandbox path.');
+    }
+
+    if (!inputPath.startsWith('/')) {
+      throw new Error('ExpoHarmonyFileSystem accepts only absolute sandbox paths.');
+    }
+
+    if (inputPath.includes('/../') || inputPath.endsWith('/..') || inputPath.includes('/./')) {
+      throw new Error('ExpoHarmonyFileSystem does not accept relative path segments.');
+    }
+
+    const allowedRoots = [
+      this.ctx.uiAbilityContext.filesDir,
+      this.ctx.uiAbilityContext.cacheDir,
+    ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+    const isAllowed = allowedRoots.some(
+      (rootPath) => inputPath === rootPath || inputPath.startsWith(\`\${rootPath}/\`),
+    );
+
+    if (!isAllowed) {
+      throw new Error('ExpoHarmonyFileSystem accepts only app sandbox paths.');
+    }
+
+    return inputPath;
+  }
+}
+`;
+}
+
+function renderExpoHarmonyImagePickerTurboModule(): string {
+  return `import type { Permissions } from '@ohos.abilityAccessCtrl';
+import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+import photoAccessHelper from '@ohos.file.photoAccessHelper';
+import picker from '@ohos.file.picker';
+import image from '@ohos.multimedia.image';
+import fs from '@ohos.file.fs';
+import { UITurboModuleContext, UITurboModule } from '@rnoh/react-native-openharmony/ts';
+
+type PermissionResponse = {
+  status: 'granted' | 'denied' | 'undetermined';
+  granted: boolean;
+  canAskAgain: boolean;
+  expires: 'never';
+  accessPrivileges?: 'all' | 'limited' | 'none';
+};
+
+type LaunchImageLibraryOptions = {
+  mediaTypes?: string | string[];
+  allowsMultipleSelection?: boolean;
+  selectionLimit?: number;
+};
+
+type LaunchCameraOptions = {
+  mediaTypes?: string | string[];
+  cameraType?: string;
+};
+
+type ImagePickerAsset = {
+  uri: string;
+  assetId: string | null;
+  width: number;
+  height: number;
+  type: 'image' | 'video' | null;
+  fileName: string | null;
+  fileSize: number | null;
+  mimeType: string | null;
+  duration: number | null;
+  exif: null;
+  base64: null;
+};
+
+type ImagePickerResult = {
+  canceled: boolean;
+  assets: ImagePickerAsset[] | null;
+};
+
+export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
+  public static readonly NAME = 'ExpoHarmonyImagePicker';
+
+  private readonly atManager = abilityAccessCtrl.createAtManager();
+
+  getConstants(): Record<string, never> {
+    return {};
+  }
+
+  async getMediaLibraryPermissionStatus(_writeOnly?: boolean): Promise<PermissionResponse> {
+    return this.getPermissionResponse('ohos.permission.READ_IMAGEVIDEO', true);
+  }
+
+  async requestMediaLibraryPermission(_writeOnly?: boolean): Promise<PermissionResponse> {
+    return this.requestPermissionResponse('ohos.permission.READ_IMAGEVIDEO', true);
+  }
+
+  async getCameraPermissionStatus(): Promise<PermissionResponse> {
+    return this.getPermissionResponse('ohos.permission.CAMERA', false);
+  }
+
+  async requestCameraPermission(): Promise<PermissionResponse> {
+    return this.requestPermissionResponse('ohos.permission.CAMERA', false);
+  }
+
+  async launchImageLibrary(options?: LaunchImageLibraryOptions): Promise<ImagePickerResult> {
+    await this.ensurePermissionGranted('ohos.permission.READ_IMAGEVIDEO', true);
+
+    const photoPicker = new photoAccessHelper.PhotoViewPicker();
+    const selection = await photoPicker.select(this.createPhotoSelectOptions(options));
+    let selectedUris = this.normalizeSelectedUris(selection?.photoUris);
+
+    if (selectedUris.length === 0) {
+      selectedUris = await this.launchLegacyPhotoPicker(options);
+    }
+
+    if (selectedUris.length === 0) {
+      return this.createCanceledResult();
+    }
+
+    const authorizedUris = await this.requestAuthorizedUris(selectedUris);
+    const assets = await Promise.all(
+      authorizedUris.map((uri, index) =>
+        this.createImagePickerAsset(uri, selectedUris[index] ?? uri, this.inferAssetTypeFromMediaTypes(options?.mediaTypes)),
+      ),
+    );
+
+    return {
+      canceled: false,
+      assets,
+    };
+  }
+
+  async launchCamera(options?: LaunchCameraOptions): Promise<ImagePickerResult> {
+    const requestedAssetType = this.inferAssetTypeFromMediaTypes(options?.mediaTypes);
+
+    if (requestedAssetType === 'video') {
+      throw new Error('ExpoHarmonyImagePicker launchCamera currently supports photo capture only.');
+    }
+
+    await this.ensurePermissionGranted('ohos.permission.CAMERA', false);
+    await this.ensurePermissionGranted('ohos.permission.READ_IMAGEVIDEO', true);
+
+    const cameraEntryPicker = new photoAccessHelper.PhotoViewPicker();
+    const selection = await cameraEntryPicker.select(
+      this.createPhotoSelectOptions(
+        {
+          mediaTypes: 'images',
+          allowsMultipleSelection: false,
+        },
+        true,
+      ),
+    );
+    const selectedUris = this.normalizeSelectedUris(selection?.photoUris);
+
+    if (selectedUris.length === 0) {
+      return this.createCanceledResult();
+    }
+
+    const authorizedUris = await this.requestAuthorizedUris(selectedUris);
+    const assetUri = authorizedUris[0] ?? selectedUris[0];
+
+    return {
+      canceled: false,
+      assets: [await this.createImagePickerAsset(assetUri, selectedUris[0], 'image')],
+    };
+  }
+
+  private async ensurePermissionGranted(
+    permissionName: Permissions,
+    isMediaLibraryPermission: boolean,
+  ): Promise<void> {
+    const permissionResponse = await this.getPermissionResponse(permissionName, isMediaLibraryPermission);
+
+    if (permissionResponse.granted) {
+      return;
+    }
+
+    const requestedResponse = await this.requestPermissionResponse(permissionName, isMediaLibraryPermission);
+
+    if (!requestedResponse.granted) {
+      throw new Error(\`Permission denied for \${permissionName}.\`);
+    }
+  }
+
+  private async getPermissionResponse(
+    permissionName: Permissions,
+    isMediaLibraryPermission: boolean,
+  ): Promise<PermissionResponse> {
+    return this.permissionResponseFromStatus(
+      this.resolvePermissionStatus(permissionName),
+      isMediaLibraryPermission,
+    );
+  }
+
+  private async requestPermissionResponse(
+    permissionName: Permissions,
+    isMediaLibraryPermission: boolean,
+  ): Promise<PermissionResponse> {
+    const requestResult = await this.atManager.requestPermissionsFromUser(
+      this.ctx.uiAbilityContext,
+      [permissionName],
+    );
+    const authResult = Array.isArray(requestResult.authResults)
+      ? Number(requestResult.authResults[0] ?? abilityAccessCtrl.GrantStatus.PERMISSION_DENIED)
+      : abilityAccessCtrl.GrantStatus.PERMISSION_DENIED;
+
+    if (authResult === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
+      return this.permissionResponseFromStatus(
+        abilityAccessCtrl.PermissionStatus.GRANTED,
+        isMediaLibraryPermission,
+      );
+    }
+
+    return this.permissionResponseFromStatus(
+      abilityAccessCtrl.PermissionStatus.DENIED,
+      isMediaLibraryPermission,
+    );
+  }
+
+  private resolvePermissionStatus(permissionName: Permissions): abilityAccessCtrl.PermissionStatus {
+    const atManagerWithSelfStatus = this.atManager as abilityAccessCtrl.AtManager & {
+      getSelfPermissionStatus?: (permission: Permissions) => abilityAccessCtrl.PermissionStatus;
+    };
+
+    if (typeof atManagerWithSelfStatus.getSelfPermissionStatus === 'function') {
+      return atManagerWithSelfStatus.getSelfPermissionStatus(permissionName);
+    }
+
+    const accessTokenId = this.ctx.uiAbilityContext.abilityInfo.applicationInfo.accessTokenId;
+    const grantStatus = this.atManager.checkAccessTokenSync(accessTokenId, permissionName);
+
+    return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED
+      ? abilityAccessCtrl.PermissionStatus.GRANTED
+      : abilityAccessCtrl.PermissionStatus.NOT_DETERMINED;
+  }
+
+  private permissionResponseFromStatus(
+    permissionStatus: abilityAccessCtrl.PermissionStatus,
+    isMediaLibraryPermission: boolean,
+  ): PermissionResponse {
+    const granted = permissionStatus === abilityAccessCtrl.PermissionStatus.GRANTED;
+    const denied =
+      permissionStatus === abilityAccessCtrl.PermissionStatus.DENIED ||
+      permissionStatus === abilityAccessCtrl.PermissionStatus.RESTRICTED ||
+      permissionStatus === abilityAccessCtrl.PermissionStatus.INVALID;
+
+    return {
+      status: granted ? 'granted' : denied ? 'denied' : 'undetermined',
+      granted,
+      canAskAgain: !denied,
+      expires: 'never',
+      ...(isMediaLibraryPermission
+        ? {
+            accessPrivileges: granted ? 'all' : 'none',
+          }
+        : {}),
+    };
+  }
+
+  private createPhotoSelectOptions(
+    options?: LaunchImageLibraryOptions,
+    isPhotoTakingSupported: boolean = false,
+  ): photoAccessHelper.PhotoSelectOptions {
+    const selectOptions = new photoAccessHelper.PhotoSelectOptions();
+    selectOptions.MIMEType = this.resolvePhotoViewMimeType(options?.mediaTypes);
+    selectOptions.maxSelectNumber =
+      options?.allowsMultipleSelection === true
+        ? this.resolveSelectionLimit(options?.selectionLimit)
+        : 1;
+    selectOptions.isSearchSupported = true;
+    selectOptions.isPhotoTakingSupported = isPhotoTakingSupported;
+    return selectOptions;
+  }
+
+  private async launchLegacyPhotoPicker(options?: LaunchImageLibraryOptions): Promise<string[]> {
+    const legacyPicker = new picker.PhotoViewPicker(this.ctx.uiAbilityContext);
+    const legacyOptions = new picker.PhotoSelectOptions();
+    legacyOptions.MIMEType = this.resolveLegacyPhotoViewMimeType(options?.mediaTypes);
+    legacyOptions.maxSelectNumber =
+      options?.allowsMultipleSelection === true
+        ? this.resolveSelectionLimit(options?.selectionLimit)
+        : 1;
+
+    const selection = await legacyPicker.select(legacyOptions);
+    return this.normalizeSelectedUris(selection?.photoUris);
+  }
+
+  private resolveSelectionLimit(selectionLimit?: number): number {
+    if (typeof selectionLimit === 'number' && Number.isFinite(selectionLimit) && selectionLimit > 0) {
+      return Math.floor(selectionLimit);
+    }
+
+    return 20;
+  }
+
+  private resolvePhotoViewMimeType(
+    rawMediaTypes?: string | string[],
+  ): photoAccessHelper.PhotoViewMIMETypes {
+    const normalized = this.normalizeMediaTypes(rawMediaTypes);
+
+    if (normalized.includes('video') && !normalized.includes('image')) {
+      return photoAccessHelper.PhotoViewMIMETypes.VIDEO_TYPE;
+    }
+
+    if (normalized.includes('video') && normalized.includes('image')) {
+      return photoAccessHelper.PhotoViewMIMETypes.IMAGE_VIDEO_TYPE;
+    }
+
+    return photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE;
+  }
+
+  private resolveLegacyPhotoViewMimeType(
+    rawMediaTypes?: string | string[],
+  ): picker.PhotoViewMIMETypes {
+    const normalized = this.normalizeMediaTypes(rawMediaTypes);
+
+    if (normalized.includes('video') && !normalized.includes('image')) {
+      return picker.PhotoViewMIMETypes.VIDEO_TYPE;
+    }
+
+    if (normalized.includes('video') && normalized.includes('image')) {
+      return picker.PhotoViewMIMETypes.IMAGE_VIDEO_TYPE;
+    }
+
+    return picker.PhotoViewMIMETypes.IMAGE_TYPE;
+  }
+
+  private inferAssetTypeFromMediaTypes(
+    rawMediaTypes?: string | string[],
+  ): 'image' | 'video' | null {
+    const normalized = this.normalizeMediaTypes(rawMediaTypes);
+
+    if (normalized.includes('video') && !normalized.includes('image')) {
+      return 'video';
+    }
+
+    if (normalized.includes('image')) {
+      return 'image';
+    }
+
+    return null;
+  }
+
+  private normalizeMediaTypes(rawMediaTypes?: string | string[]): string[] {
+    if (Array.isArray(rawMediaTypes)) {
+      return Array.from(
+        new Set(
+          rawMediaTypes
+            .map((value) => this.normalizeMediaTypeValue(value))
+            .filter((value): value is string => value !== null),
+        ),
+      );
+    }
+
+    const singleValue = this.normalizeMediaTypeValue(rawMediaTypes);
+    return singleValue ? [singleValue] : ['image'];
+  }
+
+  private normalizeMediaTypeValue(rawValue?: string): string | null {
+    if (typeof rawValue !== 'string' || rawValue.length === 0) {
+      return 'image';
+    }
+
+    switch (rawValue) {
+      case 'All':
+      case 'all':
+      case 'images':
+      case 'image':
+      case 'livePhotos':
+        return 'image';
+      case 'Videos':
+      case 'videos':
+      case 'video':
+        return 'video';
+      default:
+        return rawValue.includes('video') ? 'video' : rawValue.includes('image') ? 'image' : null;
+    }
+  }
+
+  private normalizeSelectedUris(photoUris: Array<string> | undefined | null): string[] {
+    if (!Array.isArray(photoUris)) {
+      return [];
+    }
+
+    return photoUris.filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+  }
+
+  private async requestAuthorizedUris(photoUris: string[]): Promise<string[]> {
+    const helper = photoAccessHelper.getPhotoAccessHelper(this.ctx.uiAbilityContext);
+
+    try {
+      const authorizedUris = await helper.requestPhotoUrisReadPermission(photoUris);
+      const normalizedAuthorizedUris = this.normalizeSelectedUris(authorizedUris);
+      return normalizedAuthorizedUris.length > 0 ? normalizedAuthorizedUris : photoUris;
+    } catch (_error) {
+      return photoUris;
+    }
+  }
+
+  private async createImagePickerAsset(
+    assetUri: string,
+    originalUri: string,
+    fallbackType: 'image' | 'video' | null,
+  ): Promise<ImagePickerAsset> {
+    const inferredType = this.inferAssetTypeFromUri(assetUri, fallbackType);
+    const imageSize =
+      inferredType === 'image' ? await this.getImageSize(assetUri) : { width: 0, height: 0 };
+    const fileSize = await this.getFileSize(assetUri);
+    const fileName = this.extractFileName(assetUri) ?? this.extractFileName(originalUri);
+
+    return {
+      uri: assetUri,
+      assetId: originalUri,
+      width: imageSize.width,
+      height: imageSize.height,
+      type: inferredType,
+      fileName,
+      fileSize,
+      mimeType: this.inferMimeType(assetUri, inferredType),
+      duration: null,
+      exif: null,
+      base64: null,
+    };
+  }
+
+  private inferAssetTypeFromUri(
+    assetUri: string,
+    fallbackType: 'image' | 'video' | null,
+  ): 'image' | 'video' | null {
+    const normalizedUri = assetUri.toLowerCase();
+
+    if (normalizedUri.match(/\\.(mp4|m4v|mov|3gp|webm)(\\?|#|$)/)) {
+      return 'video';
+    }
+
+    if (normalizedUri.match(/\\.(png|jpe?g|gif|bmp|webp|heic|heif)(\\?|#|$)/)) {
+      return 'image';
+    }
+
+    return fallbackType;
+  }
+
+  private inferMimeType(
+    assetUri: string,
+    assetType: 'image' | 'video' | null,
+  ): string | null {
+    const normalizedUri = assetUri.toLowerCase();
+
+    if (normalizedUri.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (normalizedUri.endsWith('.gif')) {
+      return 'image/gif';
+    }
+    if (normalizedUri.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    if (normalizedUri.endsWith('.bmp')) {
+      return 'image/bmp';
+    }
+    if (normalizedUri.endsWith('.heic')) {
+      return 'image/heic';
+    }
+    if (normalizedUri.endsWith('.heif')) {
+      return 'image/heif';
+    }
+    if (normalizedUri.match(/\\.jpe?g(\\?|#|$)/)) {
+      return 'image/jpeg';
+    }
+    if (normalizedUri.match(/\\.(mp4|m4v)(\\?|#|$)/)) {
+      return 'video/mp4';
+    }
+    if (normalizedUri.match(/\\.mov(\\?|#|$)/)) {
+      return 'video/quicktime';
+    }
+    if (normalizedUri.match(/\\.webm(\\?|#|$)/)) {
+      return 'video/webm';
+    }
+
+    return assetType === 'video' ? 'video/*' : assetType === 'image' ? 'image/*' : null;
+  }
+
+  private extractFileName(assetUri: string): string | null {
+    if (typeof assetUri !== 'string' || assetUri.length === 0) {
+      return null;
+    }
+
+    const sanitizedUri = assetUri.split('?')[0]?.split('#')[0] ?? assetUri;
+    const lastSlashIndex = sanitizedUri.lastIndexOf('/');
+    const rawFileName =
+      lastSlashIndex >= 0 ? sanitizedUri.slice(lastSlashIndex + 1) : sanitizedUri;
+
+    if (rawFileName.length === 0) {
+      return null;
+    }
+
+    try {
+      return decodeURIComponent(rawFileName);
+    } catch (_error) {
+      return rawFileName;
+    }
+  }
+
+  private async getImageSize(assetUri: string): Promise<{ width: number; height: number }> {
+    let imageSource: image.ImageSource | null = null;
+
+    try {
+      imageSource = image.createImageSource(assetUri);
+      const imageInfo = await imageSource.getImageInfo();
+      return {
+        width: Number(imageInfo.size?.width ?? 0),
+        height: Number(imageInfo.size?.height ?? 0),
+      };
+    } catch (_error) {
+      return {
+        width: 0,
+        height: 0,
+      };
+    } finally {
+      if (imageSource) {
+        try {
+          await imageSource.release();
+        } catch (_error) {
+          // Ignore cleanup errors from ImageSource release.
+        }
+      }
+    }
+  }
+
+  private async getFileSize(assetUri: string): Promise<number | null> {
+    const fsTarget = this.resolveFsTarget(assetUri);
+
+    if (!fsTarget) {
+      return null;
+    }
+
+    try {
+      const stat = await fs.stat(fsTarget);
+      return Number(stat.size ?? 0);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  private resolveFsTarget(assetUri: string): string | null {
+    if (assetUri.startsWith('file://')) {
+      return assetUri.slice('file://'.length);
+    }
+
+    return assetUri.startsWith('/') ? assetUri : null;
+  }
+
+  private createCanceledResult(): ImagePickerResult {
+    return {
+      canceled: true,
+      assets: null,
+    };
+  }
+}
+`;
+}
+
+function renderExpoHarmonyLocationTurboModule(): string {
+  return `import type { Permissions } from '@ohos.abilityAccessCtrl';
+import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+import geoLocationManager from '@ohos.geoLocationManager';
+import { AnyThreadTurboModuleContext, AnyThreadTurboModule } from '@rnoh/react-native-openharmony/ts';
+
+type PermissionResponse = {
+  status: 'granted' | 'denied' | 'undetermined';
+  granted: boolean;
+  canAskAgain: boolean;
+  expires: 'never';
+  android: {
+    accuracy: 'fine' | 'coarse' | 'none';
+  };
+};
+
+type ExpoLocationObject = {
+  coords: {
+    latitude: number;
+    longitude: number;
+    altitude: number | null;
+    accuracy: number | null;
+    altitudeAccuracy: number | null;
+    heading: number | null;
+    speed: number | null;
+  };
+  timestamp: number;
+  mocked: false;
+};
+
+type ProviderStatus = {
+  locationServicesEnabled: boolean;
+  backgroundModeEnabled: boolean;
+  gpsAvailable: boolean;
+  networkAvailable: boolean;
+  passiveAvailable: boolean;
+};
+
+type ReverseGeocodeResult = {
+  city: string | null;
+  district: string | null;
+  streetNumber: string | null;
+  street: string | null;
+  region: string | null;
+  subregion: string | null;
+  country: string | null;
+  postalCode: string | null;
+  name: string | null;
+  isoCountryCode: string | null;
+  timezone: null;
+  formattedAddress: string | null;
+};
+
+type GeocodeResult = {
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  accuracy?: number;
+};
+
+export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
+  public static readonly NAME = 'ExpoHarmonyLocation';
+
+  private readonly atManager = abilityAccessCtrl.createAtManager();
+
+  getConstants(): Record<string, never> {
+    return {};
+  }
+
+  async getForegroundPermissionStatus(): Promise<PermissionResponse> {
+    return this.getLocationPermissionResponse();
+  }
+
+  async requestForegroundPermission(): Promise<PermissionResponse> {
+    return this.requestLocationPermissionResponse();
+  }
+
+  async getBackgroundPermissionStatus(): Promise<PermissionResponse> {
+    return this.getLocationPermissionResponse();
+  }
+
+  async requestBackgroundPermission(): Promise<PermissionResponse> {
+    return this.requestLocationPermissionResponse();
+  }
+
+  async hasServicesEnabled(): Promise<boolean> {
+    return geoLocationManager.isLocationEnabled();
+  }
+
+  async getProviderStatus(): Promise<ProviderStatus> {
+    const locationServicesEnabled = geoLocationManager.isLocationEnabled();
+
+    return {
+      locationServicesEnabled,
+      backgroundModeEnabled: false,
+      gpsAvailable: locationServicesEnabled,
+      networkAvailable: locationServicesEnabled,
+      passiveAvailable: locationServicesEnabled,
+    };
+  }
+
+  async getCurrentPosition(options?: { accuracy?: number }): Promise<ExpoLocationObject> {
+    const location = await geoLocationManager.getCurrentLocation(
+      this.createCurrentLocationRequest(options?.accuracy),
+    );
+    return this.normalizeLocation(location);
+  }
+
+  async getLastKnownPosition(_options?: Record<string, unknown>): Promise<ExpoLocationObject | null> {
+    try {
+      const location = geoLocationManager.getLastLocation();
+      return this.hasCoordinates(location) ? this.normalizeLocation(location) : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async geocode(address: string): Promise<GeocodeResult[]> {
+    const addresses = await geoLocationManager.getAddressesFromLocationName({
+      description: address,
+      locale: 'en-US',
+      maxItems: 5,
+    });
+
+    return addresses.map((addressEntry) => ({
+      latitude: Number(addressEntry.latitude ?? 0),
+      longitude: Number(addressEntry.longitude ?? 0),
+    }));
+  }
+
+  async reverseGeocode(location: { latitude: number; longitude: number }): Promise<ReverseGeocodeResult[]> {
+    const addresses = await geoLocationManager.getAddressesFromLocation({
+      latitude: Number(location.latitude),
+      longitude: Number(location.longitude),
+      locale: 'en-US',
+      maxItems: 5,
+    });
+
+    return addresses.map((addressEntry) => ({
+      city: addressEntry.locality ?? null,
+      district: addressEntry.subLocality ?? null,
+      streetNumber: addressEntry.subThoroughfare ?? null,
+      street: addressEntry.thoroughfare ?? null,
+      region: addressEntry.administrativeArea ?? null,
+      subregion: addressEntry.subAdministrativeArea ?? null,
+      country: addressEntry.countryName ?? null,
+      postalCode: addressEntry.postalCode ?? null,
+      name: addressEntry.placeName ?? null,
+      isoCountryCode: addressEntry.countryCode ?? null,
+      timezone: null,
+      formattedAddress:
+        addressEntry.addressUrl ??
+        (Array.isArray(addressEntry.descriptions) && addressEntry.descriptions.length > 0
+          ? addressEntry.descriptions.join(', ')
+          : null),
+    }));
+  }
+
+  private async getLocationPermissionResponse(): Promise<PermissionResponse> {
+    const approximateStatus = this.resolvePermissionStatus('ohos.permission.APPROXIMATELY_LOCATION');
+    const preciseStatus = this.resolvePermissionStatus('ohos.permission.LOCATION');
+
+    return this.buildPermissionResponse(approximateStatus, preciseStatus);
+  }
+
+  private async requestLocationPermissionResponse(): Promise<PermissionResponse> {
+    await this.atManager.requestPermissionsFromUser(this.ctx.uiAbilityContext, [
+      'ohos.permission.APPROXIMATELY_LOCATION',
+      'ohos.permission.LOCATION',
+    ]);
+
+    return this.getLocationPermissionResponse();
+  }
+
+  private resolvePermissionStatus(permissionName: Permissions): abilityAccessCtrl.PermissionStatus {
+    const atManagerWithSelfStatus = this.atManager as abilityAccessCtrl.AtManager & {
+      getSelfPermissionStatus?: (permission: Permissions) => abilityAccessCtrl.PermissionStatus;
+    };
+
+    if (typeof atManagerWithSelfStatus.getSelfPermissionStatus === 'function') {
+      return atManagerWithSelfStatus.getSelfPermissionStatus(permissionName);
+    }
+
+    const accessTokenId = this.ctx.uiAbilityContext.abilityInfo.applicationInfo.accessTokenId;
+    const grantStatus = this.atManager.checkAccessTokenSync(accessTokenId, permissionName);
+
+    return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED
+      ? abilityAccessCtrl.PermissionStatus.GRANTED
+      : abilityAccessCtrl.PermissionStatus.NOT_DETERMINED;
+  }
+
+  private buildPermissionResponse(
+    approximateStatus: abilityAccessCtrl.PermissionStatus,
+    preciseStatus: abilityAccessCtrl.PermissionStatus,
+  ): PermissionResponse {
+    const coarseGranted = approximateStatus === abilityAccessCtrl.PermissionStatus.GRANTED;
+    const fineGranted = preciseStatus === abilityAccessCtrl.PermissionStatus.GRANTED;
+    const granted = coarseGranted || fineGranted;
+    const denied =
+      (approximateStatus === abilityAccessCtrl.PermissionStatus.DENIED ||
+        approximateStatus === abilityAccessCtrl.PermissionStatus.RESTRICTED ||
+        approximateStatus === abilityAccessCtrl.PermissionStatus.INVALID) &&
+      (preciseStatus === abilityAccessCtrl.PermissionStatus.DENIED ||
+        preciseStatus === abilityAccessCtrl.PermissionStatus.RESTRICTED ||
+        preciseStatus === abilityAccessCtrl.PermissionStatus.INVALID);
+
+    return {
+      status: granted ? 'granted' : denied ? 'denied' : 'undetermined',
+      granted,
+      canAskAgain: !denied,
+      expires: 'never',
+      android: {
+        accuracy: fineGranted ? 'fine' : coarseGranted ? 'coarse' : 'none',
+      },
+    };
+  }
+
+  private createCurrentLocationRequest(accuracy?: number): geoLocationManager.CurrentLocationRequest {
+    if (typeof accuracy === 'number' && accuracy >= 4) {
+      return {
+        priority: geoLocationManager.LocationRequestPriority.ACCURACY,
+      };
+    }
+
+    if (typeof accuracy === 'number' && accuracy <= 2) {
+      return {
+        priority: geoLocationManager.LocationRequestPriority.LOW_POWER,
+      };
+    }
+
+    return {
+      priority: geoLocationManager.LocationRequestPriority.FIRST_FIX,
+    };
+  }
+
+  private hasCoordinates(location: geoLocationManager.Location | null | undefined): location is geoLocationManager.Location {
+    return (
+      !!location &&
+      typeof location.latitude === 'number' &&
+      typeof location.longitude === 'number'
+    );
+  }
+
+  private normalizeLocation(location: geoLocationManager.Location): ExpoLocationObject {
+    return {
+      coords: {
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+        altitude: typeof location.altitude === 'number' ? location.altitude : null,
+        accuracy: typeof location.accuracy === 'number' ? location.accuracy : null,
+        altitudeAccuracy: null,
+        heading: typeof location.direction === 'number' ? location.direction : null,
+        speed: typeof location.speed === 'number' ? location.speed : null,
+      },
+      timestamp: Number(location.timeStamp ?? Date.now()),
+      mocked: false,
+    };
+  }
+}
+`;
+}
+
+function renderExpoHarmonyCameraTurboModule(): string {
+  return `import type { Permissions } from '@ohos.abilityAccessCtrl';
+import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+import camera from '@ohos.multimedia.camera';
+import cameraPicker from '@ohos.multimedia.cameraPicker';
+import image from '@ohos.multimedia.image';
+import { UITurboModuleContext, UITurboModule } from '@rnoh/react-native-openharmony/ts';
+
+type PermissionResponse = {
+  status: 'granted' | 'denied' | 'undetermined';
+  granted: boolean;
+  canAskAgain: boolean;
+  expires: 'never';
+};
+
+type CameraCaptureResult = {
+  uri: string;
+  width: number;
+  height: number;
+  base64?: string;
+  exif: null;
+};
+
+export class ExpoHarmonyCameraTurboModule extends UITurboModule {
+  public static readonly NAME = 'ExpoHarmonyCamera';
+
+  private readonly atManager = abilityAccessCtrl.createAtManager();
+
+  getConstants(): Record<string, never> {
+    return {};
+  }
+
+  async getCameraPermissionStatus(): Promise<PermissionResponse> {
+    return this.getPermissionResponse('ohos.permission.CAMERA');
+  }
+
+  async requestCameraPermission(): Promise<PermissionResponse> {
+    return this.requestPermissionResponse('ohos.permission.CAMERA');
+  }
+
+  async getMicrophonePermissionStatus(): Promise<PermissionResponse> {
+    return this.createPermissionResponse(abilityAccessCtrl.PermissionStatus.NOT_DETERMINED);
+  }
+
+  async requestMicrophonePermission(): Promise<PermissionResponse> {
+    return this.createPermissionResponse(abilityAccessCtrl.PermissionStatus.NOT_DETERMINED);
+  }
+
+  async takePicture(options?: { cameraType?: string }): Promise<CameraCaptureResult> {
+    const profile = new cameraPicker.PickerProfile();
+    profile.cameraPosition =
+      options?.cameraType === 'front'
+        ? camera.CameraPosition.CAMERA_POSITION_FRONT
+        : camera.CameraPosition.CAMERA_POSITION_BACK;
+
+    const result = await cameraPicker.pick(
+      this.ctx.uiAbilityContext,
+      [cameraPicker.PickerMediaType.PHOTO],
+      profile,
+    );
+
+    if (!result || typeof result.resultUri !== 'string' || result.resultUri.length === 0) {
+      throw new Error('Camera capture was canceled.');
+    }
+
+    const imageSize = await this.getImageSize(result.resultUri);
+
+    return {
+      uri: result.resultUri,
+      width: imageSize.width,
+      height: imageSize.height,
+      exif: null,
+    };
+  }
+
+  private async getPermissionResponse(permissionName: Permissions): Promise<PermissionResponse> {
+    const atManagerWithSelfStatus = this.atManager as abilityAccessCtrl.AtManager & {
+      getSelfPermissionStatus?: (permission: Permissions) => abilityAccessCtrl.PermissionStatus;
+    };
+    const permissionStatus =
+      typeof atManagerWithSelfStatus.getSelfPermissionStatus === 'function'
+        ? atManagerWithSelfStatus.getSelfPermissionStatus(permissionName)
+        : this.atManager.checkAccessTokenSync(
+            this.ctx.uiAbilityContext.abilityInfo.applicationInfo.accessTokenId,
+            permissionName,
+          ) === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED
+          ? abilityAccessCtrl.PermissionStatus.GRANTED
+          : abilityAccessCtrl.PermissionStatus.NOT_DETERMINED;
+
+    return this.createPermissionResponse(permissionStatus);
+  }
+
+  private async requestPermissionResponse(permissionName: Permissions): Promise<PermissionResponse> {
+    await this.atManager.requestPermissionsFromUser(this.ctx.uiAbilityContext, [permissionName]);
+    return this.getPermissionResponse(permissionName);
+  }
+
+  private createPermissionResponse(
+    permissionStatus: abilityAccessCtrl.PermissionStatus,
+  ): PermissionResponse {
+    const granted = permissionStatus === abilityAccessCtrl.PermissionStatus.GRANTED;
+    const denied =
+      permissionStatus === abilityAccessCtrl.PermissionStatus.DENIED ||
+      permissionStatus === abilityAccessCtrl.PermissionStatus.RESTRICTED ||
+      permissionStatus === abilityAccessCtrl.PermissionStatus.INVALID;
+
+    return {
+      status: granted ? 'granted' : denied ? 'denied' : 'undetermined',
+      granted,
+      canAskAgain: !denied,
+      expires: 'never',
+    };
+  }
+
+  private async getImageSize(assetUri: string): Promise<{ width: number; height: number }> {
+    let imageSource: image.ImageSource | null = null;
+
+    try {
+      imageSource = image.createImageSource(assetUri);
+      const imageInfo = await imageSource.getImageInfo();
+      return {
+        width: Number(imageInfo.size?.width ?? 0),
+        height: Number(imageInfo.size?.height ?? 0),
+      };
+    } catch (_error) {
+      return {
+        width: 0,
+        height: 0,
+      };
+    } finally {
+      if (imageSource) {
+        try {
+          await imageSource.release();
+        } catch (_error) {
+          // Ignore cleanup errors from ImageSource release.
+        }
+      }
+    }
+  }
+}
+`;
+}
+
+function renderExpoFileSystemHarmonyAdapterShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { TurboModuleRegistry } = require('react-native');
+const { CodedError } = require('expo-modules-core');
+
+const FILE_SCHEME = 'file://';
+const NATIVE_MODULE_NAME = 'ExpoHarmonyFileSystem';
+const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
+const NATIVE_CONSTANTS = NATIVE_MODULE?.getConstants ? NATIVE_MODULE.getConstants() : {};
+
+function createError(code, message) {
+  return new CodedError(code, message);
+}
+
+function requireNativeModule(operationName) {
+  if (NATIVE_MODULE) {
+    return NATIVE_MODULE;
+  }
+
+  throw createError(
+    'ERR_EXPO_HARMONY_NATIVE_MODULE_MISSING',
+    '${capability.packageName} expected the ' +
+      NATIVE_MODULE_NAME +
+      ' TurboModule to be registered, but it was missing while running ' +
+      operationName +
+      '.',
+  );
+}
+
+function createUnsupportedError(operationName) {
+  return createError(
+    'ERR_EXPO_HARMONY_UNSUPPORTED',
+    '${capability.packageName} currently supports UTF-8 sandbox file operations only. Unsupported operation: ' +
+      operationName +
+      '.',
+  );
+}
+
+function toFileUri(pathValue, ensureTrailingSlash) {
+  if (typeof pathValue !== 'string' || pathValue.length === 0) {
+    return null;
+  }
+
+  const normalizedPath = pathValue.startsWith(FILE_SCHEME)
+    ? pathValue.slice(FILE_SCHEME.length)
+    : pathValue;
+  const withScheme = FILE_SCHEME + normalizedPath;
+
+  if (!ensureTrailingSlash) {
+    return withScheme;
+  }
+
+  let normalizedSchemePath = withScheme;
+
+  while (normalizedSchemePath.endsWith('/')) {
+    normalizedSchemePath = normalizedSchemePath.slice(0, -1);
+  }
+
+  return normalizedSchemePath + '/';
+}
+
+function normalizeInputPath(inputPath) {
+  if (typeof inputPath !== 'string' || inputPath.length === 0) {
+    throw createError(
+      'ERR_EXPO_HARMONY_INVALID_URI',
+      '${capability.packageName} expected a non-empty file URI.',
+    );
+  }
+
+  const normalizedPath = inputPath.startsWith(FILE_SCHEME)
+    ? inputPath.slice(FILE_SCHEME.length)
+    : inputPath;
+
+  if (!normalizedPath.startsWith('/')) {
+    throw createError(
+      'ERR_EXPO_HARMONY_INVALID_URI',
+      '${capability.packageName} supports only absolute file:// URIs inside the app sandbox.',
+    );
+  }
+
+  if (
+    normalizedPath.includes('/../') ||
+    normalizedPath.endsWith('/..') ||
+    normalizedPath.includes('/./')
+  ) {
+    throw createError(
+      'ERR_EXPO_HARMONY_INVALID_URI',
+      '${capability.packageName} does not accept relative path segments.',
+    );
+  }
+
+  return normalizedPath;
+}
+
+function normalizeStringEncoding(rawEncoding) {
+  if (rawEncoding == null || rawEncoding === 'utf8') {
+    return 'utf8';
+  }
+
+  if (rawEncoding === 'base64') {
+    throw createUnsupportedError('encoding=base64');
+  }
+
+  throw createUnsupportedError('encoding=' + String(rawEncoding));
+}
+
+function normalizeFileInfoResult(requestedUri, nativeResult) {
+  if (!nativeResult || nativeResult.exists !== true) {
+    return {
+      exists: false,
+      isDirectory: false,
+      uri: String(requestedUri),
+    };
+  }
+
+  const normalizedResult = {
+    exists: true,
+    uri: toFileUri(nativeResult.path, false) ?? String(requestedUri),
+    size: Number(nativeResult.size ?? 0),
+    isDirectory: nativeResult.isDirectory === true,
+    modificationTime: Number(nativeResult.modificationTime ?? 0),
+  };
+
+  if (typeof nativeResult.md5 === 'string' && nativeResult.md5.length > 0) {
+    normalizedResult.md5 = nativeResult.md5;
+  }
+
+  return normalizedResult;
+}
+
+function normalizeNativeError(error) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    const code =
+      typeof error.code === 'number' || typeof error.code === 'string'
+        ? String(error.code)
+        : null;
+    const message =
+      typeof error.message === 'string' && error.message.length > 0
+        ? error.message
+        : typeof error.name === 'string' && error.name.length > 0
+          ? error.name
+          : JSON.stringify(error);
+
+    return new Error(code ? '[native:' + code + '] ' + message : message);
+  }
+
+  return new Error(String(error));
+}
+
+module.exports = {
+  documentDirectory: toFileUri(NATIVE_CONSTANTS.documentDirectoryPath, true),
+  cacheDirectory: toFileUri(NATIVE_CONSTANTS.cacheDirectoryPath, true),
+  bundleDirectory: toFileUri(NATIVE_CONSTANTS.bundleDirectoryPath, true),
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+  FileSystemSessionType: {
+    BACKGROUND: 0,
+    FOREGROUND: 1,
+  },
+  async getInfoAsync(fileUri, options) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      const result = await requireNativeModule('getInfoAsync').getInfo(normalizedPath, {
+        md5: options?.md5 === true,
+      });
+      return normalizeFileInfoResult(fileUri, result);
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async readAsStringAsync(fileUri, options) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      return await requireNativeModule('readAsStringAsync').readAsString(normalizedPath, {
+        encoding: normalizeStringEncoding(options?.encoding),
+        position: options?.position,
+        length: options?.length,
+      });
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async writeAsStringAsync(fileUri, contents, options) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      await requireNativeModule('writeAsStringAsync').writeAsString(
+        normalizedPath,
+        String(contents),
+        {
+          encoding: normalizeStringEncoding(options?.encoding),
+        },
+      );
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async deleteAsync(fileUri, options) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      await requireNativeModule('deleteAsync').deletePath(normalizedPath, {
+        idempotent: options?.idempotent === true,
+      });
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async makeDirectoryAsync(fileUri, options) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      await requireNativeModule('makeDirectoryAsync').makeDirectory(normalizedPath, {
+        intermediates: options?.intermediates === true,
+      });
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async readDirectoryAsync(fileUri) {
+    const normalizedPath = normalizeInputPath(fileUri);
+    try {
+      return await requireNativeModule('readDirectoryAsync').readDirectory(normalizedPath);
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async copyAsync(options) {
+    const fromPath = normalizeInputPath(options?.from);
+    const toPath = normalizeInputPath(options?.to);
+    try {
+      await requireNativeModule('copyAsync').copy(fromPath, toPath);
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async moveAsync(options) {
+    const fromPath = normalizeInputPath(options?.from);
+    const toPath = normalizeInputPath(options?.to);
+    try {
+      await requireNativeModule('moveAsync').move(fromPath, toPath);
+    } catch (error) {
+      throw normalizeNativeError(error);
+    }
+  },
+  async downloadAsync(url) {
+    throw createUnsupportedError('downloadAsync(' + String(url) + ')');
+  },
+};
+`;
+}
+
 function renderExpoFileSystemPreviewShim(capability: CapabilityDefinition): string {
   return `'use strict';
 
@@ -1420,6 +3299,507 @@ module.exports = {
   },
   downloadAsync(url) {
     return unavailable('downloadAsync(' + String(url) + ')');
+  },
+};
+`;
+}
+
+function renderExpoImagePickerHarmonyAdapterShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { TurboModuleRegistry } = require('react-native');
+const { CodedError } = require('expo-modules-core');
+
+const NATIVE_MODULE_NAME = 'ExpoHarmonyImagePicker';
+const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
+
+function createError(code, message) {
+  return new CodedError(code, message);
+}
+
+function requireNativeModule(operationName) {
+  if (NATIVE_MODULE) {
+    return NATIVE_MODULE;
+  }
+
+  throw createError(
+    'ERR_EXPO_HARMONY_NATIVE_MODULE_MISSING',
+    '${capability.packageName} expected the ' +
+      NATIVE_MODULE_NAME +
+      ' TurboModule to be registered, but it was missing while running ' +
+      operationName +
+      '.',
+  );
+}
+
+function normalizeNativeError(error) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    const code =
+      typeof error.code === 'number' || typeof error.code === 'string'
+        ? String(error.code)
+        : null;
+    const message =
+      typeof error.message === 'string' && error.message.length > 0
+        ? error.message
+        : typeof error.name === 'string' && error.name.length > 0
+          ? error.name
+          : JSON.stringify(error);
+
+    return new Error(code ? '[native:' + code + '] ' + message : message);
+  }
+
+  return new Error(String(error));
+}
+
+function normalizePickerResult(result) {
+  if (!result || result.canceled === true || !Array.isArray(result.assets) || result.assets.length === 0) {
+    return {
+      canceled: true,
+      assets: null,
+    };
+  }
+
+  return {
+    canceled: false,
+    assets: result.assets.map((asset) => ({
+      uri: String(asset.uri),
+      assetId: asset.assetId ?? null,
+      width: Number(asset.width ?? 0),
+      height: Number(asset.height ?? 0),
+      type: asset.type ?? null,
+      fileName: asset.fileName ?? null,
+      fileSize:
+        typeof asset.fileSize === 'number' && Number.isFinite(asset.fileSize)
+          ? asset.fileSize
+          : null,
+      mimeType: asset.mimeType ?? null,
+      duration:
+        typeof asset.duration === 'number' && Number.isFinite(asset.duration)
+          ? asset.duration
+          : null,
+      exif: asset.exif ?? null,
+      base64: asset.base64 ?? null,
+    })),
+  };
+}
+
+async function invokeNative(methodName, operationName, ...args) {
+  try {
+    return await requireNativeModule(operationName)[methodName](...args);
+  } catch (error) {
+    throw normalizeNativeError(error);
+  }
+}
+
+module.exports = {
+  MediaTypeOptions: {
+    All: 'All',
+    Images: 'Images',
+    Videos: 'Videos',
+  },
+  CameraType: {
+    front: 'front',
+    back: 'back',
+  },
+  UIImagePickerPresentationStyle: {
+    AUTOMATIC: 'automatic',
+    FULL_SCREEN: 'fullScreen',
+    PAGE_SHEET: 'pageSheet',
+    FORM_SHEET: 'formSheet',
+    CURRENT_CONTEXT: 'currentContext',
+    OVER_FULL_SCREEN: 'overFullScreen',
+  },
+  async requestCameraPermissionsAsync() {
+    return invokeNative(
+      'requestCameraPermission',
+      'requestCameraPermissionsAsync',
+    );
+  },
+  async requestMediaLibraryPermissionsAsync(writeOnly) {
+    return invokeNative(
+      'requestMediaLibraryPermission',
+      'requestMediaLibraryPermissionsAsync',
+      writeOnly === true,
+    );
+  },
+  async getCameraPermissionsAsync() {
+    return invokeNative('getCameraPermissionStatus', 'getCameraPermissionsAsync');
+  },
+  async getMediaLibraryPermissionsAsync(writeOnly) {
+    return invokeNative(
+      'getMediaLibraryPermissionStatus',
+      'getMediaLibraryPermissionsAsync',
+      writeOnly === true,
+    );
+  },
+  async launchCameraAsync(options) {
+    return normalizePickerResult(
+      await invokeNative('launchCamera', 'launchCameraAsync', options ?? {}),
+    );
+  },
+  async launchImageLibraryAsync(options) {
+    return normalizePickerResult(
+      await invokeNative('launchImageLibrary', 'launchImageLibraryAsync', options ?? {}),
+    );
+  },
+  async getPendingResultAsync() {
+    return null;
+  },
+};
+`;
+}
+
+function renderExpoLocationHarmonyAdapterShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const { TurboModuleRegistry } = require('react-native');
+const { CodedError } = require('expo-modules-core');
+
+const NATIVE_MODULE_NAME = 'ExpoHarmonyLocation';
+const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
+const ACTIVE_WATCHES = new Map();
+let nextWatchId = 1;
+
+function createError(code, message) {
+  return new CodedError(code, message);
+}
+
+function requireNativeModule(operationName) {
+  if (NATIVE_MODULE) {
+    return NATIVE_MODULE;
+  }
+
+  throw createError(
+    'ERR_EXPO_HARMONY_NATIVE_MODULE_MISSING',
+    '${capability.packageName} expected the ' +
+      NATIVE_MODULE_NAME +
+      ' TurboModule to be registered, but it was missing while running ' +
+      operationName +
+      '.',
+  );
+}
+
+function normalizeNativeError(error) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    const code =
+      typeof error.code === 'number' || typeof error.code === 'string'
+        ? String(error.code)
+        : null;
+    const message =
+      typeof error.message === 'string' && error.message.length > 0
+        ? error.message
+        : typeof error.name === 'string' && error.name.length > 0
+          ? error.name
+          : JSON.stringify(error);
+
+    return new Error(code ? '[native:' + code + '] ' + message : message);
+  }
+
+  return new Error(String(error));
+}
+
+async function invokeNative(methodName, operationName, ...args) {
+  try {
+    return await requireNativeModule(operationName)[methodName](...args);
+  } catch (error) {
+    throw normalizeNativeError(error);
+  }
+}
+
+function normalizePermissionResponse(permissionResponse) {
+  return {
+    status: permissionResponse?.status ?? 'undetermined',
+    granted: permissionResponse?.granted === true,
+    canAskAgain: permissionResponse?.canAskAgain !== false,
+    expires: permissionResponse?.expires ?? 'never',
+    android: permissionResponse?.android ?? { accuracy: 'none' },
+    ios: permissionResponse?.ios ?? null,
+  };
+}
+
+function normalizeLocationObject(location) {
+  return {
+    coords: {
+      latitude: Number(location?.coords?.latitude ?? 0),
+      longitude: Number(location?.coords?.longitude ?? 0),
+      altitude:
+        typeof location?.coords?.altitude === 'number' ? location.coords.altitude : null,
+      accuracy:
+        typeof location?.coords?.accuracy === 'number' ? location.coords.accuracy : null,
+      altitudeAccuracy:
+        typeof location?.coords?.altitudeAccuracy === 'number'
+          ? location.coords.altitudeAccuracy
+          : null,
+      heading: typeof location?.coords?.heading === 'number' ? location.coords.heading : null,
+      speed: typeof location?.coords?.speed === 'number' ? location.coords.speed : null,
+    },
+    timestamp: Number(location?.timestamp ?? Date.now()),
+    mocked: location?.mocked === true,
+  };
+}
+
+function normalizeProviderStatus(providerStatus) {
+  return {
+    locationServicesEnabled: providerStatus?.locationServicesEnabled === true,
+    backgroundModeEnabled: providerStatus?.backgroundModeEnabled === true,
+    gpsAvailable: providerStatus?.gpsAvailable === true,
+    networkAvailable: providerStatus?.networkAvailable === true,
+    passiveAvailable: providerStatus?.passiveAvailable === true,
+  };
+}
+
+function normalizeReverseGeocodeResult(address) {
+  return {
+    city: address?.city ?? null,
+    district: address?.district ?? null,
+    streetNumber: address?.streetNumber ?? null,
+    street: address?.street ?? null,
+    region: address?.region ?? null,
+    subregion: address?.subregion ?? null,
+    country: address?.country ?? null,
+    postalCode: address?.postalCode ?? null,
+    name: address?.name ?? null,
+    isoCountryCode: address?.isoCountryCode ?? null,
+    timezone: address?.timezone ?? null,
+    formattedAddress: address?.formattedAddress ?? null,
+  };
+}
+
+function normalizeGeocodeInput(address) {
+  if (typeof address === 'string') {
+    return address.trim();
+  }
+
+  if (!address || typeof address !== 'object') {
+    return '';
+  }
+
+  const parts = [
+    address.name,
+    address.streetNumber,
+    address.street,
+    address.district,
+    address.city,
+    address.region,
+    address.postalCode,
+    address.country,
+  ]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .map((part) => part.trim());
+
+  return parts.join(', ');
+}
+
+function normalizeGeocodeResults(results) {
+  if (!Array.isArray(results)) {
+    return [];
+  }
+
+  return results.map((result) => ({
+    latitude: Number(result?.latitude ?? 0),
+    longitude: Number(result?.longitude ?? 0),
+    altitude: typeof result?.altitude === 'number' ? result.altitude : null,
+    accuracy: typeof result?.accuracy === 'number' ? result.accuracy : null,
+  }));
+}
+
+function createWatchSubscription(watchId) {
+  return {
+    remove() {
+      const watchState = ACTIVE_WATCHES.get(watchId);
+
+      if (watchState?.timer) {
+        clearInterval(watchState.timer);
+      }
+
+      ACTIVE_WATCHES.delete(watchId);
+    },
+  };
+}
+
+async function pollWatchPosition(watchId) {
+  const watchState = ACTIVE_WATCHES.get(watchId);
+
+  if (!watchState) {
+    return;
+  }
+
+  try {
+    const location = normalizeLocationObject(
+      await invokeNative('getCurrentPosition', 'watchPositionAsync', watchState.options),
+    );
+    watchState.lastLocation = location;
+    watchState.callback(location);
+  } catch (error) {
+    if (typeof watchState.errorHandler === 'function') {
+      watchState.errorHandler(normalizeNativeError(error));
+    }
+  }
+}
+
+module.exports = {
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  PermissionStatus: {
+    DENIED: 'denied',
+    GRANTED: 'granted',
+    UNDETERMINED: 'undetermined',
+  },
+  async getForegroundPermissionsAsync() {
+    return normalizePermissionResponse(
+      await invokeNative(
+        'getForegroundPermissionStatus',
+        'getForegroundPermissionsAsync',
+      ),
+    );
+  },
+  async requestForegroundPermissionsAsync() {
+    return normalizePermissionResponse(
+      await invokeNative(
+        'requestForegroundPermission',
+        'requestForegroundPermissionsAsync',
+      ),
+    );
+  },
+  async getBackgroundPermissionsAsync() {
+    return normalizePermissionResponse(
+      await invokeNative(
+        'getBackgroundPermissionStatus',
+        'getBackgroundPermissionsAsync',
+      ),
+    );
+  },
+  async requestBackgroundPermissionsAsync() {
+    return normalizePermissionResponse(
+      await invokeNative(
+        'requestBackgroundPermission',
+        'requestBackgroundPermissionsAsync',
+      ),
+    );
+  },
+  async hasServicesEnabledAsync() {
+    return await invokeNative('hasServicesEnabled', 'hasServicesEnabledAsync');
+  },
+  async getProviderStatusAsync() {
+    return normalizeProviderStatus(
+      await invokeNative('getProviderStatus', 'getProviderStatusAsync'),
+    );
+  },
+  async getCurrentPositionAsync(options) {
+    return normalizeLocationObject(
+      await invokeNative('getCurrentPosition', 'getCurrentPositionAsync', options ?? {}),
+    );
+  },
+  async getLastKnownPositionAsync(options) {
+    const location = await invokeNative(
+      'getLastKnownPosition',
+      'getLastKnownPositionAsync',
+      options ?? {},
+    );
+    return location ? normalizeLocationObject(location) : null;
+  },
+  async geocodeAsync(address) {
+    return normalizeGeocodeResults(
+      await invokeNative(
+        'geocode',
+        'geocodeAsync',
+        normalizeGeocodeInput(address),
+      ),
+    );
+  },
+  async reverseGeocodeAsync(location) {
+    const results = await invokeNative(
+      'reverseGeocode',
+      'reverseGeocodeAsync',
+      {
+        latitude: Number(location?.latitude ?? 0),
+        longitude: Number(location?.longitude ?? 0),
+      },
+    );
+
+    if (!Array.isArray(results)) {
+      return [];
+    }
+
+    return results.map(normalizeReverseGeocodeResult);
+  },
+  async watchPositionAsync(options, callback, errorHandler) {
+    if (typeof callback !== 'function') {
+      throw createError(
+        'ERR_EXPO_HARMONY_INVALID_LISTENER',
+        '${capability.packageName} expected watchPositionAsync to receive a callback.',
+      );
+    }
+
+    const watchId = nextWatchId++;
+    const intervalMs = Math.max(
+      1000,
+      Number.isFinite(options?.timeInterval)
+        ? Number(options.timeInterval)
+        : 5000,
+    );
+    const watchState = {
+      options: options ?? {},
+      callback,
+      errorHandler,
+      timer: null,
+      lastLocation: null,
+    };
+
+    ACTIVE_WATCHES.set(watchId, watchState);
+    await pollWatchPosition(watchId);
+
+    const registeredWatch = ACTIVE_WATCHES.get(watchId);
+    if (registeredWatch) {
+      registeredWatch.timer = setInterval(() => {
+        void pollWatchPosition(watchId);
+      }, intervalMs);
+    }
+
+    return createWatchSubscription(watchId);
+  },
+  async watchHeadingAsync(callback) {
+    if (typeof callback !== 'function') {
+      throw createError(
+        'ERR_EXPO_HARMONY_INVALID_LISTENER',
+        '${capability.packageName} expected watchHeadingAsync to receive a callback.',
+      );
+    }
+
+    const subscription = await module.exports.watchPositionAsync(
+      { accuracy: 3, timeInterval: 5000 },
+      (location) => {
+        callback({
+          trueHeading: location.coords.heading ?? 0,
+          magHeading: location.coords.heading ?? 0,
+          accuracy: location.coords.accuracy ?? 0,
+        });
+      },
+    );
+
+    return subscription;
+  },
+  async getHeadingAsync() {
+    const location = await module.exports.getCurrentPositionAsync({ accuracy: 3 });
+    return {
+      trueHeading: location.coords.heading ?? 0,
+      magHeading: location.coords.heading ?? 0,
+      accuracy: location.coords.accuracy ?? 0,
+    };
   },
 };
 `;
@@ -1547,6 +3927,266 @@ module.exports = {
   watchPositionAsync(options) {
     return unavailable('watchPositionAsync(' + JSON.stringify(options ?? {}) + ')');
   },
+  geocodeAsync(address) {
+    return unavailable('geocodeAsync(' + JSON.stringify(address ?? null) + ')');
+  },
+  reverseGeocodeAsync(location) {
+    return unavailable('reverseGeocodeAsync(' + JSON.stringify(location ?? null) + ')');
+  },
+};
+`;
+}
+
+function renderExpoCameraHarmonyAdapterShim(capability: CapabilityDefinition): string {
+  return `'use strict';
+
+const React = require('react');
+const { Text, View } = require('react-native');
+const { TurboModuleRegistry } = require('react-native');
+const { CodedError } = require('expo-modules-core');
+
+const NATIVE_MODULE_NAME = 'ExpoHarmonyCamera';
+const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
+const DEFAULT_PERMISSION_RESPONSE = {
+  status: 'undetermined',
+  granted: false,
+  canAskAgain: true,
+  expires: 'never',
+};
+
+function createError(code, message) {
+  return new CodedError(code, message);
+}
+
+function createUnsupportedError(operationName) {
+  return createError(
+    'ERR_EXPO_HARMONY_UNSUPPORTED',
+    '${capability.packageName} does not implement ' + operationName + ' on HarmonyOS yet.',
+  );
+}
+
+function requireNativeModule(operationName) {
+  if (NATIVE_MODULE) {
+    return NATIVE_MODULE;
+  }
+
+  throw createError(
+    'ERR_EXPO_HARMONY_NATIVE_MODULE_MISSING',
+    '${capability.packageName} expected the ' +
+      NATIVE_MODULE_NAME +
+      ' TurboModule to be registered, but it was missing while running ' +
+      operationName +
+      '.',
+  );
+}
+
+function normalizeNativeError(error) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    const code =
+      typeof error.code === 'number' || typeof error.code === 'string'
+        ? String(error.code)
+        : null;
+    const message =
+      typeof error.message === 'string' && error.message.length > 0
+        ? error.message
+        : typeof error.name === 'string' && error.name.length > 0
+          ? error.name
+          : JSON.stringify(error);
+
+    return new Error(code ? '[native:' + code + '] ' + message : message);
+  }
+
+  return new Error(String(error));
+}
+
+async function invokeNative(methodName, operationName, ...args) {
+  try {
+    return await requireNativeModule(operationName)[methodName](...args);
+  } catch (error) {
+    throw normalizeNativeError(error);
+  }
+}
+
+function normalizePermissionResponse(permissionResponse) {
+  return {
+    status: permissionResponse?.status ?? DEFAULT_PERMISSION_RESPONSE.status,
+    granted: permissionResponse?.granted === true,
+    canAskAgain: permissionResponse?.canAskAgain !== false,
+    expires: permissionResponse?.expires ?? DEFAULT_PERMISSION_RESPONSE.expires,
+  };
+}
+
+function normalizeCameraFacing(facing) {
+  return facing === 'front' ? 'front' : 'back';
+}
+
+const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
+  const [previewPaused, setPreviewPaused] = React.useState(false);
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      async takePictureAsync(options) {
+        return invokeNative('takePicture', 'CameraView.takePictureAsync', {
+          cameraType: normalizeCameraFacing(props.facing),
+          ...options,
+        });
+      },
+      async pausePreview() {
+        setPreviewPaused(true);
+      },
+      async resumePreview() {
+        setPreviewPaused(false);
+      },
+      async getAvailablePictureSizesAsync() {
+        return ['1920x1080'];
+      },
+      async getAvailableLensesAsync() {
+        return [];
+      },
+      async recordAsync() {
+        throw createUnsupportedError('CameraView.recordAsync');
+      },
+      async stopRecording() {
+        throw createUnsupportedError('CameraView.stopRecording');
+      },
+      async toggleRecordingAsync() {
+        throw createUnsupportedError('CameraView.toggleRecordingAsync');
+      },
+    }),
+    [props.facing],
+  );
+
+  return React.createElement(
+    View,
+    {
+      style: [
+        {
+          minHeight: 220,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: '#0f172a',
+          backgroundColor: previewPaused ? '#cbd5e1' : '#0f172a',
+          padding: 20,
+          overflow: 'hidden',
+        },
+        props.style,
+      ],
+      accessibilityLabel: 'Expo Harmony camera capture surface',
+    },
+    React.createElement(
+      View,
+      {
+        style: {
+          gap: 6,
+          alignItems: 'center',
+        },
+      },
+      React.createElement(
+        Text,
+        {
+          style: {
+            color: previewPaused ? '#334155' : '#e2e8f0',
+            fontSize: 14,
+            fontWeight: '700',
+            textAlign: 'center',
+          },
+        },
+        'Expo Harmony camera capture surface',
+      ),
+      React.createElement(
+        Text,
+        {
+          style: {
+            color: previewPaused ? '#475569' : '#94a3b8',
+            fontSize: 12,
+            textAlign: 'center',
+          },
+        },
+        previewPaused
+          ? 'Preview paused locally while capture support remains available.'
+          : 'Using Harmony system capture flow behind the managed adapter.',
+      ),
+    ),
+  );
+});
+
+CameraView.displayName = 'ExpoHarmonyCameraView';
+
+async function getCameraPermissionsAsync() {
+  return normalizePermissionResponse(
+    await invokeNative('getCameraPermissionStatus', 'getCameraPermissionsAsync'),
+  );
+}
+
+async function requestCameraPermissionsAsync() {
+  return normalizePermissionResponse(
+    await invokeNative('requestCameraPermission', 'requestCameraPermissionsAsync'),
+  );
+}
+
+async function getMicrophonePermissionsAsync() {
+  return normalizePermissionResponse(
+    await invokeNative('getMicrophonePermissionStatus', 'getMicrophonePermissionsAsync'),
+  );
+}
+
+async function requestMicrophonePermissionsAsync() {
+  return normalizePermissionResponse(
+    await invokeNative(
+      'requestMicrophonePermission',
+      'requestMicrophonePermissionsAsync',
+    ),
+  );
+}
+
+module.exports = {
+  CameraType: {
+    front: 'front',
+    back: 'back',
+  },
+  FlashMode: {
+    off: 'off',
+    on: 'on',
+    auto: 'auto',
+    torch: 'torch',
+  },
+  CameraView,
+  Camera: {
+    CameraType: {
+      front: 'front',
+      back: 'back',
+    },
+    Constants: {
+      Type: {
+        front: 'front',
+        back: 'back',
+      },
+      FlashMode: {
+        off: 'off',
+        on: 'on',
+        auto: 'auto',
+        torch: 'torch',
+      },
+    },
+    getCameraPermissionsAsync,
+    requestCameraPermissionsAsync,
+    getMicrophonePermissionsAsync,
+    requestMicrophonePermissionsAsync,
+  },
+  getCameraPermissionsAsync,
+  requestCameraPermissionsAsync,
+  getMicrophonePermissionsAsync,
+  requestMicrophonePermissionsAsync,
+  async scanFromURLAsync() {
+    throw createUnsupportedError('scanFromURLAsync');
+  },
 };
 `;
 }
@@ -1586,6 +4226,12 @@ const CameraView = React.forwardRef(function ExpoHarmonyCameraPreview(props, ref
   React.useImperativeHandle(ref, () => ({
     takePictureAsync(options) {
       return unavailable('CameraView.takePictureAsync(' + JSON.stringify(options ?? {}) + ')');
+    },
+    pausePreview() {
+      return unavailable('CameraView.pausePreview()');
+    },
+    resumePreview() {
+      return unavailable('CameraView.resumePreview()');
     },
   }));
 
@@ -1648,6 +4294,23 @@ module.exports = {
   },
   getMicrophonePermissionsAsync() {
     return Promise.resolve(getPermissionResponse());
+  },
+  Camera: {
+    getCameraPermissionsAsync() {
+      return Promise.resolve(getPermissionResponse());
+    },
+    requestCameraPermissionsAsync() {
+      return unavailable('Camera.requestCameraPermissionsAsync');
+    },
+    getMicrophonePermissionsAsync() {
+      return Promise.resolve(getPermissionResponse());
+    },
+    requestMicrophonePermissionsAsync() {
+      return unavailable('Camera.requestMicrophonePermissionsAsync');
+    },
+  },
+  scanFromURLAsync() {
+    return unavailable('scanFromURLAsync');
   },
 };
 `;

@@ -24,6 +24,7 @@ import { UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
 import { readManifest, readToolkitConfig } from './metadata';
 import {
   BlockingIssue,
+  CapabilityEvidence,
   CompatibilityRecord,
   DetectedDependency,
   DoctorTargetTier,
@@ -94,6 +95,8 @@ export async function buildDoctorReport(
       packageName: definition.packageName,
       status: definition.status,
       supportTier: definition.supportTier,
+      runtimeMode: definition.runtimeMode,
+      evidence: { ...definition.evidence },
       note: definition.note,
       docsUrl: definition.docsUrl,
       nativePackageNames: [...definition.nativePackageNames],
@@ -203,7 +206,14 @@ export function renderDoctorReport(report: DoctorReport): string {
           capability.harmonyPermissions.length > 0
             ? ` | permissions: ${capability.harmonyPermissions.join(', ')}`
             : '';
-        return `- [${capability.status}/${capability.supportTier}] ${capability.packageName} -> ${capability.nativePackageNames.join(', ') || 'toolkit-managed bridge'} | sample: ${capability.sampleRoute}${permissions}`;
+        const missingEvidence = getMissingCapabilityEvidence(capability.evidence);
+        const evidence = ` | evidence: ${renderCapabilityEvidence(capability.evidence)}`;
+        const promotionGaps = buildCapabilityPromotionGaps(capability.runtimeMode, missingEvidence);
+        const gapSuffix =
+          promotionGaps.length > 0
+            ? ` | verified gaps: ${promotionGaps.join(', ')}`
+            : '';
+        return `- [${capability.status}/${capability.supportTier}] ${capability.packageName} -> ${capability.nativePackageNames.join(', ') || 'toolkit-managed bridge'} | runtime: ${capability.runtimeMode} | sample: ${capability.sampleRoute}${permissions}${evidence}${gapSuffix}`;
       }),
     );
   }
@@ -227,6 +237,34 @@ export function renderDoctorReport(report: DoctorReport): string {
   }
 
   return sections.join('\n');
+}
+
+function renderCapabilityEvidence(evidence: CapabilityEvidence): string {
+  return [
+    `bundle=${evidence.bundle ? 'yes' : 'no'}`,
+    `debugBuild=${evidence.debugBuild ? 'yes' : 'no'}`,
+    `device=${evidence.device ? 'yes' : 'no'}`,
+    `release=${evidence.release ? 'yes' : 'no'}`,
+  ].join(', ');
+}
+
+function getMissingCapabilityEvidence(evidence: CapabilityEvidence): Array<keyof CapabilityEvidence> {
+  return (Object.entries(evidence) as Array<[keyof CapabilityEvidence, boolean]>)
+    .filter(([, present]) => !present)
+    .map(([key]) => key);
+}
+
+function buildCapabilityPromotionGaps(
+  runtimeMode: ProjectCapabilityReport['runtimeMode'],
+  missingEvidence: Array<keyof CapabilityEvidence>,
+): string[] {
+  const gaps = missingEvidence.map((entry) => String(entry));
+
+  if (runtimeMode !== 'verified') {
+    gaps.unshift(`runtimeMode:${runtimeMode}->verified`);
+  }
+
+  return gaps;
 }
 
 function createDependencyRecord(

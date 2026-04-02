@@ -130,6 +130,17 @@ describe('doctor report', () => {
         'expo-camera',
       ]),
     );
+    expect(report.capabilities.find((capability) => capability.id === 'expo-file-system')?.runtimeMode).toBe(
+      'adapter',
+    );
+    expect(report.capabilities.find((capability) => capability.id === 'expo-image-picker')?.runtimeMode).toBe(
+      'adapter',
+    );
+    expect(report.capabilities.every((capability) => capability.runtimeMode === 'adapter')).toBe(true);
+    expect(report.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
+    expect(report.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
+    expect(report.capabilities.every((capability) => capability.evidence.device)).toBe(true);
+    expect(report.capabilities.every((capability) => capability.evidence.release === false)).toBe(true);
     expect(report.supportSummary.preview).toBeGreaterThan(0);
     expect(
       report.blockingIssues.some(
@@ -163,6 +174,10 @@ describe('doctor report', () => {
     expect(capabilityById.get('expo-camera')?.harmonyPermissions).toEqual(
       expect.arrayContaining(['ohos.permission.CAMERA']),
     );
+    expect(capabilityById.get('expo-file-system')?.runtimeMode).toBe('adapter');
+    expect(capabilityById.get('expo-image-picker')?.evidence.bundle).toBe(true);
+    expect(capabilityById.get('expo-location')?.evidence.device).toBe(true);
+    expect(capabilityById.get('expo-camera')?.evidence.release).toBe(false);
   });
 
   it('keeps the official ui-stack sample adapter specs aligned with the validated source of truth', async () => {

@@ -7,6 +7,7 @@ export const RNOH_CLI_VERSION = '0.82.18';
 export const SUPPORTED_EXPO_SDKS = [53, 55];
 export const GENERATED_DIR = '.expo-harmony';
 export const GENERATED_SHIMS_DIR = `${GENERATED_DIR}/shims`;
+export const SIGNING_LOCAL_FILENAME = 'signing.local.json';
 export const MANIFEST_FILENAME = 'manifest.json';
 export const DOCTOR_REPORT_FILENAME = 'doctor-report.json';
 export const ENV_REPORT_FILENAME = 'env-report.json';

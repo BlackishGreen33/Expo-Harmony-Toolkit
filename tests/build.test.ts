@@ -50,6 +50,30 @@ async function createFakeDevEcoStudio(projectRoot: string): Promise<string> {
   return devecoRoot;
 }
 
+async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
+  await fs.outputJson(
+    path.join(projectRoot, '.expo-harmony', 'signing.local.json'),
+    {
+      signingConfigs: [
+        {
+          name: 'default',
+          type: 'HarmonyOS',
+          material: {
+            storeFile: './signing/release.p12',
+          },
+        },
+      ],
+      products: [
+        {
+          name: 'default',
+          signingConfig: 'default',
+        },
+      ],
+    },
+    { spaces: 2 },
+  );
+}
+
 async function createFakeHarArchive(
   targetPath: string,
   packageName: string,
@@ -415,12 +439,13 @@ describe('bundle and HAP build reports', () => {
     expect(report.blockingIssues.some((issue) => issue.code === 'build.hap.failed')).toBe(true);
   }, 120000);
 
-  it('builds a debug HAP through the fake runner and preserves release signing checks', async () => {
+  it('builds debug and release HAPs when local signing is configured through signing.local.json', async () => {
     const projectRoot = await createTempFixture(appShellSampleRoot);
     const devecoRoot = await createFakeDevEcoStudio(projectRoot);
     const runner = createSuccessfulRunner();
 
     await initProject(projectRoot, true);
+    await writeLocalSigningConfig(projectRoot);
 
     const debugReport = await buildHapProject(projectRoot, {
       mode: 'debug',
@@ -449,8 +474,9 @@ describe('bundle and HAP build reports', () => {
       },
     });
 
-    expect(releaseReport.status).toBe('failed');
-    expect(releaseReport.blockingIssues.some((issue) => issue.code === 'env.signing.missing')).toBe(true);
+    expect(releaseReport.status).toBe('succeeded');
+    expect(releaseReport.blockingIssues).toHaveLength(0);
+    expect(releaseReport.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
   }, 120000);
 
   it('bootstraps the Harmony sidecar during build-hap when the project has not been initialized yet', async () => {

@@ -306,7 +306,8 @@ export async function buildHapProject(
   if (options.mode === 'release' && !envReport.signingConfigured) {
     blockingIssues.push({
       code: 'env.signing.missing',
-      message: 'Release HAP builds require signingConfigs in harmony/build-profile.json5.',
+      message:
+        'Release HAP builds require signingConfigs from .expo-harmony/signing.local.json or harmony/build-profile.json5.',
     });
   }
 

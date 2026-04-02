@@ -2,6 +2,7 @@ export type CompatibilityStatus = 'supported' | 'manual' | 'unknown';
 export type EligibilityStatus = 'eligible' | 'ineligible';
 export type SupportTier = 'verified' | 'preview' | 'experimental' | 'unsupported';
 export type DoctorTargetTier = Exclude<SupportTier, 'unsupported'>;
+export type CapabilityRuntimeMode = 'shim' | 'adapter' | 'verified';
 export type DependencySource =
   | 'dependency'
   | 'devDependency'
@@ -98,11 +99,20 @@ export interface SupportTierSummary {
   unsupported: number;
 }
 
+export interface CapabilityEvidence {
+  bundle: boolean;
+  debugBuild: boolean;
+  device: boolean;
+  release: boolean;
+}
+
 export interface CapabilityDefinition {
   id: string;
   packageName: string;
   status: CompatibilityStatus;
   supportTier: DoctorTargetTier;
+  runtimeMode: CapabilityRuntimeMode;
+  evidence: CapabilityEvidence;
   note: string;
   docsUrl?: string;
   nativePackageNames: string[];
@@ -116,12 +126,22 @@ export interface ProjectCapabilityReport {
   packageName: string;
   status: CompatibilityStatus;
   supportTier: DoctorTargetTier;
+  runtimeMode: CapabilityRuntimeMode;
+  evidence: CapabilityEvidence;
   note: string;
   docsUrl?: string;
   nativePackageNames: string[];
   harmonyPermissions: string[];
   sampleRoute: string;
   acceptanceChecklist: string[];
+}
+
+export interface ManagedCapabilityRecord {
+  id: string;
+  packageName: string;
+  supportTier: DoctorTargetTier;
+  runtimeMode: CapabilityRuntimeMode;
+  evidence: CapabilityEvidence;
 }
 
 export interface DoctorReport {
@@ -225,7 +245,7 @@ export interface ToolkitConfig {
   rnohCliVersion: string;
   bundleName: string;
   entryModuleName: string;
-  capabilities: string[];
+  capabilities: ManagedCapabilityRecord[];
   requestedHarmonyPermissions: string[];
   project: {
     name: string;

@@ -1,13 +1,29 @@
 import { CapabilityDefinition, DoctorTargetTier, PackageJson, SupportTier } from '../types';
 import { hasDeclaredDependency } from '../core/project';
 
+const PREVIEW_BASELINE_EVIDENCE = {
+  bundle: true,
+  debugBuild: true,
+  device: true,
+  release: false,
+} as const;
+
+const EXPLORATORY_EVIDENCE = {
+  bundle: false,
+  debugBuild: false,
+  device: false,
+  release: false,
+} as const;
+
 export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
   {
     id: 'expo-file-system',
     packageName: 'expo-file-system',
     status: 'manual',
     supportTier: 'preview',
-    note: 'Preview bridge scaffolding is available through the managed Harmony shim path, but device persistence is not verified yet.',
+    runtimeMode: 'adapter',
+    evidence: PREVIEW_BASELINE_EVIDENCE,
+    note: 'Toolkit-managed Harmony native file-system adapters cover UTF-8 sandbox file flows, while broader Expo parity and release validation are still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-fs.md',
     nativePackageNames: ['react-native-fs'],
     harmonyPermissions: [],
@@ -23,7 +39,9 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     packageName: 'expo-image-picker',
     status: 'manual',
     supportTier: 'preview',
-    note: 'Preview bridge scaffolding is available, but image selection and camera capture still require device-side validation before promotion.',
+    runtimeMode: 'adapter',
+    evidence: PREVIEW_BASELINE_EVIDENCE,
+    note: 'Toolkit-managed Harmony adapters cover permission probes, image-library selection, and initial camera-picker capture flows, while broader Expo parity and release validation are still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-image-picker.md',
     nativePackageNames: ['react-native-image-picker', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO'],
@@ -39,7 +57,9 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     packageName: 'expo-location',
     status: 'manual',
     supportTier: 'preview',
-    note: 'Preview bridge scaffolding is available for foreground permissions, current-position probes, and watch flows, but device-side runtime behavior is still pending verified promotion.',
+    runtimeMode: 'adapter',
+    evidence: PREVIEW_BASELINE_EVIDENCE,
+    note: 'Toolkit-managed Harmony adapters cover foreground permission, current-position, last-known, watch, and geocoding flows while release evidence is still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/%40react-native-community-geolocation.md',
     nativePackageNames: ['@react-native-community/geolocation', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.LOCATION', 'ohos.permission.APPROXIMATELY_LOCATION'],
@@ -55,7 +75,9 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     packageName: 'expo-camera',
     status: 'manual',
     supportTier: 'preview',
-    note: 'Preview bridge scaffolding is available for permission, preview-surface, and capture-entry flows, but a verified Harmony-native runtime path is not public yet.',
+    runtimeMode: 'adapter',
+    evidence: PREVIEW_BASELINE_EVIDENCE,
+    note: 'Toolkit-managed Harmony adapters cover permission, capture, and preview-lifecycle entrypoints while release evidence and deeper camera parity are still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-camera-kit.md',
     nativePackageNames: ['react-native-camera-kit', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.CAMERA'],
@@ -71,6 +93,8 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     packageName: 'expo-notifications',
     status: 'manual',
     supportTier: 'experimental',
+    runtimeMode: 'shim',
+    evidence: EXPLORATORY_EVIDENCE,
     note: 'Notifications stay below the public promise until a complete Harmony delivery story is validated end to end.',
     docsUrl: 'https://github.com/react-native-oh-library',
     nativePackageNames: [],

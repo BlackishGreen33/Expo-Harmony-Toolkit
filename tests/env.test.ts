@@ -29,11 +29,36 @@ async function createFakeDevEcoStudio(projectRoot: string): Promise<string> {
   return devecoRoot;
 }
 
+async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
+  await fs.outputJson(
+    path.join(projectRoot, '.expo-harmony', 'signing.local.json'),
+    {
+      signingConfigs: [
+        {
+          name: 'default',
+          type: 'HarmonyOS',
+          material: {
+            storeFile: './signing/release.p12',
+          },
+        },
+      ],
+      products: [
+        {
+          name: 'default',
+          signingConfig: 'default',
+        },
+      ],
+    },
+    { spaces: 2 },
+  );
+}
+
 describe('env report', () => {
-  it('reports a ready environment when DevEco tools are discoverable and signing is only advisory', async () => {
+  it('reports a ready environment when DevEco tools are discoverable and local signing is configured', async () => {
     const projectRoot = await createTempProject();
     const devecoRoot = await createFakeDevEcoStudio(projectRoot);
     await fs.outputFile(path.join(projectRoot, 'harmony', 'build-profile.json5'), 'signingConfigs: [],\n');
+    await writeLocalSigningConfig(projectRoot);
 
     const report = await buildEnvReport(projectRoot, {
       env: {
@@ -50,6 +75,27 @@ describe('env report', () => {
     expect(report.devecoStudioPath).toBe(devecoRoot);
     expect(report.hvigorPath).toContain('hvigorw.js');
     expect(report.hdcPath).toContain(path.join('openharmony', 'toolchains', 'hdc'));
+    expect(report.signingConfigured).toBe(true);
+    expect(report.advisories.some((issue) => issue.code === 'env.signing.missing')).toBe(false);
+  }, 15000);
+
+  it('keeps signing advisory behavior when neither local signing nor build-profile signing is configured', async () => {
+    const projectRoot = await createTempProject();
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await fs.outputFile(path.join(projectRoot, 'harmony', 'build-profile.json5'), 'signingConfigs: [],\n');
+
+    const report = await buildEnvReport(projectRoot, {
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('ready');
+    expect(report.signingConfigured).toBe(false);
     expect(report.advisories.some((issue) => issue.code === 'env.signing.missing')).toBe(true);
   }, 15000);
 

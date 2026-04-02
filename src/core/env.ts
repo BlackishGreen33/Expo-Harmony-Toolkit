@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { STRICT_ENV_EXIT_CODE, TOOLKIT_VERSION } from './constants';
 import { ensureProjectPackageJsonPath, resolveProjectRoot } from './project';
+import { hasSigningConfiguration, readSigningLocalConfig } from './signing';
 import { BlockingIssue, EnvReport } from '../types';
 
 const DEFAULT_DEVECO_STUDIO_CANDIDATES = [
@@ -60,9 +61,11 @@ export async function buildEnvReport(
   const harmonyProjectRoot = (await fs.pathExists(harmonyProjectRootCandidate))
     ? harmonyProjectRootCandidate
     : null;
-  const signingConfigured = harmonyProjectRoot
-    ? await detectSigningConfiguration(path.join(harmonyProjectRoot, 'build-profile.json5'))
-    : false;
+  const signingLocalConfig = await readSigningLocalConfig(resolvedProjectRoot);
+  const buildProfileContents = harmonyProjectRoot
+    ? await readBuildProfileContents(path.join(harmonyProjectRoot, 'build-profile.json5'))
+    : null;
+  const signingConfigured = hasSigningConfiguration(buildProfileContents, signingLocalConfig);
   const blockingIssues: BlockingIssue[] = [];
   const advisories: BlockingIssue[] = [];
   const warnings: string[] = [];
@@ -111,7 +114,7 @@ export async function buildEnvReport(
     advisories.push({
       code: 'env.signing.missing',
       message:
-        'Harmony build-profile.json5 does not declare any signingConfigs yet. Debug GUI flows may still work, but release builds require signing.',
+        'Neither .expo-harmony/signing.local.json nor harmony/build-profile.json5 declares usable signingConfigs yet. Debug GUI flows may still work, but release builds require signing.',
     });
   }
 
@@ -204,19 +207,12 @@ function findExecutableInPath(executableName: string, runtimeEnv: NodeJS.Process
   return null;
 }
 
-async function detectSigningConfiguration(buildProfilePath: string): Promise<boolean> {
+async function readBuildProfileContents(buildProfilePath: string): Promise<string | null> {
   if (!(await fs.pathExists(buildProfilePath))) {
-    return false;
+    return null;
   }
 
-  const contents = await fs.readFile(buildProfilePath, 'utf8');
-  const signingConfigsMatch = contents.match(/signingConfigs\s*:\s*\[([\s\S]*?)\]/m);
-
-  if (!signingConfigsMatch) {
-    return false;
-  }
-
-  return signingConfigsMatch[1].trim().length > 0;
+  return fs.readFile(buildProfilePath, 'utf8');
 }
 
 function renderIssueLine(issue: BlockingIssue): string {
