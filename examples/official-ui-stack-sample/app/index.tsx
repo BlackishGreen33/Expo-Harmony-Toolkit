@@ -1,14 +1,14 @@
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withSequence,
+  withSpring,
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
@@ -17,6 +17,8 @@ const MAX_SHIFT = 72;
 
 export default function HomeScreen() {
   const motion = useSharedValue(0);
+  const pathname = usePathname();
+  const observedUrl = Linking.useURL();
 
   const runMotionDemo = () => {
     motion.value = 0;
@@ -63,7 +65,8 @@ export default function HomeScreen() {
             <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
             <Text style={styles.title}>Official UI Stack Sample</Text>
             <Text style={styles.body}>
-              This sample validates Expo Router, Expo Linking, Expo Constants, reanimated, and SVG inside the current Harmony UI-stack matrix.
+              This is the public onboarding sample for the verified UI stack. It makes router, linking,
+              constants, SVG, and reanimated success states visible without adding product logic on top.
             </Text>
           </View>
           <View style={styles.svgBadge}>
@@ -84,14 +87,23 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Text style={styles.metaLabel}>Constants.expoConfig?.name</Text>
-        <Text style={styles.metaValue}>{Constants.expoConfig?.name ?? 'unknown'}</Text>
+        <View style={styles.metaCard}>
+          <Text style={styles.metaTitle}>Current state</Text>
+          <Text style={styles.metaLine}>Constants.expoConfig?.name: {Constants.expoConfig?.name ?? 'unknown'}</Text>
+          <Text style={styles.metaLine}>Current pathname: {pathname}</Text>
+          <Text style={styles.metaLine}>Observed URL: {observedUrl ?? 'none yet'}</Text>
+          <Text style={styles.metaLine}>Generated details URL: {detailsUrl}</Text>
+        </View>
 
-        <Text style={styles.metaLabel}>Linking.createURL('/details')</Text>
-        <Text style={styles.metaValue}>{detailsUrl}</Text>
+        <View style={styles.metaCard}>
+          <Text style={styles.metaTitle}>Success signals</Text>
+          <Text style={styles.metaLine}>The orbit badge renders as a visible SVG shape.</Text>
+          <Text style={styles.metaLine}>Pressing the motion rail moves and springs the orb on screen.</Text>
+          <Text style={styles.metaLine}>Opening `/details` and returning keeps routing stable after the animation.</Text>
+        </View>
 
         <Text style={styles.metaLabel}>Reanimated spring check</Text>
-        <Text style={styles.metaHint}>Press the motion rail to trigger a spring animation on-device.</Text>
+        <Text style={styles.metaHint}>Press the rail below to trigger a visible spring animation on-device.</Text>
 
         <Pressable accessibilityRole="button" onPress={runMotionDemo}>
           <Animated.View style={[styles.motionRail, animatedRailStyle]}>
@@ -156,15 +168,26 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#475467',
   },
+  metaCard: {
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#f8fafc',
+    gap: 8,
+  },
+  metaTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#101828',
+  },
   metaLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: '#667085',
   },
-  metaValue: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#101828',
+  metaLine: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
   },
   metaHint: {
     fontSize: 14,

@@ -2,13 +2,12 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 从 `v1.7` 开始承担 Batch A+B preview 能力的统一官方入口。它不是新的 `verified` 主 sample，而是专门用来验证：
+这个 sample 是 `v1.7.x` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把“当前真实支持的核心路径”和“当前明确不支持的边界”都讲清楚。
 
-- `doctor --target-tier preview`
-- managed Harmony permission 生成
-- preview capability Metro alias / shim
-- `bundle` 与 `build-hap --mode debug` 阶段对原生能力 import path 的稳定接管
-- `next` 发布轨的 preview smoke 基线
+标记说明：
+
+- `🟡` 当前可用子集：这部分已经有可信实现，样例和模拟器路径可用；下一步主要缺真机 / release 证据
+- `🟠` 当前未纳入子集：包本身已进入 `preview`，但这个具体子 API 还没有到可信对外承诺；这不是“只差真机”
 
 ## 当前覆盖
 
@@ -24,16 +23,79 @@
 - `/location`
 - `/camera`
 
-说明：
+## 每条 route 的真实范围
 
-- 这个 sample 仍然属于 `preview` 主线，不等于已经进入 `verified`
-- `/file-system` 已经承接真实 Harmony sandbox I/O adapter 验收；当前可完成 UTF-8 写入、读回、删除闭环
-- `/file-system` 页面提供单独按钮用于 `write`、`read`、`inspect`、`listDirectory`、`delete` 与一键完整流；另外有一个 `Open sandbox URI` 的 exploratory 按钮，用于尝试把 `documentDirectory` 交给系统 handler
-- `/image-picker` 页面提供单独按钮用于 `request/check media permission`、`request/check camera permission`、`launch image library`、`launch camera capture`、`inspect latest result`、`clear latest result`，以及两条完整 flow；拒权与取消都应被视为可记录的验收状态
-- `/location`、`/camera` 已进入 adapter-backed preview；当前重点是把权限、定位、拍照、预览生命周期这些主路径变成可重复验收的样例
-- 当前 sample 强调“可分析、可生成 sidecar、可 bundle、可 debug build、可观察 permission/shim 或 adapter 产物”
-- `doctor-report.json` 与 `toolkit-config.json` 中的 `runtimeMode` / `evidence.*` 会直接反映这些 preview route 距离 verified 还缺哪些证据
-- 只有当设备侧 runtime、debug HAP、人工验收都完成后，对应能力才可以从 `preview` 晋升到 `verified`
+### `/file-system`
+
+`🟡 当前可用子集`：
+
+- 创建 sandbox 目录
+- UTF-8 写入
+- 读回内容
+- `getInfoAsync`
+- `readDirectoryAsync`
+- `copyAsync`
+- `moveAsync`
+- 删除生成产物
+
+`🟠 当前未纳入子集`：
+
+- `base64`
+- `downloadAsync`
+- 更广的 Expo parity
+
+### `/image-picker`
+
+`🟡 当前可用子集`：
+
+- media permission
+- camera permission
+- 单图图库选择
+- 单次系统相机拍照
+- denied / canceled / successful asset 三类结果展示
+
+`🟠 当前未纳入子集`：
+
+- `getPendingResultAsync` 的完整 Expo parity
+- 多选、多媒体、更深一层的系统恢复语义
+
+### `/location`
+
+`🟡 当前可用子集`：
+
+- foreground permission
+- `getCurrentPositionAsync`
+- `getLastKnownPositionAsync`
+- `geocodeAsync`
+- `reverseGeocodeAsync`
+
+`🟠 当前未纳入子集`：
+
+- `watchPositionAsync`
+- background permission parity
+- `watchHeadingAsync`
+- `getHeadingAsync`
+
+这些 `🟠` 项不是“已经实现，只差真机验证”，而是当前还没补齐到可信实现，所以暂时不纳入对外可承诺子集。
+
+### `/camera`
+
+`🟡 当前可用子集`：
+
+- camera permission
+- 通过 Harmony system camera UI 完成 still-photo capture
+- 把返回 asset metadata 回传给 JS
+- denied / canceled / successful capture 三类结果展示
+
+`🟠 当前未纳入子集`：
+
+- embedded live preview
+- `pausePreview` / `resumePreview`
+- microphone permission parity
+- video recording
+- scanning APIs 之外的更深 Expo parity
+
+这些 `🟠` 项不是“已经实现，只差真机验证”，而是当前还没补齐到可信实现，所以暂时不纳入对外可承诺子集。
 
 ## 推荐命令
 
@@ -54,28 +116,33 @@ pnpm run harmony:doctor:strict
 预期结果：
 
 - `doctor --target-tier preview`：通过
-- `doctor --strict`：失败，因为 preview 能力仍然不在 verified allowlist
-- `sync-template`：产出 Batch A+B 对应 preview shims 与 Harmony permissions
+- `doctor --strict`：失败，因为 preview capability 仍然不在 verified allowlist
+- `sync-template`：产出 preview shims、Harmony permissions、toolkit telemetry
 - `bundle`：成功产出 `bundle.harmony.js`
 - `build-hap --mode debug`：可进入 debug HAP 构建路径
 
-## 关键受管产物
+## Release 路径
 
-- `harmony/entry/src/main/module.json5`
-- `.expo-harmony/shims/expo-file-system/index.js`
-- `.expo-harmony/shims/expo-image-picker/index.js`
-- `.expo-harmony/shims/expo-location/index.js`
-- `.expo-harmony/shims/expo-camera/index.js`
-- `metro.harmony.config.js`
-- `harmony/entry/src/main/ets/expoHarmony/ExpoHarmonyFileSystemTurboModule.ts`
-- `harmony/entry/src/main/ets/expoHarmony/ExpoHarmonyImagePickerTurboModule.ts`
-- `harmony/entry/src/main/cpp/expoHarmony/ExpoHarmonyPackage.h`
+如果要继续验证 release 构建，先准备本地签名覆盖文件：
 
-## 晋升条件
+```bash
+mkdir -p .expo-harmony
+$EDITOR .expo-harmony/signing.local.json
+pnpm run harmony:env
+pnpm run harmony:build:release
+```
 
-当以下条件都具备时，相关能力才可以从这个 sample 迁移到 verified 主叙事：
+说明：
 
-- 真机或模拟器运行时功能通过
-- debug `build-hap` 成功
-- 权限拒绝、取消流程、返回 asset、异常路径完成记录
-- support matrix、README、roadmap、acceptance 记录同 PR 更新
+- `.expo-harmony/signing.local.json` 是本地 signing 入口
+- toolkit 会把本地 signing 合并进 `harmony/build-profile.json5`
+- 即使 release 构建可走通，在没有真机前，这四项能力也仍保持 `preview`
+
+## 当前结论
+
+- 这个 sample 属于 `preview` 主线，不等于已经进入 `verified`
+- `doctor-report.json` 与 `toolkit-config.json` 中的 `runtimeMode` / `evidence.*` 会如实反映这些能力距离 verified 还缺哪些证据
+- `🟡` 项可以理解为“只差真机 / release 证据的下一步”
+- `🟠` 项不能理解成“只差真机”，因为当前实现边界本身还没有补齐
+- 当前重点是“模拟器下真正可用、核心流清楚、文档一致”
+- 等未来补齐真机 gate 后，才讨论 capability promotion

@@ -3461,11 +3461,16 @@ const { CodedError } = require('expo-modules-core');
 
 const NATIVE_MODULE_NAME = 'ExpoHarmonyLocation';
 const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
-const ACTIVE_WATCHES = new Map();
-let nextWatchId = 1;
 
 function createError(code, message) {
   return new CodedError(code, message);
+}
+
+function createUnsupportedError(operationName) {
+  return createError(
+    'ERR_EXPO_HARMONY_UNSUPPORTED',
+    '${capability.packageName} does not implement ' + operationName + ' on HarmonyOS yet.',
+  );
 }
 
 function requireNativeModule(operationName) {
@@ -3611,40 +3616,6 @@ function normalizeGeocodeResults(results) {
   }));
 }
 
-function createWatchSubscription(watchId) {
-  return {
-    remove() {
-      const watchState = ACTIVE_WATCHES.get(watchId);
-
-      if (watchState?.timer) {
-        clearInterval(watchState.timer);
-      }
-
-      ACTIVE_WATCHES.delete(watchId);
-    },
-  };
-}
-
-async function pollWatchPosition(watchId) {
-  const watchState = ACTIVE_WATCHES.get(watchId);
-
-  if (!watchState) {
-    return;
-  }
-
-  try {
-    const location = normalizeLocationObject(
-      await invokeNative('getCurrentPosition', 'watchPositionAsync', watchState.options),
-    );
-    watchState.lastLocation = location;
-    watchState.callback(location);
-  } catch (error) {
-    if (typeof watchState.errorHandler === 'function') {
-      watchState.errorHandler(normalizeNativeError(error));
-    }
-  }
-}
-
 module.exports = {
   Accuracy: {
     Lowest: 1,
@@ -3676,20 +3647,10 @@ module.exports = {
     );
   },
   async getBackgroundPermissionsAsync() {
-    return normalizePermissionResponse(
-      await invokeNative(
-        'getBackgroundPermissionStatus',
-        'getBackgroundPermissionsAsync',
-      ),
-    );
+    throw createUnsupportedError('getBackgroundPermissionsAsync');
   },
   async requestBackgroundPermissionsAsync() {
-    return normalizePermissionResponse(
-      await invokeNative(
-        'requestBackgroundPermission',
-        'requestBackgroundPermissionsAsync',
-      ),
-    );
+    throw createUnsupportedError('requestBackgroundPermissionsAsync');
   },
   async hasServicesEnabledAsync() {
     return await invokeNative('hasServicesEnabled', 'hasServicesEnabledAsync');
@@ -3745,32 +3706,11 @@ module.exports = {
       );
     }
 
-    const watchId = nextWatchId++;
-    const intervalMs = Math.max(
-      1000,
-      Number.isFinite(options?.timeInterval)
-        ? Number(options.timeInterval)
-        : 5000,
-    );
-    const watchState = {
-      options: options ?? {},
-      callback,
-      errorHandler,
-      timer: null,
-      lastLocation: null,
-    };
-
-    ACTIVE_WATCHES.set(watchId, watchState);
-    await pollWatchPosition(watchId);
-
-    const registeredWatch = ACTIVE_WATCHES.get(watchId);
-    if (registeredWatch) {
-      registeredWatch.timer = setInterval(() => {
-        void pollWatchPosition(watchId);
-      }, intervalMs);
+    if (typeof errorHandler === 'function') {
+      errorHandler(createUnsupportedError('watchPositionAsync'));
     }
 
-    return createWatchSubscription(watchId);
+    throw createUnsupportedError('watchPositionAsync');
   },
   async watchHeadingAsync(callback) {
     if (typeof callback !== 'function') {
@@ -3780,26 +3720,10 @@ module.exports = {
       );
     }
 
-    const subscription = await module.exports.watchPositionAsync(
-      { accuracy: 3, timeInterval: 5000 },
-      (location) => {
-        callback({
-          trueHeading: location.coords.heading ?? 0,
-          magHeading: location.coords.heading ?? 0,
-          accuracy: location.coords.accuracy ?? 0,
-        });
-      },
-    );
-
-    return subscription;
+    throw createUnsupportedError('watchHeadingAsync');
   },
   async getHeadingAsync() {
-    const location = await module.exports.getCurrentPositionAsync({ accuracy: 3 });
-    return {
-      trueHeading: location.coords.heading ?? 0,
-      magHeading: location.coords.heading ?? 0,
-      accuracy: location.coords.accuracy ?? 0,
-    };
+    throw createUnsupportedError('getHeadingAsync');
   },
 };
 `;
@@ -4025,8 +3949,6 @@ function normalizeCameraFacing(facing) {
 }
 
 const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
-  const [previewPaused, setPreviewPaused] = React.useState(false);
-
   React.useImperativeHandle(
     ref,
     () => ({
@@ -4037,16 +3959,16 @@ const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
         });
       },
       async pausePreview() {
-        setPreviewPaused(true);
+        throw createUnsupportedError('CameraView.pausePreview');
       },
       async resumePreview() {
-        setPreviewPaused(false);
+        throw createUnsupportedError('CameraView.resumePreview');
       },
       async getAvailablePictureSizesAsync() {
-        return ['1920x1080'];
+        throw createUnsupportedError('CameraView.getAvailablePictureSizesAsync');
       },
       async getAvailableLensesAsync() {
-        return [];
+        throw createUnsupportedError('CameraView.getAvailableLensesAsync');
       },
       async recordAsync() {
         throw createUnsupportedError('CameraView.recordAsync');
@@ -4071,14 +3993,14 @@ const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
           justifyContent: 'center',
           borderRadius: 20,
           borderWidth: 1,
-          borderColor: '#0f172a',
-          backgroundColor: previewPaused ? '#cbd5e1' : '#0f172a',
+          borderColor: '#92400e',
+          backgroundColor: '#fffbeb',
           padding: 20,
           overflow: 'hidden',
         },
         props.style,
       ],
-      accessibilityLabel: 'Expo Harmony camera capture surface',
+      accessibilityLabel: 'Expo Harmony camera capture entry',
     },
     React.createElement(
       View,
@@ -4092,26 +4014,24 @@ const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
         Text,
         {
           style: {
-            color: previewPaused ? '#334155' : '#e2e8f0',
+            color: '#92400e',
             fontSize: 14,
             fontWeight: '700',
             textAlign: 'center',
           },
         },
-        'Expo Harmony camera capture surface',
+        'Expo Harmony system camera capture entry',
       ),
       React.createElement(
         Text,
         {
           style: {
-            color: previewPaused ? '#475569' : '#94a3b8',
+            color: '#b45309',
             fontSize: 12,
             textAlign: 'center',
           },
         },
-        previewPaused
-          ? 'Preview paused locally while capture support remains available.'
-          : 'Using Harmony system capture flow behind the managed adapter.',
+        'Still-photo capture is supported through the Harmony system camera UI. Embedded live preview, preview pause/resume, and video APIs are not part of v1.7.x.',
       ),
     ),
   );
@@ -4132,18 +4052,11 @@ async function requestCameraPermissionsAsync() {
 }
 
 async function getMicrophonePermissionsAsync() {
-  return normalizePermissionResponse(
-    await invokeNative('getMicrophonePermissionStatus', 'getMicrophonePermissionsAsync'),
-  );
+  throw createUnsupportedError('getMicrophonePermissionsAsync');
 }
 
 async function requestMicrophonePermissionsAsync() {
-  return normalizePermissionResponse(
-    await invokeNative(
-      'requestMicrophonePermission',
-      'requestMicrophonePermissionsAsync',
-    ),
-  );
+  throw createUnsupportedError('requestMicrophonePermissionsAsync');
 }
 
 module.exports = {

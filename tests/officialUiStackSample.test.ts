@@ -107,6 +107,8 @@ describe('official ui-stack sample', () => {
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('react-native-svg');
     expect(bundleContents).toContain('react-native-reanimated');
+    expect(bundleContents).toContain('Success signals');
+    expect(bundleContents).toContain('Current pathname');
     expect(bundleContents).not.toContain('3.17.5');
     expect(bundleContents).not.toContain('WorkletsModule');
 

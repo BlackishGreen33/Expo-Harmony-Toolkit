@@ -2,9 +2,11 @@
 
 这份指南适用于仓库内的 `examples/official-ui-stack-sample`。
 
-它是 `v1.5.0` 的主 sample，承担以下验证职责：
+它仍然是当前唯一的 verified UI-stack 主 sample，承担以下验证职责：
 
-- `expo-router`、`expo-linking`、`expo-constants`
+- `expo-router`
+- `expo-linking`
+- `expo-constants`
 - `react-native-svg`
 - `react-native-reanimated`
 - `doctor -> init -> bundle -> build-hap` 的完整工具链
@@ -25,12 +27,6 @@ pnpm run harmony:doctor:strict
 pnpm run harmony:init
 pnpm run harmony:sync-template
 pnpm run harmony:bundle
-```
-
-如果本机 DevEco / Harmony SDK 已就绪，还可以继续：
-
-```bash
-pnpm run harmony:env
 pnpm run harmony:build:debug
 ```
 
@@ -38,13 +34,29 @@ pnpm run harmony:build:debug
 
 打开 App 后，至少验证：
 
-- 首页能正常启动
-- 顶部信息区能看到 `Constants.expoConfig?.name`
+- 首页能看到 `Constants.expoConfig?.name`
+- 首页能看到当前 pathname、observed URL 和 generated details URL
 - 页面能展示 SVG 圆环图形
 - 点击 motion rail 时有可见位移、旋转与回弹
 - 点击 `Open details route` 后能跳到 `/details`
 - 在 `/details` 点击返回后能回首页
-- 动画和路由交互不会互相破坏
+- 动画、路由、SVG 不会互相破坏
+
+## Release 路径
+
+如果要继续验证 release 构建，先准备本地签名覆盖文件：
+
+```bash
+mkdir -p .expo-harmony
+$EDITOR .expo-harmony/signing.local.json
+pnpm run harmony:env
+pnpm run harmony:build:release
+```
+
+说明：
+
+- `.expo-harmony/signing.local.json` 是本地 signing 入口
+- signing 缺失时，release 构建应明确失败，而不是假成功
 
 ## Harmony sidecar 预期产物
 
@@ -60,13 +72,6 @@ pnpm run harmony:build:debug
 
 - `reanimated` 与 `svg` 会进入 `RNOHPackagesFactory.*` 与 `autolinking.cmake`
 - `reanimated` 与 `svg` 会作为 `.har` 依赖出现在 `harmony/oh-package.json5`
-
-## DevEco 手动验证
-
-- 用 DevEco Studio 打开 `examples/official-ui-stack-sample/harmony`
-- 选择 `entry` module
-- 确认 App 可运行
-- 确认 `Build Debug Hap(s)` 成功
 
 如果需要看更完整的构建与发布说明，继续阅读：
 

@@ -1,38 +1,27 @@
 import * as Location from 'expo-location';
 import { Link } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type ForegroundPermission = Awaited<ReturnType<typeof Location.getForegroundPermissionsAsync>>;
 type LocationPoint = Awaited<ReturnType<typeof Location.getCurrentPositionAsync>>;
-type LocationSubscription = Awaited<ReturnType<typeof Location.watchPositionAsync>>;
 type GeocodeResult = Awaited<ReturnType<typeof Location.geocodeAsync>>;
 type ReverseGeocodeResult = Awaited<ReturnType<typeof Location.reverseGeocodeAsync>>;
 
 const SAMPLE_ADDRESS = '1 Huawei Plaza, Shenzhen';
 
 export default function LocationFunctionalScreen() {
-  const watcherRef = useRef<LocationSubscription | null>(null);
   const [message, setMessage] = useState(
-    'Choose one action to validate permission, current fix, last known fix, watch updates, and geocoding step by step.',
+    'Start with Request foreground permission, then fetch a current fix and confirm reverse-geocode output.',
   );
   const [permission, setPermission] = useState<ForegroundPermission | null>(null);
   const [servicesEnabled, setServicesEnabled] = useState<boolean | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationPoint | null>(null);
   const [lastKnownLocation, setLastKnownLocation] = useState<LocationPoint | null>(null);
-  const [watchLocation, setWatchLocation] = useState<LocationPoint | null>(null);
-  const [watchActive, setWatchActive] = useState(false);
   const [geocodeResults, setGeocodeResults] = useState<GeocodeResult | null>(null);
   const [reverseGeocodeResults, setReverseGeocodeResults] = useState<ReverseGeocodeResult | null>(
     null,
   );
-
-  useEffect(() => {
-    return () => {
-      watcherRef.current?.remove?.();
-      watcherRef.current = null;
-    };
-  }, []);
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -46,9 +35,7 @@ export default function LocationFunctionalScreen() {
   const summarizeLocation = (prefix: string, location: LocationPoint) =>
     `${prefix} latitude=${location.coords.latitude.toFixed(6)} longitude=${location.coords.longitude.toFixed(
       6,
-    )} accuracy=${String(location.coords.accuracy ?? 'n/a')} heading=${String(
-      location.coords.heading ?? 'n/a',
-    )}`;
+    )} accuracy=${String(location.coords.accuracy ?? 'n/a')}`;
 
   const refreshPermission = async () => {
     const nextPermission = await Location.getForegroundPermissionsAsync();
@@ -66,9 +53,7 @@ export default function LocationFunctionalScreen() {
     try {
       const nextPermission = await refreshPermission();
       const nextServicesEnabled = await refreshProviderStatus();
-      setMessage(
-        `${summarizePermission(nextPermission)} servicesEnabled=${String(nextServicesEnabled)}`,
-      );
+      setMessage(`${summarizePermission(nextPermission)} servicesEnabled=${String(nextServicesEnabled)}`);
     } catch (error) {
       setMessage(formatError(error));
     }
@@ -79,9 +64,7 @@ export default function LocationFunctionalScreen() {
       const nextPermission = await Location.requestForegroundPermissionsAsync();
       setPermission(nextPermission);
       const nextServicesEnabled = await refreshProviderStatus();
-      setMessage(
-        `${summarizePermission(nextPermission)} servicesEnabled=${String(nextServicesEnabled)}`,
-      );
+      setMessage(`${summarizePermission(nextPermission)} servicesEnabled=${String(nextServicesEnabled)}`);
     } catch (error) {
       setMessage(formatError(error));
     }
@@ -116,36 +99,6 @@ export default function LocationFunctionalScreen() {
     }
   };
 
-  const startWatch = async () => {
-    try {
-      watcherRef.current?.remove?.();
-      watcherRef.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 5000,
-          distanceInterval: 0,
-        },
-        (nextLocation) => {
-          setWatchLocation(nextLocation);
-          setMessage(summarizeLocation('Watch update OK.', nextLocation));
-        },
-      );
-      setWatchActive(true);
-      setMessage('Watch started. Waiting for the next location callback.');
-    } catch (error) {
-      setWatchActive(false);
-      watcherRef.current = null;
-      setMessage(formatError(error));
-    }
-  };
-
-  const stopWatch = () => {
-    watcherRef.current?.remove?.();
-    watcherRef.current = null;
-    setWatchActive(false);
-    setMessage('Watch stopped.');
-  };
-
   const geocodeAddress = async () => {
     try {
       const nextResults = await Location.geocodeAsync(SAMPLE_ADDRESS);
@@ -165,11 +118,11 @@ export default function LocationFunctionalScreen() {
     }
   };
 
-  const reverseGeocodeCurrentPosition = async () => {
-    const targetLocation = currentLocation ?? lastKnownLocation ?? watchLocation;
+  const reverseGeocodeLatestFix = async () => {
+    const targetLocation = currentLocation ?? lastKnownLocation;
 
     if (!targetLocation) {
-      setMessage('Reverse geocode skipped. Capture a current, last known, or watch location first.');
+      setMessage('Reverse geocode skipped. Capture a current or last-known location first.');
       return;
     }
 
@@ -199,7 +152,6 @@ export default function LocationFunctionalScreen() {
   const clearSnapshots = () => {
     setCurrentLocation(null);
     setLastKnownLocation(null);
-    setWatchLocation(null);
     setGeocodeResults(null);
     setReverseGeocodeResults(null);
     setMessage('Cleared stored location snapshots.');
@@ -224,23 +176,16 @@ export default function LocationFunctionalScreen() {
         accuracy: Location.Accuracy.Balanced,
       });
       setCurrentLocation(nextLocation);
-      stopWatch();
-      watcherRef.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 5000,
-          distanceInterval: 0,
-        },
-        (incomingLocation) => {
-          setWatchLocation(incomingLocation);
-          setMessage(summarizeLocation('Watch update OK.', incomingLocation));
-        },
-      );
-      setWatchActive(true);
+      const nextReverseResults = await Location.reverseGeocodeAsync({
+        latitude: nextLocation.coords.latitude,
+        longitude: nextLocation.coords.longitude,
+      });
+      setReverseGeocodeResults(nextReverseResults);
+
       setMessage(
-        `Full location flow OK. granted=${String(nextPermission.granted)} servicesEnabled=${String(
+        `Full location flow OK. servicesEnabled=${String(
           nextServicesEnabled,
-        )} latitude=${nextLocation.coords.latitude.toFixed(6)} longitude=${nextLocation.coords.longitude.toFixed(6)}`,
+        )} latitude=${nextLocation.coords.latitude.toFixed(6)} longitude=${nextLocation.coords.longitude.toFixed(6)} reverseResults=${nextReverseResults.length}`,
       );
     } catch (error) {
       setMessage(formatError(error));
@@ -255,7 +200,6 @@ export default function LocationFunctionalScreen() {
           <Text style={styles.resultLine}>latitude: {location.coords.latitude}</Text>
           <Text style={styles.resultLine}>longitude: {location.coords.longitude}</Text>
           <Text style={styles.resultLine}>accuracy: {String(location.coords.accuracy ?? 'n/a')}</Text>
-          <Text style={styles.resultLine}>heading: {String(location.coords.heading ?? 'n/a')}</Text>
           <Text style={styles.resultLine}>timestamp: {location.timestamp}</Text>
         </>
       ) : (
@@ -270,9 +214,9 @@ export default function LocationFunctionalScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>expo-location functional check</Text>
           <Text style={styles.body}>
-            This route exposes single-step permission, current fix, last known fix, watch updates, and
-            geocoding actions so developers can validate the core Harmony location flow without extra app
-            logic.
+            This route only demonstrates the supported v1.7.x subset for simulator-friendly acceptance:
+            foreground permission, current and last-known fixes, plus geocode and reverse-geocode
+            lookups.
           </Text>
           <Text style={styles.meta}>Accuracy.Balanced: {String(Location.Accuracy.Balanced)}</Text>
           <Text style={styles.meta}>Sample address: {SAMPLE_ADDRESS}</Text>
@@ -292,16 +236,10 @@ export default function LocationFunctionalScreen() {
             <Pressable style={styles.button} onPress={getLastKnownPosition}>
               <Text style={styles.buttonLabel}>Get last known position</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={startWatch}>
-              <Text style={styles.buttonLabel}>Start watch updates</Text>
-            </Pressable>
-            <Pressable style={styles.button} onPress={stopWatch}>
-              <Text style={styles.buttonLabel}>Stop watch updates</Text>
-            </Pressable>
             <Pressable style={styles.button} onPress={geocodeAddress}>
               <Text style={styles.buttonLabel}>Geocode sample address</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={reverseGeocodeCurrentPosition}>
+            <Pressable style={styles.button} onPress={reverseGeocodeLatestFix}>
               <Text style={styles.buttonLabel}>Reverse geocode latest fix</Text>
             </Pressable>
             <Pressable style={styles.secondaryButton} onPress={clearSnapshots}>
@@ -309,12 +247,8 @@ export default function LocationFunctionalScreen() {
             </Pressable>
           </View>
           <Pressable style={[styles.button, styles.primaryButton]} onPress={runFullFlow}>
-            <Text style={styles.buttonLabel}>Run full permission/current/watch flow</Text>
+            <Text style={styles.buttonLabel}>Run full permission/current/reverse-geocode flow</Text>
           </Pressable>
-          <Text style={styles.helper}>
-            `Start watch updates` keeps one foreground subscription active until you stop it. Use
-            `Reverse geocode latest fix` after obtaining a location fix to confirm address lookup behavior.
-          </Text>
 
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>Permission snapshot</Text>
@@ -327,12 +261,10 @@ export default function LocationFunctionalScreen() {
             <Text style={styles.resultLine}>
               servicesEnabled: {servicesEnabled === null ? 'not checked' : String(servicesEnabled)}
             </Text>
-            <Text style={styles.resultLine}>watchActive: {String(watchActive)}</Text>
           </View>
 
           {renderLocationCard('Current position', currentLocation, 'No current position yet.')}
           {renderLocationCard('Last known position', lastKnownLocation, 'No last known position yet.')}
-          {renderLocationCard('Latest watch update', watchLocation, 'No watch update yet.')}
 
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>Geocode result</Text>
@@ -351,16 +283,19 @@ export default function LocationFunctionalScreen() {
             {reverseGeocodeResults?.[0] ? (
               <>
                 <Text style={styles.resultLine}>city: {String(reverseGeocodeResults[0].city ?? 'n/a')}</Text>
-                <Text style={styles.resultLine}>
-                  street: {String(reverseGeocodeResults[0].street ?? 'n/a')}
-                </Text>
-                <Text style={styles.resultLine}>
-                  country: {String(reverseGeocodeResults[0].country ?? 'n/a')}
-                </Text>
+                <Text style={styles.resultLine}>street: {String(reverseGeocodeResults[0].street ?? 'n/a')}</Text>
+                <Text style={styles.resultLine}>country: {String(reverseGeocodeResults[0].country ?? 'n/a')}</Text>
               </>
             ) : (
               <Text style={styles.resultLine}>No reverse geocode result yet.</Text>
             )}
+          </View>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Support boundary</Text>
+            <Text style={styles.resultLine}>Continuous watch subscriptions are intentionally unsupported in v1.7.x.</Text>
+            <Text style={styles.resultLine}>Background permission parity is intentionally unsupported in v1.7.x.</Text>
+            <Text style={styles.resultLine}>Heading APIs are intentionally unsupported in v1.7.x.</Text>
           </View>
 
           <Link href="/" style={styles.link}>
@@ -452,11 +387,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#1d4ed8',
-  },
-  helper: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
   },
   resultCard: {
     borderRadius: 18,

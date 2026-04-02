@@ -57,6 +57,9 @@ describe('official minimal sample', () => {
     expect(await fs.pathExists(bundleOutput)).toBe(true);
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('__d(');
+    expect(bundleContents).toContain('What this sample validates');
+    expect(bundleContents).toContain('Success looks like');
+    expect(bundleContents).toContain('Intentionally excluded');
 
     const secondInit = await initProject(sampleRoot, false);
     expect(secondInit.sync.skippedFiles).toHaveLength(0);

@@ -118,6 +118,10 @@ describe('official app-shell sample', () => {
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('__d(');
     expect(bundleContents).toContain('expoharmonyappshell://');
+    expect(bundleContents).toContain('Inspect app-shell state');
+    expect(bundleContents).toContain('Push /details with router');
+    expect(bundleContents).toContain('Open generated deep link');
+    expect(bundleContents).toContain('Current pathname');
     expect(bundleContents).not.toContain('globalThis.expo.NativeModule');
     expect(bundleContents).not.toContain('Unable to install Expo modules');
 

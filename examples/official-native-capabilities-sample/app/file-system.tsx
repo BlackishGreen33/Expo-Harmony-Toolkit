@@ -1,22 +1,67 @@
 import * as FileSystem from 'expo-file-system';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const TARGET_CONTENTS = 'expo-harmony-functional';
 
 export default function FileSystemPreviewScreen() {
   const documentDirectory = FileSystem.documentDirectory ?? null;
-  const targetUri = `${documentDirectory ?? 'file:///expo-harmony/document/'}preview.txt`;
-  const targetContents = 'expo-harmony-functional';
-  const [message, setMessage] = useState('Choose one action to validate sandbox file I/O step by step.');
+  const sandboxDirectory = documentDirectory ? `${documentDirectory}functional-dir/` : null;
+  const workingFile = sandboxDirectory ? `${sandboxDirectory}preview.txt` : null;
+  const copiedFile = sandboxDirectory ? `${sandboxDirectory}preview-copy.txt` : null;
+  const movedFile = documentDirectory ? `${documentDirectory}preview-moved.txt` : null;
+  const [message, setMessage] = useState(
+    'Start with Create sandbox directory, then write, read, copy, move, and clean up the generated files.',
+  );
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-  const writeFile = async () => {
+  const ensureSandboxTargets = () => {
+    if (!documentDirectory || !sandboxDirectory || !workingFile || !copiedFile || !movedFile) {
+      setMessage('Sandbox file targets are unavailable because documentDirectory is missing.');
+      return null;
+    }
+
+    return {
+      sandboxDirectory,
+      workingFile,
+      copiedFile,
+      movedFile,
+    };
+  };
+
+  const createDirectory = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
     try {
-      await FileSystem.writeAsStringAsync(targetUri, targetContents);
-      const afterWrite = await FileSystem.getInfoAsync(targetUri);
+      await FileSystem.makeDirectoryAsync(targets.sandboxDirectory, { intermediates: true });
+      const info = await FileSystem.getInfoAsync(targets.sandboxDirectory);
       setMessage(
-        `Write OK. exists=${String(afterWrite.exists)} size=${String(afterWrite.size ?? 0)} uri=${targetUri}`,
+        `Create directory OK. exists=${String(info.exists)} isDirectory=${String(info.isDirectory)} uri=${targets.sandboxDirectory}`,
+      );
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const writeFile = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
+    try {
+      await FileSystem.makeDirectoryAsync(targets.sandboxDirectory, { intermediates: true });
+      await FileSystem.writeAsStringAsync(targets.workingFile, TARGET_CONTENTS);
+      const afterWrite = await FileSystem.getInfoAsync(targets.workingFile);
+      setMessage(
+        `Write OK. exists=${String(afterWrite.exists)} size=${String(afterWrite.size ?? 0)} uri=${targets.workingFile}`,
       );
     } catch (error) {
       setMessage(formatError(error));
@@ -24,8 +69,14 @@ export default function FileSystemPreviewScreen() {
   };
 
   const readFile = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
     try {
-      const contents = await FileSystem.readAsStringAsync(targetUri);
+      const contents = await FileSystem.readAsStringAsync(targets.workingFile);
       setMessage(`Read OK. contents=${contents}`);
     } catch (error) {
       setMessage(formatError(error));
@@ -33,8 +84,14 @@ export default function FileSystemPreviewScreen() {
   };
 
   const inspectFile = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
     try {
-      const info = await FileSystem.getInfoAsync(targetUri);
+      const info = await FileSystem.getInfoAsync(targets.workingFile);
       setMessage(
         `Info OK. exists=${String(info.exists)} isDirectory=${String(info.isDirectory)} size=${String(info.size ?? 0)}`,
       );
@@ -44,74 +101,105 @@ export default function FileSystemPreviewScreen() {
   };
 
   const listDirectory = async () => {
-    if (!documentDirectory) {
-      setMessage('List sandbox directory unavailable because documentDirectory is missing.');
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
       return;
     }
 
     try {
-      const entries = await FileSystem.readDirectoryAsync(documentDirectory);
-      setMessage(
-        `Directory OK. entries=${entries.length > 0 ? entries.join(', ') : '(empty)'}`,
-      );
+      const entries = await FileSystem.readDirectoryAsync(targets.sandboxDirectory);
+      setMessage(`Directory OK. entries=${entries.length > 0 ? entries.join(', ') : '(empty)'}`);
     } catch (error) {
       setMessage(formatError(error));
     }
   };
 
-  const deleteFile = async () => {
+  const copyFile = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
     try {
-      const beforeDelete = await FileSystem.getInfoAsync(targetUri);
-
-      if (!beforeDelete.exists) {
-        setMessage('Delete skipped. preview.txt does not exist.');
-        return;
-      }
-
-      await FileSystem.deleteAsync(targetUri);
-      const afterDelete = await FileSystem.getInfoAsync(targetUri);
-      setMessage(`Delete OK. existsAfterDelete=${String(afterDelete.exists)}`);
+      await FileSystem.copyAsync({
+        from: targets.workingFile,
+        to: targets.copiedFile,
+      });
+      const info = await FileSystem.getInfoAsync(targets.copiedFile);
+      setMessage(`Copy OK. exists=${String(info.exists)} uri=${targets.copiedFile}`);
     } catch (error) {
       setMessage(formatError(error));
     }
   };
 
-  const openSandboxUri = async () => {
-    if (!documentDirectory) {
-      setMessage('Open sandbox URI unavailable because documentDirectory is missing.');
+  const moveCopiedFile = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
       return;
     }
 
     try {
-      const canOpen = await Linking.canOpenURL(documentDirectory);
+      await FileSystem.moveAsync({
+        from: targets.copiedFile,
+        to: targets.movedFile,
+      });
+      const info = await FileSystem.getInfoAsync(targets.movedFile);
+      setMessage(`Move OK. exists=${String(info.exists)} uri=${targets.movedFile}`);
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
 
-      if (!canOpen) {
-        setMessage('Open sandbox URI is not supported by the current Harmony runtime handler.');
-        return;
-      }
+  const clearArtifacts = async () => {
+    const targets = ensureSandboxTargets();
 
-      await Linking.openURL(documentDirectory);
-      setMessage(
-        'Open sandbox URI requested. Actual system folder handoff depends on the current Harmony runtime handler.',
-      );
+    if (!targets) {
+      return;
+    }
+
+    try {
+      await FileSystem.deleteAsync(targets.workingFile, { idempotent: true });
+      await FileSystem.deleteAsync(targets.copiedFile, { idempotent: true });
+      await FileSystem.deleteAsync(targets.movedFile, { idempotent: true });
+      await FileSystem.deleteAsync(targets.sandboxDirectory, { idempotent: true });
+      setMessage('Cleanup OK. All generated files and directories were removed if present.');
     } catch (error) {
       setMessage(formatError(error));
     }
   };
 
   const runFunctionalFlow = async () => {
+    const targets = ensureSandboxTargets();
+
+    if (!targets) {
+      return;
+    }
+
     try {
-      await FileSystem.writeAsStringAsync(targetUri, targetContents);
-      const afterWrite = await FileSystem.getInfoAsync(targetUri);
-      const contents = await FileSystem.readAsStringAsync(targetUri);
-      await FileSystem.deleteAsync(targetUri);
-      const afterDelete = await FileSystem.getInfoAsync(targetUri);
+      await FileSystem.makeDirectoryAsync(targets.sandboxDirectory, { intermediates: true });
+      await FileSystem.writeAsStringAsync(targets.workingFile, TARGET_CONTENTS);
+      const contents = await FileSystem.readAsStringAsync(targets.workingFile);
+      await FileSystem.copyAsync({
+        from: targets.workingFile,
+        to: targets.copiedFile,
+      });
+      await FileSystem.moveAsync({
+        from: targets.copiedFile,
+        to: targets.movedFile,
+      });
+      const entries = await FileSystem.readDirectoryAsync(targets.sandboxDirectory);
+      await FileSystem.deleteAsync(targets.workingFile, { idempotent: true });
+      await FileSystem.deleteAsync(targets.movedFile, { idempotent: true });
+      await FileSystem.deleteAsync(targets.sandboxDirectory, { idempotent: true });
 
       setMessage(
-        `Functional flow OK. existsAfterWrite=${String(afterWrite.exists)} contents=${contents} existsAfterDelete=${String(afterDelete.exists)}`,
+        `Functional flow OK. contents=${contents} remainingEntries=${entries.length} movedTarget=${targets.movedFile}`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      setMessage(formatError(error));
     }
   };
 
@@ -121,15 +209,26 @@ export default function FileSystemPreviewScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>expo-file-system functional check</Text>
           <Text style={styles.body}>
-            This route exposes single-step sandbox file actions so you can validate write, read, inspect,
-            list, and delete behavior separately before running the full flow.
+            This route focuses on the supported sandbox file flow for v1.7.x: create a directory, write
+            and read a file, inspect it, copy or move it, then delete the generated artifacts.
           </Text>
-          <Text style={styles.meta}>documentDirectory: {documentDirectory ?? 'n/a'}</Text>
-          <Text style={styles.meta}>target file: {targetUri}</Text>
           <View style={styles.statusBox}>
             <Text style={styles.message}>{message}</Text>
           </View>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Current targets</Text>
+            <Text style={styles.resultLine}>documentDirectory: {documentDirectory ?? 'n/a'}</Text>
+            <Text style={styles.resultLine}>sandboxDirectory: {sandboxDirectory ?? 'n/a'}</Text>
+            <Text style={styles.resultLine}>workingFile: {workingFile ?? 'n/a'}</Text>
+            <Text style={styles.resultLine}>copiedFile: {copiedFile ?? 'n/a'}</Text>
+            <Text style={styles.resultLine}>movedFile: {movedFile ?? 'n/a'}</Text>
+          </View>
+
           <View style={styles.actions}>
+            <Pressable style={styles.actionButton} onPress={createDirectory}>
+              <Text style={styles.buttonLabel}>Create sandbox directory</Text>
+            </Pressable>
             <Pressable style={styles.actionButton} onPress={writeFile}>
               <Text style={styles.buttonLabel}>Write file</Text>
             </Pressable>
@@ -142,20 +241,27 @@ export default function FileSystemPreviewScreen() {
             <Pressable style={styles.actionButton} onPress={listDirectory}>
               <Text style={styles.buttonLabel}>List sandbox directory</Text>
             </Pressable>
-            <Pressable style={styles.actionButton} onPress={deleteFile}>
-              <Text style={styles.buttonLabel}>Delete file</Text>
+            <Pressable style={styles.actionButton} onPress={copyFile}>
+              <Text style={styles.buttonLabel}>Copy file</Text>
             </Pressable>
-            <Pressable style={styles.actionButton} onPress={openSandboxUri}>
-              <Text style={styles.buttonLabel}>Open sandbox URI</Text>
+            <Pressable style={styles.actionButton} onPress={moveCopiedFile}>
+              <Text style={styles.buttonLabel}>Move copied file</Text>
+            </Pressable>
+            <Pressable style={styles.secondaryButton} onPress={clearArtifacts}>
+              <Text style={styles.secondaryButtonLabel}>Clear generated artifacts</Text>
             </Pressable>
           </View>
+
           <Pressable style={[styles.actionButton, styles.primaryButton]} onPress={runFunctionalFlow}>
-            <Text style={styles.buttonLabel}>Run full write/read/delete flow</Text>
+            <Text style={styles.buttonLabel}>Run full create/write/read/copy/move flow</Text>
           </Pressable>
-          <Text style={styles.helper}>
-            `Open sandbox URI` is exploratory. Whether a system folder UI appears depends on the active
-            Harmony handler.
-          </Text>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Support boundary</Text>
+            <Text style={styles.resultLine}>UTF-8 sandbox file I/O is the supported subset for this sample.</Text>
+            <Text style={styles.resultLine}>`base64` encoding and `downloadAsync` stay outside the v1.7.x main path.</Text>
+          </View>
+
           <Link href="/" style={styles.link}>
             Back to home
           </Link>
@@ -194,11 +300,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#374151',
   },
-  meta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#134e4a',
-  },
   actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -213,6 +314,21 @@ const styles = StyleSheet.create({
     minWidth: 220,
     flexGrow: 1,
   },
+  secondaryButton: {
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#99f6e4',
+    alignItems: 'center',
+    minWidth: 220,
+    flexGrow: 1,
+  },
+  secondaryButtonLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#115e59',
+  },
   primaryButton: {
     backgroundColor: '#115e59',
   },
@@ -220,11 +336,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#ffffff',
-  },
-  helper: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
   },
   statusBox: {
     borderRadius: 16,
@@ -240,6 +351,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: '#111827',
+  },
+  resultCard: {
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#f8fafc',
+    gap: 8,
+  },
+  resultTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  resultLine: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
   },
   link: {
     fontSize: 16,

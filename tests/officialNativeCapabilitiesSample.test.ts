@@ -78,11 +78,12 @@ describe('official native capabilities sample', () => {
     expect(await fs.pathExists(bundleOutput)).toBe(true);
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('ExpoHarmonyFileSystem');
+    expect(bundleContents).toContain('Create sandbox directory');
     expect(bundleContents).toContain('Write file');
     expect(bundleContents).toContain('Read file');
-    expect(bundleContents).toContain('Delete file');
+    expect(bundleContents).toContain('Copy file');
+    expect(bundleContents).toContain('Move copied file');
     expect(bundleContents).toContain('List sandbox directory');
-    expect(bundleContents).toContain('Open sandbox URI');
     expect(bundleContents).toContain('Functional flow OK.');
     expect(bundleContents).toContain('expo-file-system');
     expect(bundleContents).toContain('expo-image-picker');
@@ -93,6 +94,10 @@ describe('official native capabilities sample', () => {
     expect(bundleContents).toContain('Run full camera permission/capture flow');
     expect(bundleContents).toContain('Media permission snapshot');
     expect(bundleContents).toContain('expo-location');
+    expect(bundleContents).toContain('Reverse geocode latest fix');
+    expect(bundleContents).toContain('Continuous watch subscriptions are intentionally unsupported in v1.7.x.');
     expect(bundleContents).toContain('expo-camera');
+    expect(bundleContents).toContain('Take picture');
+    expect(bundleContents).toContain('Embedded live preview is intentionally unsupported in v1.7.x.');
   }, 180000);
 });

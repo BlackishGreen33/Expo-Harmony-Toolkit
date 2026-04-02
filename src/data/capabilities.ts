@@ -59,7 +59,7 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony adapters cover foreground permission, current-position, last-known, watch, and geocoding flows while release evidence is still pending.',
+    note: 'Toolkit-managed Harmony adapters cover foreground permission, current-position, last-known, and geocoding flows. Continuous watch, background permission parity, and heading APIs stay explicitly unsupported in v1.7.x while release evidence is still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/%40react-native-community-geolocation.md',
     nativePackageNames: ['@react-native-community/geolocation', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.LOCATION', 'ohos.permission.APPROXIMATELY_LOCATION'],
@@ -67,7 +67,7 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     acceptanceChecklist: [
       'Request foreground location permission.',
       'Resolve one current position fix.',
-      'Start and stop a watchPosition subscription cleanly.',
+      'Resolve one last-known or reverse-geocoded location result.',
     ],
   },
   {
@@ -77,15 +77,15 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony adapters cover permission, capture, and preview-lifecycle entrypoints while release evidence and deeper camera parity are still pending.',
+    note: 'Toolkit-managed Harmony adapters cover camera permission and still-photo capture through the Harmony system camera flow. Embedded live preview, preview pause/resume, microphone, and video APIs stay explicitly unsupported in v1.7.x while release evidence is still pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-camera-kit.md',
     nativePackageNames: ['react-native-camera-kit', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.CAMERA'],
     sampleRoute: '/camera',
     acceptanceChecklist: [
       'Request camera permission.',
-      'Render a live preview without crashing the Harmony runtime.',
       'Capture one photo and surface the asset metadata back to JS.',
+      'Record denied or canceled outcomes without crashing the Harmony runtime.',
     ],
   },
   {

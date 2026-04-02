@@ -170,8 +170,10 @@ describe('init project', () => {
     expect(fileSystemShim).toContain('ExpoHarmonyFileSystem');
     expect(fileSystemShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
-    expect(locationShim).toContain('watchPositionAsync');
-    expect(cameraShim).toContain('Expo Harmony camera capture surface');
+    expect(locationShim).toContain("createUnsupportedError('watchPositionAsync')");
+    expect(locationShim).toContain("createUnsupportedError('getBackgroundPermissionsAsync')");
+    expect(cameraShim).toContain('Expo Harmony system camera capture entry');
+    expect(cameraShim).toContain("createUnsupportedError('CameraView.pausePreview')");
     expect(toolkitConfig?.capabilities.map((capability) => capability.id)).toEqual([
       'expo-camera',
       'expo-file-system',

@@ -1,14 +1,26 @@
-import { Link } from 'expo-router';
+import * as Linking from 'expo-linking';
+import { Link, usePathname } from 'expo-router';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
+const detailsUrl = Linking.createURL('/details');
+
 export default function DetailsScreen() {
+  const pathname = usePathname();
+  const observedUrl = Linking.useURL();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.card}>
         <Text style={styles.title}>UI Stack Details</Text>
         <Text style={styles.body}>
-          This second route confirms that router, linking, reanimated, and SVG still survive the `doctor -> init -> bundle -> build-hap -> runtime` bridge.
+          This screen confirms that the verified UI-stack route can still resolve after SVG rendering
+          and reanimated interactions on the home page.
         </Text>
+        <View style={styles.metaCard}>
+          <Text style={styles.metaLine}>Current pathname: {pathname}</Text>
+          <Text style={styles.metaLine}>Observed URL: {observedUrl ?? 'none yet'}</Text>
+          <Text style={styles.metaLine}>Expected details URL: {detailsUrl}</Text>
+        </View>
         <Link href="/" style={styles.link}>
           Back to home
         </Link>
@@ -30,7 +42,7 @@ const styles = StyleSheet.create({
     maxWidth: 460,
     borderRadius: 28,
     padding: 24,
-    gap: 12,
+    gap: 14,
     backgroundColor: '#ffffff',
   },
   title: {
@@ -43,8 +55,18 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#475467',
   },
+  metaCard: {
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#eef2ff',
+    gap: 8,
+  },
+  metaLine: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
+  },
   link: {
-    marginTop: 8,
     fontSize: 16,
     fontWeight: '600',
     color: '#4f46e5',
