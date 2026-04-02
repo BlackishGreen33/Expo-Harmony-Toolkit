@@ -10,19 +10,21 @@ export default function HomeScreen() {
         <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
         <Text style={styles.title}>Official Native Capabilities Sample</Text>
         <Text style={styles.body}>
-          This sample tracks Batch A+B preview-tier native capability bridges. It is expected to bundle on Harmony and render stable preview routes before each runtime implementation is promoted to verified.
+          This sample is the canonical native-capability walkthrough for Harmony-managed Expo projects.
+          Each route stays intentionally small and maps one module to its core developer flow so new
+          contributors can validate the feature without extra app logic.
         </Text>
         <Link href="/file-system" style={styles.link}>
-          Open file-system preview route
+          Open file-system functional route
         </Link>
         <Link href="/image-picker" style={styles.link}>
-          Open image-picker preview route
+          Open image-picker functional route
         </Link>
         <Link href="/location" style={styles.link}>
-          Open location preview route
+          Open location functional route
         </Link>
         <Link href="/camera" style={styles.link}>
-          Open camera preview route
+          Open camera functional route
         </Link>
       </View>
     </SafeAreaView>

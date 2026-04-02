@@ -24,7 +24,7 @@ describe('official native capabilities sample', () => {
     await cleanupGeneratedArtifacts();
   }, 30000);
 
-  it('passes preview doctor expectations, scaffolds preview shims, and bundles a harmony artifact', async () => {
+  it('passes preview doctor expectations, scaffolds native-capability shims, and bundles a harmony artifact', async () => {
     const report = await buildDoctorReport(sampleRoot, {
       targetTier: 'preview',
     });
@@ -77,9 +77,21 @@ describe('official native capabilities sample', () => {
 
     expect(await fs.pathExists(bundleOutput)).toBe(true);
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
-    expect(bundleContents).toContain('ERR_EXPO_HARMONY_PREVIEW');
+    expect(bundleContents).toContain('ExpoHarmonyFileSystem');
+    expect(bundleContents).toContain('Write file');
+    expect(bundleContents).toContain('Read file');
+    expect(bundleContents).toContain('Delete file');
+    expect(bundleContents).toContain('List sandbox directory');
+    expect(bundleContents).toContain('Open sandbox URI');
+    expect(bundleContents).toContain('Functional flow OK.');
     expect(bundleContents).toContain('expo-file-system');
     expect(bundleContents).toContain('expo-image-picker');
+    expect(bundleContents).toContain('Request media permission');
+    expect(bundleContents).toContain('Check camera permission');
+    expect(bundleContents).toContain('Inspect latest picker result');
+    expect(bundleContents).toContain('Run full media permission/pick flow');
+    expect(bundleContents).toContain('Run full camera permission/capture flow');
+    expect(bundleContents).toContain('Media permission snapshot');
     expect(bundleContents).toContain('expo-location');
     expect(bundleContents).toContain('expo-camera');
   }, 180000);
