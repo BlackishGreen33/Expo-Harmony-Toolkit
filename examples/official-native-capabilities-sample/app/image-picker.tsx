@@ -15,24 +15,46 @@ type CameraPermissionState = Awaited<ReturnType<typeof ImagePicker.getCameraPerm
 type MediaPermissionState = Awaited<ReturnType<typeof ImagePicker.getMediaLibraryPermissionsAsync>>;
 type PickerResult = Awaited<ReturnType<typeof ImagePicker.launchImageLibraryAsync>>;
 type PickerAsset = NonNullable<PickerResult['assets']>[number];
-type PickerSource = 'image library' | 'camera capture';
+
+const SINGLE_IMAGE_OPTIONS = {
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  allowsMultipleSelection: false,
+  selectionLimit: 1,
+} as const;
+
+const MULTI_IMAGE_OPTIONS = {
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  allowsMultipleSelection: true,
+  selectionLimit: 3,
+} as const;
+
+const MIXED_LIBRARY_OPTIONS = {
+  mediaTypes: [ImagePicker.MediaTypeOptions.Images, ImagePicker.MediaTypeOptions.Videos],
+  allowsMultipleSelection: true,
+  selectionLimit: 4,
+} as const;
+
+const CAMERA_PHOTO_OPTIONS = {
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+} as const;
+
+const CAMERA_VIDEO_OPTIONS = {
+  mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+} as const;
 
 export default function ImagePickerPreviewScreen() {
   const [message, setMessage] = useState(
-    'Choose one action to validate image-picker permissions, cancel paths, and returned assets step by step.',
+    'Validate single-select, multi-select, mixed library, system photo/video capture, and pending-result recovery.',
   );
   const [mediaPermission, setMediaPermission] = useState<MediaPermissionState | null>(null);
   const [cameraPermission, setCameraPermission] = useState<CameraPermissionState | null>(null);
   const [lastResult, setLastResult] = useState<PickerResult | null>(null);
-  const [lastResultSource, setLastResultSource] = useState<PickerSource | null>(null);
-
-  const pickerOptions = {
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsMultipleSelection: false,
-    selectionLimit: 1,
-  } as const;
+  const [modeLabel, setModeLabel] = useState('none yet');
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+  const getPrimaryAsset = (result: PickerResult | null): PickerAsset | null =>
+    result?.canceled ? null : result?.assets?.[0] ?? null;
 
   const summarizePermission = (
     label: 'Media' | 'Camera',
@@ -40,71 +62,17 @@ export default function ImagePickerPreviewScreen() {
   ) =>
     `${label} permission OK. status=${permission.status} granted=${String(permission.granted)} canAskAgain=${String(
       permission.canAskAgain,
-    )} access=${String('accessPrivileges' in permission ? permission.accessPrivileges ?? 'n/a' : 'n/a')}`;
+    )}`;
 
-  const summarizeAsset = (prefix: string, asset: PickerAsset) =>
-    `${prefix} name=${String(asset.fileName ?? 'n/a')} type=${String(asset.type ?? 'n/a')} size=${String(
-      asset.fileSize ?? 'n/a',
-    )} width=${asset.width} height=${asset.height}`;
-
-  const getFirstAsset = (result: PickerResult | null): PickerAsset | null =>
-    result && !result.canceled ? result.assets?.[0] ?? null : null;
-
-  const refreshMediaPermission = async () => {
-    const nextPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
-    setMediaPermission(nextPermission);
-    return nextPermission;
-  };
-
-  const refreshCameraPermission = async () => {
-    const nextPermission = await ImagePicker.getCameraPermissionsAsync();
-    setCameraPermission(nextPermission);
-    return nextPermission;
-  };
-
-  const formatPickerError = async (scope: 'Image library' | 'Camera capture', error: unknown) => {
-    const rawError = formatError(error);
-
-    if (rawError.includes('ohos.permission.READ_IMAGEVIDEO')) {
-      try {
-        const nextPermission = await refreshMediaPermission();
-        return `${scope} blocked. mediaStatus=${nextPermission.status} granted=${String(
-          nextPermission.granted,
-        )} access=${String(nextPermission.accessPrivileges ?? 'n/a')}`;
-      } catch {
-        return `${scope} blocked. ${rawError}`;
-      }
+  const summarizeResult = (label: string, result: PickerResult) => {
+    if (result.canceled || !result.assets?.[0]) {
+      return `${label} canceled. canceled=true assets=0`;
     }
 
-    if (rawError.includes('ohos.permission.CAMERA')) {
-      try {
-        const nextPermission = await refreshCameraPermission();
-        return `${scope} blocked. cameraStatus=${nextPermission.status} granted=${String(nextPermission.granted)}`;
-      } catch {
-        return `${scope} blocked. ${rawError}`;
-      }
-    }
-
-    return rawError;
-  };
-
-  const inspectResult = (result: PickerResult, source: PickerSource) => {
-    const asset = getFirstAsset(result);
-
-    if (result.canceled || !asset) {
-      return `Inspect OK. source=${source} canceled=true assets=0`;
-    }
-
-    return summarizeAsset(`Inspect OK. source=${source} canceled=false`, asset);
-  };
-
-  const syncMediaPermission = async () => {
-    try {
-      const nextPermission = await refreshMediaPermission();
-      setMessage(summarizePermission('Media', nextPermission));
-    } catch (error) {
-      setMessage(formatError(error));
-    }
+    const asset = result.assets[0];
+    return `${label} OK. assets=${result.assets.length} type=${String(asset.type ?? 'n/a')} mimeType=${String(
+      asset.mimeType ?? 'n/a',
+    )} duration=${String(asset.duration ?? 'n/a')}`;
   };
 
   const requestMediaPermission = async () => {
@@ -112,15 +80,6 @@ export default function ImagePickerPreviewScreen() {
       const nextPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       setMediaPermission(nextPermission);
       setMessage(summarizePermission('Media', nextPermission));
-    } catch (error) {
-      setMessage(formatError(error));
-    }
-  };
-
-  const syncCameraPermission = async () => {
-    try {
-      const nextPermission = await refreshCameraPermission();
-      setMessage(summarizePermission('Camera', nextPermission));
     } catch (error) {
       setMessage(formatError(error));
     }
@@ -136,126 +95,72 @@ export default function ImagePickerPreviewScreen() {
     }
   };
 
-  const launchImageLibrary = async () => {
+  const checkMediaPermission = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
-      setLastResult(result);
-      setLastResultSource('image library');
-      if (result.canceled || !result.assets?.[0]) {
-        setMessage('Image library canceled. canceled=true assets=0');
-        return;
-      }
-
-      const asset = result.assets[0];
-      setMessage(summarizeAsset('Library pick OK.', asset));
+      const nextPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+      setMediaPermission(nextPermission);
+      setMessage(summarizePermission('Media', nextPermission));
     } catch (error) {
-      setMessage(await formatPickerError('Image library', error));
+      setMessage(formatError(error));
     }
   };
 
-  const launchCamera = async () => {
+  const checkCameraPermission = async () => {
     try {
-      const result = await ImagePicker.launchCameraAsync(pickerOptions);
-      setLastResult(result);
-      setLastResultSource('camera capture');
-      if (result.canceled || !result.assets?.[0]) {
-        setMessage('Camera capture canceled. canceled=true assets=0');
-        return;
-      }
-
-      const asset = result.assets[0];
-      setMessage(summarizeAsset('Camera capture OK.', asset));
+      const nextPermission = await ImagePicker.getCameraPermissionsAsync();
+      setCameraPermission(nextPermission);
+      setMessage(summarizePermission('Camera', nextPermission));
     } catch (error) {
-      setMessage(await formatPickerError('Camera capture', error));
+      setMessage(formatError(error));
     }
   };
 
-  const inspectLatestResult = () => {
-    if (!lastResult || !lastResultSource) {
-      setMessage('Inspect skipped. No picker result recorded yet.');
-      return;
+  const runLibraryFlow = async (label: string, options: Record<string, unknown>) => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync(options as never);
+      setModeLabel(label);
+      setLastResult(result);
+      setMessage(summarizeResult(label, result));
+    } catch (error) {
+      setMessage(formatError(error));
     }
+  };
 
-    setMessage(inspectResult(lastResult, lastResultSource));
+  const runCameraFlow = async (label: string, options: Record<string, unknown>) => {
+    try {
+      const result = await ImagePicker.launchCameraAsync(options as never);
+      setModeLabel(label);
+      setLastResult(result);
+      setMessage(summarizeResult(label, result));
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const inspectPendingResult = async () => {
+    try {
+      const result = await ImagePicker.getPendingResultAsync();
+
+      if (!result) {
+        setMessage('Pending result check OK. result=null');
+        return;
+      }
+
+      setModeLabel('pending result');
+      setLastResult(result);
+      setMessage(summarizeResult('Pending result', result));
+    } catch (error) {
+      setMessage(formatError(error));
+    }
   };
 
   const clearResult = () => {
+    setModeLabel('none yet');
     setLastResult(null);
-    setLastResultSource(null);
     setMessage('Cleared latest picker result.');
   };
 
-  const runFullImageLibraryFlow = async () => {
-    try {
-      const nextPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      setMediaPermission(nextPermission);
-
-      if (!nextPermission.granted) {
-        setMessage(
-          `Full media flow stopped. status=${nextPermission.status} granted=${String(
-            nextPermission.granted,
-          )} access=${String(nextPermission.accessPrivileges ?? 'n/a')}`,
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
-      setLastResult(result);
-      setLastResultSource('image library');
-
-      if (result.canceled || !result.assets?.[0]) {
-        setMessage('Full media flow canceled. canceled=true assets=0');
-        return;
-      }
-
-      setMessage(summarizeAsset('Full media flow OK.', result.assets[0]));
-    } catch (error) {
-      setMessage(await formatPickerError('Image library', error));
-    }
-  };
-
-  const runFullCameraFlow = async () => {
-    try {
-      const nextCameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-      setCameraPermission(nextCameraPermission);
-
-      if (!nextCameraPermission.granted) {
-        setMessage(
-          `Full camera flow stopped. cameraStatus=${nextCameraPermission.status} granted=${String(
-            nextCameraPermission.granted,
-          )}`,
-        );
-        return;
-      }
-
-      const nextMediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      setMediaPermission(nextMediaPermission);
-
-      if (!nextMediaPermission.granted) {
-        setMessage(
-          `Full camera flow stopped. mediaStatus=${nextMediaPermission.status} granted=${String(
-            nextMediaPermission.granted,
-          )} access=${String(nextMediaPermission.accessPrivileges ?? 'n/a')}`,
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync(pickerOptions);
-      setLastResult(result);
-      setLastResultSource('camera capture');
-
-      if (result.canceled || !result.assets?.[0]) {
-        setMessage('Full camera flow canceled. canceled=true assets=0');
-        return;
-      }
-
-      setMessage(summarizeAsset('Full camera flow OK.', result.assets[0]));
-    } catch (error) {
-      setMessage(await formatPickerError('Camera capture', error));
-    }
-  };
-
-  const firstAsset = getFirstAsset(lastResult);
+  const firstAsset = getPrimaryAsset(lastResult);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -263,96 +168,107 @@ export default function ImagePickerPreviewScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>expo-image-picker functional check</Text>
           <Text style={styles.body}>
-            This route exposes single-step permission, pick, inspect, and clear actions so you can
-            validate real asset returns, cancel paths, and denied permissions separately before
-            running the full flows.
+            This route validates the v1.7.2 preview subset: single and multi-select library flows,
+            mixed image/video library selection, system photo/video capture, and one-shot pending
+            result recovery.
           </Text>
-          <Text style={styles.meta}>MediaTypeOptions.Images: {String(ImagePicker.MediaTypeOptions.Images)}</Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>
           </View>
+
           <View style={styles.buttonGroup}>
             <Pressable style={styles.button} onPress={requestMediaPermission}>
               <Text style={styles.buttonLabel}>Request media permission</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={syncMediaPermission}>
+            <Pressable style={styles.button} onPress={checkMediaPermission}>
               <Text style={styles.buttonLabel}>Check media permission</Text>
             </Pressable>
             <Pressable style={styles.button} onPress={requestCameraPermission}>
               <Text style={styles.buttonLabel}>Request camera permission</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={syncCameraPermission}>
+            <Pressable style={styles.button} onPress={checkCameraPermission}>
               <Text style={styles.buttonLabel}>Check camera permission</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={launchImageLibrary}>
-              <Text style={styles.buttonLabel}>Launch image library</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                void runLibraryFlow('Single image library', SINGLE_IMAGE_OPTIONS);
+              }}
+            >
+              <Text style={styles.buttonLabel}>Single image library</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={launchCamera}>
-              <Text style={styles.buttonLabel}>Launch camera capture</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                void runLibraryFlow('Multi-select library', MULTI_IMAGE_OPTIONS);
+              }}
+            >
+              <Text style={styles.buttonLabel}>Multi-select library</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={inspectLatestResult}>
-              <Text style={styles.buttonLabel}>Inspect latest picker result</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                void runLibraryFlow('Mixed library selection', MIXED_LIBRARY_OPTIONS);
+              }}
+            >
+              <Text style={styles.buttonLabel}>Mixed library selection</Text>
+            </Pressable>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                void runCameraFlow('Camera photo capture', CAMERA_PHOTO_OPTIONS);
+              }}
+            >
+              <Text style={styles.buttonLabel}>Camera photo capture</Text>
+            </Pressable>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                void runCameraFlow('Camera video capture', CAMERA_VIDEO_OPTIONS);
+              }}
+            >
+              <Text style={styles.buttonLabel}>Camera video capture</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={inspectPendingResult}>
+              <Text style={styles.buttonLabel}>Check pending result</Text>
             </Pressable>
             <Pressable style={styles.secondaryButton} onPress={clearResult}>
               <Text style={styles.secondaryButtonLabel}>Clear latest result</Text>
             </Pressable>
           </View>
-          <Pressable style={[styles.button, styles.primaryButton]} onPress={runFullImageLibraryFlow}>
-            <Text style={styles.buttonLabel}>Run full media permission/pick flow</Text>
-          </Pressable>
-          <Pressable style={[styles.button, styles.primaryButton]} onPress={runFullCameraFlow}>
-            <Text style={styles.buttonLabel}>Run full camera permission/capture flow</Text>
-          </Pressable>
-          <Text style={styles.helper}>
-            `Launch image library` and `Launch camera capture` open system UI. A returned
-            `canceled=true` result is valid cancel-path evidence, and a denied permission message is
-            expected when you reject the system prompt.
-          </Text>
 
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Media permission snapshot</Text>
-            <Text style={styles.resultLine}>status: {mediaPermission?.status ?? 'not checked'}</Text>
-            <Text style={styles.resultLine}>granted: {String(mediaPermission?.granted ?? false)}</Text>
-            <Text style={styles.resultLine}>
-              canAskAgain: {String(mediaPermission?.canAskAgain ?? false)}
-            </Text>
-            <Text style={styles.resultLine}>
-              accessPrivileges: {String(mediaPermission?.accessPrivileges ?? 'n/a')}
-            </Text>
+            <Text style={styles.resultTitle}>Permission snapshot</Text>
+            <Text style={styles.resultLine}>media status: {mediaPermission?.status ?? 'not checked'}</Text>
+            <Text style={styles.resultLine}>camera status: {cameraPermission?.status ?? 'not checked'}</Text>
           </View>
 
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Camera permission snapshot</Text>
-            <Text style={styles.resultLine}>status: {cameraPermission?.status ?? 'not checked'}</Text>
-            <Text style={styles.resultLine}>granted: {String(cameraPermission?.granted ?? false)}</Text>
-            <Text style={styles.resultLine}>
-              canAskAgain: {String(cameraPermission?.canAskAgain ?? false)}
-            </Text>
-          </View>
-
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Latest asset</Text>
-            <Text style={styles.resultLine}>source: {lastResultSource ?? 'none yet'}</Text>
+            <Text style={styles.resultTitle}>Latest picker result</Text>
+            <Text style={styles.resultLine}>mode: {modeLabel}</Text>
             <Text style={styles.resultLine}>canceled: {String(lastResult?.canceled ?? false)}</Text>
             {firstAsset ? (
               <>
                 <Text style={styles.resultLine}>uri: {firstAsset.uri}</Text>
-                <Text style={styles.resultLine}>fileName: {String(firstAsset.fileName ?? 'n/a')}</Text>
-                <Text style={styles.resultLine}>fileSize: {String(firstAsset.fileSize ?? 'n/a')}</Text>
-                <Text style={styles.resultLine}>width: {firstAsset.width}</Text>
-                <Text style={styles.resultLine}>height: {firstAsset.height}</Text>
+                <Text style={styles.resultLine}>type: {String(firstAsset.type ?? 'n/a')}</Text>
                 <Text style={styles.resultLine}>mimeType: {String(firstAsset.mimeType ?? 'n/a')}</Text>
-                <View style={styles.previewFrame}>
-                  <Image
-                    resizeMode="cover"
-                    source={{ uri: firstAsset.uri }}
-                    style={styles.previewImage}
-                  />
-                </View>
+                <Text style={styles.resultLine}>fileSize: {String(firstAsset.fileSize ?? 'n/a')}</Text>
+                <Text style={styles.resultLine}>duration: {String(firstAsset.duration ?? 'n/a')}</Text>
+                {firstAsset.type === 'image' ? (
+                  <View style={styles.imageFrame}>
+                    <Image source={{ uri: firstAsset.uri }} style={styles.image} resizeMode="cover" />
+                  </View>
+                ) : null}
               </>
             ) : (
-              <Text style={styles.resultLine}>No asset selected yet.</Text>
+              <Text style={styles.resultLine}>No asset recorded yet.</Text>
             )}
+          </View>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Preview boundary</Text>
+            <Text style={styles.resultLine}>The current image-picker preview subset no longer keeps orange gaps in the public docs.</Text>
+            <Text style={styles.resultLine}>It remains preview until device and release evidence are promoted.</Text>
           </View>
 
           <Link href="/" style={styles.link}>
@@ -367,7 +283,7 @@ export default function ImagePickerPreviewScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ecfccb',
+    backgroundColor: '#f8fafc',
   },
   content: {
     padding: 24,
@@ -391,22 +307,17 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#374151',
   },
-  meta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#3f6212',
-  },
   messageBox: {
     borderRadius: 16,
     padding: 14,
-    backgroundColor: '#f7fee7',
+    backgroundColor: '#eff6ff',
     borderWidth: 1,
-    borderColor: '#bef264',
+    borderColor: '#bfdbfe',
   },
   message: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#1f2937',
+    color: '#1e3a8a',
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -417,7 +328,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#4d7c0f',
+    backgroundColor: '#2563eb',
     alignItems: 'center',
     minWidth: 220,
     flexGrow: 1,
@@ -427,15 +338,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
   },
-  primaryButton: {
-    backgroundColor: '#3f6212',
-  },
   secondaryButton: {
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#84cc16',
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     minWidth: 220,
     flexGrow: 1,
@@ -443,44 +351,37 @@ const styles = StyleSheet.create({
   secondaryButtonLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#365314',
-  },
-  helper: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
+    color: '#1d4ed8',
   },
   resultCard: {
     borderRadius: 18,
     padding: 16,
     backgroundColor: '#f8fafc',
-    gap: 8,
+    gap: 6,
   },
   resultTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#0f172a',
   },
   resultLine: {
     fontSize: 14,
     lineHeight: 20,
     color: '#334155',
   },
-  previewFrame: {
-    marginTop: 8,
+  imageFrame: {
+    marginTop: 10,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#d9f99d',
-    backgroundColor: '#f7fee7',
+    backgroundColor: '#dbeafe',
   },
-  previewImage: {
+  image: {
     width: '100%',
-    aspectRatio: 1,
+    height: 220,
   },
   link: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#4d7c0f',
+    color: '#2563eb',
   },
 });

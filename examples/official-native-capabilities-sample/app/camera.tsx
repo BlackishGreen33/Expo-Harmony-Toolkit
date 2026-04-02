@@ -2,88 +2,82 @@ import {
   CameraType,
   CameraView,
   getCameraPermissionsAsync,
+  getMicrophonePermissionsAsync,
   requestCameraPermissionsAsync,
+  requestMicrophonePermissionsAsync,
 } from 'expo-camera';
 import { Link } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type CameraPermission = Awaited<ReturnType<typeof getCameraPermissionsAsync>>;
-type CameraCapture = Awaited<
-  ReturnType<
-    NonNullable<{ takePictureAsync?: (options?: Record<string, unknown>) => Promise<unknown> }>['takePictureAsync']
-  >
->;
+type MicrophonePermission = Awaited<ReturnType<typeof getMicrophonePermissionsAsync>>;
 
-type CameraCaptureHandle = {
-  takePictureAsync?: (options?: Record<string, unknown>) => Promise<CameraCapture>;
-};
-
-type CapturedPhoto = {
-  uri: string;
-  width: number;
-  height: number;
-  base64?: string;
-  exif?: unknown;
+type CameraHandle = {
+  takePictureAsync?: (options?: Record<string, unknown>) => Promise<{
+    uri: string;
+    width: number;
+    height: number;
+  }>;
+  pausePreview?: () => Promise<unknown>;
+  resumePreview?: () => Promise<unknown>;
+  recordAsync?: (options?: Record<string, unknown>) => Promise<{
+    uri: string;
+    duration?: number;
+    fileSize?: number | null;
+    mimeType?: string;
+  }>;
+  stopRecording?: () => Promise<unknown>;
+  toggleRecordingAsync?: (options?: Record<string, unknown>) => Promise<unknown>;
 };
 
 export default function CameraFunctionalScreen() {
-  const cameraRef = useRef<CameraCaptureHandle | null>(null);
+  const cameraRef = useRef<CameraHandle | null>(null);
   const [message, setMessage] = useState(
-    'Start with Request camera permission, then open the Harmony system camera UI and inspect the returned asset.',
+    'Validate embedded preview, pause/resume, still photo capture, microphone permission, and video recording controls.',
   );
-  const [permission, setPermission] = useState<CameraPermission | null>(null);
-  const [lastCapture, setLastCapture] = useState<CapturedPhoto | null>(null);
+  const [cameraPermission, setCameraPermission] = useState<CameraPermission | null>(null);
+  const [microphonePermission, setMicrophonePermission] = useState<MicrophonePermission | null>(null);
+  const [previewState, setPreviewState] = useState<'running' | 'paused'>('running');
+  const [lastPhoto, setLastPhoto] = useState<{ uri: string; width: number; height: number } | null>(null);
+  const [lastVideo, setLastVideo] = useState<{
+    uri: string;
+    duration?: number;
+    fileSize?: number | null;
+    mimeType?: string;
+  } | null>(null);
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-  const refreshPermission = async () => {
-    const nextPermission = await getCameraPermissionsAsync();
-    setPermission(nextPermission);
-    return nextPermission;
-  };
-
-  const summarizePermission = (nextPermission: CameraPermission) =>
-    `Camera permission OK. status=${nextPermission.status} granted=${String(
-      nextPermission.granted,
-    )} canAskAgain=${String(nextPermission.canAskAgain)}`;
-
-  const summarizeCapture = (prefix: string, capture: CapturedPhoto) =>
-    `${prefix} uri=${capture.uri} width=${capture.width} height=${capture.height}`;
-
-  const formatCameraError = async (scope: 'Capture' | 'Full camera flow', error: unknown) => {
-    const rawError = formatError(error);
-
-    if (rawError.includes('Camera capture was canceled')) {
-      return `${scope} canceled. canceled=true`;
-    }
-
-    if (rawError.includes('ohos.permission.CAMERA')) {
-      try {
-        const nextPermission = await refreshPermission();
-        return `${scope} blocked. cameraStatus=${nextPermission.status} granted=${String(nextPermission.granted)}`;
-      } catch {
-        return `${scope} blocked. ${rawError}`;
-      }
-    }
-
-    return rawError;
-  };
-
-  const checkPermission = async () => {
+  const requestCameraPermission = async () => {
     try {
-      const nextPermission = await refreshPermission();
-      setMessage(summarizePermission(nextPermission));
+      const permission = await requestCameraPermissionsAsync();
+      setCameraPermission(permission);
+      setMessage(`Camera permission OK. status=${permission.status} granted=${String(permission.granted)}`);
     } catch (error) {
       setMessage(formatError(error));
     }
   };
 
-  const requestPermission = async () => {
+  const requestMicrophonePermission = async () => {
     try {
-      const nextPermission = await requestCameraPermissionsAsync();
-      setPermission(nextPermission);
-      setMessage(summarizePermission(nextPermission));
+      const permission = await requestMicrophonePermissionsAsync();
+      setMicrophonePermission(permission);
+      setMessage(`Microphone permission OK. status=${permission.status} granted=${String(permission.granted)}`);
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const checkPermissions = async () => {
+    try {
+      const nextCamera = await getCameraPermissionsAsync();
+      const nextMic = await getMicrophonePermissionsAsync();
+      setCameraPermission(nextCamera);
+      setMicrophonePermission(nextMic);
+      setMessage(
+        `Permission snapshot OK. camera=${nextCamera.status}/${String(nextCamera.granted)} microphone=${nextMic.status}/${String(nextMic.granted)}`,
+      );
     } catch (error) {
       setMessage(formatError(error));
     }
@@ -91,77 +85,78 @@ export default function CameraFunctionalScreen() {
 
   const takePicture = async () => {
     try {
-      const result = (await cameraRef.current?.takePictureAsync?.({
+      const result = await cameraRef.current?.takePictureAsync?.({
         quality: 0.8,
         skipProcessing: true,
-      })) as CapturedPhoto | undefined;
+      });
 
-      if (!result || typeof result.uri !== 'string') {
-        setMessage('Capture returned no photo payload.');
+      if (!result) {
+        setMessage('Take picture returned no photo payload.');
         return;
       }
 
-      setLastCapture({
-        uri: result.uri,
-        width: result.width,
-        height: result.height,
-        base64: result.base64,
-        exif: result.exif,
-      });
-      setMessage(summarizeCapture('Capture OK.', result));
+      setLastPhoto(result);
+      setMessage(`Still photo result OK. uri=${result.uri}`);
     } catch (error) {
-      setMessage(await formatCameraError('Capture', error));
+      setMessage(formatError(error));
     }
   };
 
-  const inspectLastCapture = () => {
-    if (!lastCapture) {
-      setMessage('Inspect skipped. No capture recorded yet.');
-      return;
-    }
-
-    setMessage(summarizeCapture('Inspect OK.', lastCapture));
-  };
-
-  const clearCapture = () => {
-    setLastCapture(null);
-    setMessage('Cleared last capture.');
-  };
-
-  const runFullFlow = async () => {
+  const pausePreview = async () => {
     try {
-      const nextPermission = await requestCameraPermissionsAsync();
-      setPermission(nextPermission);
-
-      if (!nextPermission.granted) {
-        setMessage(
-          `Full camera flow stopped. cameraStatus=${nextPermission.status} granted=${String(
-            nextPermission.granted,
-          )}`,
-        );
-        return;
-      }
-
-      const result = (await cameraRef.current?.takePictureAsync?.({
-        quality: 0.8,
-        skipProcessing: true,
-      })) as CapturedPhoto | undefined;
-
-      if (!result || typeof result.uri !== 'string') {
-        setMessage('Full camera flow stopped. No capture payload returned.');
-        return;
-      }
-
-      setLastCapture({
-        uri: result.uri,
-        width: result.width,
-        height: result.height,
-        base64: result.base64,
-        exif: result.exif,
-      });
-      setMessage(summarizeCapture('Full camera flow OK.', result));
+      await cameraRef.current?.pausePreview?.();
+      setPreviewState('paused');
+      setMessage('Preview paused OK.');
     } catch (error) {
-      setMessage(await formatCameraError('Full camera flow', error));
+      setMessage(formatError(error));
+    }
+  };
+
+  const resumePreview = async () => {
+    try {
+      await cameraRef.current?.resumePreview?.();
+      setPreviewState('running');
+      setMessage('Preview resumed OK.');
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const result = await cameraRef.current?.recordAsync?.({
+        maxDuration: 10,
+      });
+
+      if (!result) {
+        setMessage('Video recording returned no payload.');
+        return;
+      }
+
+      setLastVideo(result);
+      setMessage(`Video recording start/stop OK. uri=${result.uri}`);
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      await cameraRef.current?.stopRecording?.();
+      setMessage('Stop recording OK.');
+    } catch (error) {
+      setMessage(formatError(error));
+    }
+  };
+
+  const toggleRecording = async () => {
+    try {
+      await cameraRef.current?.toggleRecordingAsync?.({
+        maxDuration: 10,
+      });
+      setMessage('Toggle recording OK.');
+    } catch (error) {
+      setMessage(formatError(error));
     }
   };
 
@@ -171,10 +166,10 @@ export default function CameraFunctionalScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>expo-camera functional check</Text>
           <Text style={styles.body}>
-            This route only demonstrates the supported v1.7.x subset for expo-camera on Harmony:
-            camera permission and still-photo capture through the system camera UI.
+            This route validates the v1.7.2 preview subset: embedded live preview, preview
+            pause/resume, still capture, video recording controls, and microphone permission
+            snapshots.
           </Text>
-          <Text style={styles.meta}>CameraType.back: {String(CameraType.back)}</Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>
           </View>
@@ -184,59 +179,76 @@ export default function CameraFunctionalScreen() {
           </View>
 
           <View style={styles.buttonGroup}>
-            <Pressable style={styles.button} onPress={requestPermission}>
+            <Pressable style={styles.button} onPress={requestCameraPermission}>
               <Text style={styles.buttonLabel}>Request camera permission</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={checkPermission}>
-              <Text style={styles.buttonLabel}>Check camera permission</Text>
+            <Pressable style={styles.button} onPress={requestMicrophonePermission}>
+              <Text style={styles.buttonLabel}>Request microphone permission</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={checkPermissions}>
+              <Text style={styles.buttonLabel}>Check permission snapshot</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={pausePreview}>
+              <Text style={styles.buttonLabel}>Pause preview</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={resumePreview}>
+              <Text style={styles.buttonLabel}>Resume preview</Text>
             </Pressable>
             <Pressable style={styles.button} onPress={takePicture}>
               <Text style={styles.buttonLabel}>Take picture</Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={inspectLastCapture}>
-              <Text style={styles.buttonLabel}>Inspect last capture</Text>
+            <Pressable style={styles.button} onPress={startRecording}>
+              <Text style={styles.buttonLabel}>Start video recording</Text>
             </Pressable>
-            <Pressable style={styles.secondaryButton} onPress={clearCapture}>
-              <Text style={styles.secondaryButtonLabel}>Clear last capture</Text>
+            <Pressable style={styles.button} onPress={stopRecording}>
+              <Text style={styles.buttonLabel}>Stop video recording</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={toggleRecording}>
+              <Text style={styles.buttonLabel}>Toggle recording</Text>
             </Pressable>
           </View>
 
-          <Pressable style={[styles.button, styles.primaryButton]} onPress={runFullFlow}>
-            <Text style={styles.buttonLabel}>Run full permission/capture flow</Text>
-          </Pressable>
-
-          <Text style={styles.helper}>
-            `Take picture` opens the Harmony system camera UI. Returning with no photo is a valid cancel
-            path. Returning with a file URI is the success case for this sample.
-          </Text>
-
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Permission snapshot</Text>
-            <Text style={styles.resultLine}>status: {permission?.status ?? 'not checked'}</Text>
-            <Text style={styles.resultLine}>granted: {String(permission?.granted ?? false)}</Text>
-            <Text style={styles.resultLine}>canAskAgain: {String(permission?.canAskAgain ?? false)}</Text>
+            <Text style={styles.resultTitle}>Preview state</Text>
+            <Text style={styles.resultLine}>preview state: {previewState}</Text>
+            <Text style={styles.resultLine}>camera status: {cameraPermission?.status ?? 'not checked'}</Text>
+            <Text style={styles.resultLine}>microphone status: {microphonePermission?.status ?? 'not checked'}</Text>
           </View>
 
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Last capture</Text>
-            {lastCapture ? (
+            <Text style={styles.resultTitle}>Still photo result</Text>
+            {lastPhoto ? (
               <>
-                <Text style={styles.resultLine}>uri: {lastCapture.uri}</Text>
-                <Text style={styles.resultLine}>width: {lastCapture.width}</Text>
-                <Text style={styles.resultLine}>height: {lastCapture.height}</Text>
+                <Text style={styles.resultLine}>uri: {lastPhoto.uri}</Text>
+                <Text style={styles.resultLine}>width: {lastPhoto.width}</Text>
+                <Text style={styles.resultLine}>height: {lastPhoto.height}</Text>
                 <View style={styles.imageFrame}>
-                  <Image resizeMode="cover" source={{ uri: lastCapture.uri }} style={styles.image} />
+                  <Image resizeMode="cover" source={{ uri: lastPhoto.uri }} style={styles.image} />
                 </View>
               </>
             ) : (
-              <Text style={styles.resultLine}>No capture recorded yet.</Text>
+              <Text style={styles.resultLine}>No still photo yet.</Text>
             )}
           </View>
 
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Support boundary</Text>
-            <Text style={styles.resultLine}>Embedded live preview is intentionally unsupported in v1.7.x.</Text>
-            <Text style={styles.resultLine}>Preview pause/resume, video recording, and microphone APIs are intentionally unsupported in v1.7.x.</Text>
+            <Text style={styles.resultTitle}>Video recording result</Text>
+            {lastVideo ? (
+              <>
+                <Text style={styles.resultLine}>uri: {lastVideo.uri}</Text>
+                <Text style={styles.resultLine}>duration: {String(lastVideo.duration ?? 'n/a')}</Text>
+                <Text style={styles.resultLine}>fileSize: {String(lastVideo.fileSize ?? 'n/a')}</Text>
+                <Text style={styles.resultLine}>mimeType: {String(lastVideo.mimeType ?? 'n/a')}</Text>
+              </>
+            ) : (
+              <Text style={styles.resultLine}>No video recording yet.</Text>
+            )}
+          </View>
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Preview boundary</Text>
+            <Text style={styles.resultLine}>The current camera preview docs no longer keep orange gaps for preview, pause/resume, microphone, or video.</Text>
+            <Text style={styles.resultLine}>This route still stays preview until device and release evidence are promoted.</Text>
           </View>
 
           <Link href="/" style={styles.link}>
@@ -275,11 +287,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#374151',
   },
-  meta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#b45309',
-  },
   messageBox: {
     borderRadius: 16,
     padding: 14,
@@ -295,7 +302,7 @@ const styles = StyleSheet.create({
   captureFrame: {
     overflow: 'hidden',
     borderRadius: 20,
-    backgroundColor: '#fff7ed',
+    backgroundColor: '#111827',
   },
   captureSurface: {
     width: '100%',
@@ -315,63 +322,38 @@ const styles = StyleSheet.create({
     minWidth: 220,
     flexGrow: 1,
   },
-  primaryButton: {
-    backgroundColor: '#b45309',
-  },
   buttonLabel: {
     fontSize: 15,
     fontWeight: '600',
     color: '#ffffff',
   },
-  secondaryButton: {
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#fbbf24',
-    alignItems: 'center',
-    minWidth: 220,
-    flexGrow: 1,
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#92400e',
-  },
-  helper: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
-  },
   resultCard: {
     borderRadius: 18,
     padding: 16,
-    backgroundColor: '#f8fafc',
-    gap: 8,
+    backgroundColor: '#fff7ed',
+    gap: 6,
   },
   resultTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#92400e',
   },
   resultLine: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#334155',
+    color: '#78350f',
   },
   imageFrame: {
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#fde68a',
-    backgroundColor: '#fffbeb',
+    borderRadius: 16,
+    backgroundColor: '#fde68a',
   },
   image: {
     width: '100%',
-    aspectRatio: 1,
+    height: 220,
   },
   link: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#d97706',
   },
