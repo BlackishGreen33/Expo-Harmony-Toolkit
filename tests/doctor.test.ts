@@ -166,13 +166,22 @@ describe('doctor report', () => {
     expect(report.capabilities).toHaveLength(4);
     expect(capabilityById.get('expo-file-system')?.harmonyPermissions).toEqual([]);
     expect(capabilityById.get('expo-image-picker')?.harmonyPermissions).toEqual(
-      expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO']),
+      expect.arrayContaining([
+        'ohos.permission.CAMERA',
+        'ohos.permission.MICROPHONE',
+        'ohos.permission.READ_IMAGEVIDEO',
+      ]),
     );
     expect(capabilityById.get('expo-location')?.harmonyPermissions).toEqual(
-      expect.arrayContaining(['ohos.permission.LOCATION', 'ohos.permission.APPROXIMATELY_LOCATION']),
+      expect.arrayContaining([
+        'ohos.permission.LOCATION',
+        'ohos.permission.APPROXIMATELY_LOCATION',
+        'ohos.permission.LOCATION_IN_BACKGROUND',
+        'ohos.permission.ACCELEROMETER',
+      ]),
     );
     expect(capabilityById.get('expo-camera')?.harmonyPermissions).toEqual(
-      expect.arrayContaining(['ohos.permission.CAMERA']),
+      expect.arrayContaining(['ohos.permission.CAMERA', 'ohos.permission.MICROPHONE']),
     );
     expect(capabilityById.get('expo-file-system')?.runtimeMode).toBe('adapter');
     expect(capabilityById.get('expo-image-picker')?.evidence.bundle).toBe(true);
@@ -208,7 +217,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.7.1',
+      [TOOLKIT_PACKAGE_NAME]: '1.7.2',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 

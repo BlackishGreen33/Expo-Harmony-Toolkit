@@ -60,9 +60,9 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
     expect(packageJson.pnpm?.overrides).toBeUndefined();
-    expect(manifest?.toolkitVersion).toBe('1.7.1');
+    expect(manifest?.toolkitVersion).toBe('1.7.2');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.7.1');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.7.2');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
@@ -163,17 +163,23 @@ describe('init project', () => {
     expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
     expect(moduleConfig).toContain('ohos.permission.LOCATION');
     expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
+    expect(moduleConfig).toContain('ohos.permission.MICROPHONE');
+    expect(moduleConfig).toContain('ohos.permission.LOCATION_IN_BACKGROUND');
+    expect(moduleConfig).toContain('ohos.permission.ACCELEROMETER');
     expect(metroConfig).toContain(".expo-harmony/shims/expo-file-system");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-image-picker");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-location");
     expect(metroConfig).toContain(".expo-harmony/shims/expo-camera");
     expect(fileSystemShim).toContain('ExpoHarmonyFileSystem');
+    expect(fileSystemShim).toContain('downloadAsync(url, fileUri, options)');
     expect(fileSystemShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
-    expect(locationShim).toContain("createUnsupportedError('watchPositionAsync')");
-    expect(locationShim).toContain("createUnsupportedError('getBackgroundPermissionsAsync')");
-    expect(cameraShim).toContain('Expo Harmony system camera capture entry');
-    expect(cameraShim).toContain("createUnsupportedError('CameraView.pausePreview')");
+    expect(imagePickerShim).toContain('getPendingResultAsync');
+    expect(locationShim).toContain('startWatchPosition');
+    expect(locationShim).toContain('getHeadingAsync');
+    expect(cameraShim).toContain("requireNativeComponent('ExpoHarmonyCameraView')");
+    expect(cameraShim).toContain("invokeNative('pausePreview', 'CameraView.pausePreview'");
+    expect(cameraShim).toContain("invokeNative('startRecording', 'CameraView.recordAsync'");
     expect(toolkitConfig?.capabilities.map((capability) => capability.id)).toEqual([
       'expo-camera',
       'expo-file-system',
@@ -192,9 +198,12 @@ describe('init project', () => {
     expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(
       expect.arrayContaining([
         'ohos.permission.CAMERA',
+        'ohos.permission.MICROPHONE',
         'ohos.permission.READ_IMAGEVIDEO',
         'ohos.permission.LOCATION',
         'ohos.permission.APPROXIMATELY_LOCATION',
+        'ohos.permission.LOCATION_IN_BACKGROUND',
+        'ohos.permission.ACCELEROMETER',
       ]),
     );
   });

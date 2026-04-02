@@ -52,9 +52,12 @@ describe('official native capabilities sample', () => {
       'utf8',
     );
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
+    expect(moduleConfig).toContain('ohos.permission.MICROPHONE');
     expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
     expect(moduleConfig).toContain('ohos.permission.LOCATION');
     expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
+    expect(moduleConfig).toContain('ohos.permission.LOCATION_IN_BACKGROUND');
+    expect(moduleConfig).toContain('ohos.permission.ACCELEROMETER');
 
     const bundleOutput = path.join(
       sampleRoot,
@@ -79,25 +82,28 @@ describe('official native capabilities sample', () => {
     const bundleContents = await fs.readFile(bundleOutput, 'utf8');
     expect(bundleContents).toContain('ExpoHarmonyFileSystem');
     expect(bundleContents).toContain('Create sandbox directory');
-    expect(bundleContents).toContain('Write file');
-    expect(bundleContents).toContain('Read file');
-    expect(bundleContents).toContain('Copy file');
-    expect(bundleContents).toContain('Move copied file');
-    expect(bundleContents).toContain('List sandbox directory');
-    expect(bundleContents).toContain('Functional flow OK.');
+    expect(bundleContents).toContain('Write UTF-8 file');
+    expect(bundleContents).toContain('Base64 roundtrip');
+    expect(bundleContents).toContain('Read partial file');
+    expect(bundleContents).toContain('Check md5 info');
+    expect(bundleContents).toContain('Download remote file');
+    expect(bundleContents).toContain('Full file-system flow OK.');
     expect(bundleContents).toContain('expo-file-system');
     expect(bundleContents).toContain('expo-image-picker');
-    expect(bundleContents).toContain('Request media permission');
-    expect(bundleContents).toContain('Check camera permission');
-    expect(bundleContents).toContain('Inspect latest picker result');
-    expect(bundleContents).toContain('Run full media permission/pick flow');
-    expect(bundleContents).toContain('Run full camera permission/capture flow');
-    expect(bundleContents).toContain('Media permission snapshot');
+    expect(bundleContents).toContain('Multi-select library');
+    expect(bundleContents).toContain('Mixed library selection');
+    expect(bundleContents).toContain('Camera video capture');
+    expect(bundleContents).toContain('Check pending result');
+    expect(bundleContents).toContain('Latest picker result');
     expect(bundleContents).toContain('expo-location');
     expect(bundleContents).toContain('Reverse geocode latest fix');
-    expect(bundleContents).toContain('Continuous watch subscriptions are intentionally unsupported in v1.7.x.');
+    expect(bundleContents).toContain('Start watch position');
+    expect(bundleContents).toContain('Start heading watch');
+    expect(bundleContents).toContain('Request background permission');
     expect(bundleContents).toContain('expo-camera');
     expect(bundleContents).toContain('Take picture');
-    expect(bundleContents).toContain('Embedded live preview is intentionally unsupported in v1.7.x.');
+    expect(bundleContents).toContain('Pause preview');
+    expect(bundleContents).toContain('Start video recording');
+    expect(bundleContents).toContain('Request microphone permission');
   }, 180000);
 });
