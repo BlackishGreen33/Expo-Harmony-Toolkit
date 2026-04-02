@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.1-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -47,7 +47,7 @@
 
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.7.0` |
+| 当前版本 | `v1.7.1` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
@@ -59,7 +59,7 @@
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
-| 回归基线 | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
+| 辅助 onboarding samples | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
 
 <details>
 <summary><strong>当前仍不在 verified 正式承诺范围</strong></summary>
@@ -184,6 +184,12 @@ pnpm exec expo-harmony build-hap --mode release
 - `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`
 - `runtimeMode=shim` 说明当前仍未进入 verified runtime path，即使 bundle / debug build 已经可走通
 
+文档里的状态标记额外约定为：
+
+- `🟡`：当前子集已经实现，主要只差真机 / release 证据
+- `🟠`：包已经进入 `preview`，但这个具体子 API 还没到可信实现，不能简单理解成“只差真机”
+- `⛔`：完全不在当前公开支持范围
+
 完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
 ## 官方 Samples
@@ -191,11 +197,11 @@ pnpm exec expo-harmony build-hap --mode release
 - `examples/official-ui-stack-sample`
   当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-native-capabilities-sample`
-  `v1.7` 的 Batch A+B preview sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的 bridge、permission、bundle 与 debug build 验收。
+  `v1.7.x` 的 Batch A+B preview walkthrough sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的核心支持子集、permission、bundle 与 debug build 验收。
 - `examples/official-app-shell-sample`
-  `v1.1` App Shell 回归基线，用来防止 UI-stack 收口引入 router 退化。
+  最小可理解的 App Shell onboarding sample，用来展示 router、linking、constants、pathname、observed URL 与 generated deep link。
 - `examples/official-minimal-sample`
-  最小 smoke baseline，用来回归 sidecar 模板与最短 bundle 路径。
+  最小 onboarding sample，用来说明最短 `doctor -> init -> bundle -> build-hap` 链路，以及它故意不覆盖的范围。
 
 详见：
 
@@ -276,7 +282,7 @@ verified capability 晋升还必须补齐：
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
 - [npm 发布说明](./docs/npm-release.md)
 - [签名与 Release 说明](./docs/signing-and-release.md)
-- [v1.7.0 验收记录（进行中）](./docs/v1.7.0-acceptance.md)
+- [v1.7.1 验收记录](./docs/v1.7.1-acceptance.md)
 - [路线图](./docs/roadmap.md)
 
 ## License

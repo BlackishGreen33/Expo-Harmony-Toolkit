@@ -60,9 +60,9 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
     expect(packageJson.pnpm?.overrides).toBeUndefined();
-    expect(manifest?.toolkitVersion).toBe('1.7.0');
+    expect(manifest?.toolkitVersion).toBe('1.7.1');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.7.0');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.7.1');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);

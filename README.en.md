@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.1-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -47,7 +47,7 @@
 
 | Item | Status |
 | --- | --- |
-| Current version | `v1.7.0` |
+| Current version | `v1.7.1` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
@@ -59,7 +59,7 @@
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
-| Regression baselines | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
+| Supporting onboarding samples | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
 
 <details>
 <summary><strong>Still outside the verified public promise</strong></summary>
@@ -189,13 +189,13 @@ See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, p
 ## Official Samples
 
 - `examples/official-ui-stack-sample`
-  The primary public sample for `v1.5.0`, covering router, linking, constants, SVG, reanimated, and Harmony sidecar build flow.
+  The current public main sample, covering router, linking, constants, SVG, reanimated, and the Harmony sidecar build flow.
 - `examples/official-native-capabilities-sample`
-  The `v1.7` Batch A+B preview sample, covering `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` bridge, permission, bundle, and debug-build validation.
+  The `v1.7.x` Batch A+B preview walkthrough sample, covering the supported core subsets for `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` plus permission, bundle, and debug-build validation.
 - `examples/official-app-shell-sample`
-  The `v1.1` App Shell regression baseline that protects router behavior while UI-stack support is finalized.
+  The minimal App Shell onboarding sample that demonstrates router, linking, constants, pathname, observed URL, and a generated deep-link flow.
 - `examples/official-minimal-sample`
-  The smallest smoke baseline for sidecar templates and the shortest bundle path.
+  The smallest onboarding sample, explaining the shortest `doctor -> init -> bundle -> build-hap` chain and what it intentionally does not cover.
 
 See:
 
@@ -276,7 +276,7 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
 - [npm Release Notes](./docs/npm-release.md)
 - [Signing and Release Notes](./docs/signing-and-release.md)
-- [v1.7.0 Acceptance Log (In Progress)](./docs/v1.7.0-acceptance.md)
+- [v1.7.1 Acceptance Log](./docs/v1.7.1-acceptance.md)
 - [Roadmap](./docs/roadmap.md)
 
 ## License

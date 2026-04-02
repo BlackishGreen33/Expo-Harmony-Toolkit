@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.7.0` 延续 `verified + preview + experimental` 支持分层，并把 Batch B 设备能力推进到 preview 接入路径，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.7.1` 延续 `verified + preview + experimental` 支持分层，并把 Batch B 设备能力推进到 preview 接入路径，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
