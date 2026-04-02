@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.7` keeps the `verified + preview + experimental` model and moves `expo-location` and `expo-camera` into `preview`. The public path is still "Core Expo Full Coverage first, long-tail third-party native modules second"; this is still not a claim that arbitrary Expo apps can be published to HarmonyOS unchanged.
+> `v1.7` keeps the `verified + preview + experimental` model and moves `expo-location` and `expo-camera` into `preview`. Starting with this documentation refresh, the public promise is tighter: `latest` only carries fully accepted `verified` capabilities, while `next` is reserved for preview fast-track work. The roadmap still targets `Managed/CNG Core Expo Coverage` first and long-tail extension coverage second.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -54,6 +54,8 @@
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler` |
+| Release tracks | `latest` = fully accepted `verified` only; `next` = preview fast track |
+| Capability telemetry | `runtimeMode` + `evidence(bundle/debugBuild/device/release)` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
@@ -168,13 +170,19 @@ Common decision points:
 
 ## Support Matrix
 
-`v1.7` keeps tiered support:
+`v1.7` keeps tiered support and now exposes capability promotion distance in public reports:
 
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
 - `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
 - `experimental`: `expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
+
+Starting in this refresh:
+
+- `doctor-report.json` exposes `capabilities[].runtimeMode`
+- `doctor-report.json` and `toolkit-config.json` expose `evidence.bundle`, `evidence.debugBuild`, `evidence.device`, and `evidence.release`
+- `runtimeMode=shim` means the capability still has not reached a verified runtime path even if bundling and debug-build scaffolding already exist
 
 See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, pairing rules, exact specifiers, issue codes, and release gates.
 
@@ -230,14 +238,16 @@ Pre-publish checks:
 - `pnpm build`
 - `pnpm test`
 - `npm pack --dry-run`
-- tarball smoke: `doctor --strict`, `init --force`, `bundle`
+- tarball smoke:
+  `latest` runs `doctor --strict`, `init --force`, `bundle`
+  `next` runs `doctor --target-tier preview`, `init --force`, `bundle`
 
-Automatic publishing defaults to hosted CI only:
+Automatic publishing still defaults to hosted CI only, but now splits into two tracks:
 
-- GitHub workflow runs `build/test/pack/tarball smoke`
-- `build-hap --mode debug` does not block npm publish
-- GitHub auto-publish uses the `latest` dist-tag and provenance
-- local manual publishing uses the `latest` dist-tag
+- `stable/latest`: only verified samples and fully accepted capabilities
+- `fast-track/next`: preview sample smoke and preview capability validation
+- GitHub auto-publish selects `latest` or `next` based on the tag and keeps provenance enabled
+- `build-hap --mode debug` still does not block hosted npm publishing
 
 Manual Harmony acceptance still requires:
 
@@ -247,6 +257,12 @@ Manual Harmony acceptance still requires:
 - routing still works after the animation completes
 - `Build Debug Hap(s)` succeeds
 - `official-native-capabilities-sample` at least proves Batch A+B preview route bundling, generated Harmony permissions, and the debug build path
+
+Verified promotion still additionally requires:
+
+- device-side acceptance
+- release signing plus `build-hap --mode release`
+- roadmap, support matrix, README, and acceptance records updated in the same PR
 
 See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.md](./docs/signing-and-release.md).
 

@@ -1,5 +1,20 @@
 # 路线图
 
+## 收官定义
+
+这个项目的“完美落幕”不再定义为“一次性完美支持任意 Expo 项目”。
+
+新的收官定义是：
+
+- 在 `Managed/CNG Expo` 主线下，主流官方 Expo 能力可稳定分析、可 bundle、可 debug/release 验证、可交付
+- `latest` 只承诺已经完成完整验收的 `verified` 能力
+- 长尾第三方 native module 不再挤进同一条公开承诺，而是进入 `extension model`
+
+因此，路线会分成两段：
+
+- `Core Expo Coverage`：主线收官点
+- `Long-tail Extension`：收官后的持续扩展模型
+
 ## 已完成里程碑
 
 ### v0.1 迁移工具包
@@ -39,69 +54,82 @@
 - 共享 Harmony permission 生成链
 - 新增 `official-native-capabilities-sample`
 
-## 当前主线
-
 ### v1.7 Device APIs Batch B + Capability Onboarding
 
-目标：把第二批高频设备能力推进到 `preview`，并把 capability 接入、验证、晋升流程产品化。
-
 - `expo-location`、`expo-camera` 进入 `preview`
-- 共用 managed capability bridge 行为：
-  可 `doctor`、可 `sync-template`、可 `bundle`、可 `build-hap --mode debug`
-- `expo-location` 至少覆盖：
-  前台权限、当前定位、`watchPosition`
-- `expo-camera` 至少覆盖：
-  相机权限、预览 surface、单次拍照入口
-- `official-native-capabilities-sample` 扩成 Batch A+B 统一验证入口
-- 为 Batch A+B 维护 fixture、sample、文档、验收记录同步更新
-- `expo-file-system`、`expo-image-picker` 只有在同版补齐完整证据时才晋升 `verified`
+- Batch A+B preview capability 进入统一 sample / fixture / 文档 / 验收模型
+- 形成 `doctor -> sync-template -> bundle -> build-hap --mode debug` 的 preview onboarding baseline
+- 公开结论保持保守：可接入，不等于已 verified
 
-### v1.8 Verification and Release Hardening
+## 当前主线
 
-目标：把 capability coverage 与 release reliability 合并成可重复执行的 gate。
+### v1.8 Capability Graduation + Fast Track Release
 
-- 完整 deep link lifecycle 验收
-- 更强的 signing / profile / release lint
-- 快速 smoke 与 capability acceptance 双层验证
-- 具备 Harmony 工具链的 runner 上增加 debug HAP 真构建 gate
-- capability promotion gate 固化到 sample、fixture、build、device acceptance 流程
-- release gate 只放在有签名环境的专用流程
+目标日期：`2026-05-15`
 
-### v1.9 Core Expo Production Modules
+目标：优先把“已经接入的 preview 能力”推进到可晋升状态，而不是只继续堆新模块数量。
 
-目标：优先补齐能解锁最多真实项目的 Expo 官方生产能力，而不是先追长尾第三方 native package。
+- 建立 capability graduation 流水线：
+  `doctor --strict`、`doctor --target-tier preview`、`sync-template`、`bundle`、`build-hap --mode debug`、device acceptance、release acceptance
+- `DoctorReport`、`toolkit-config.json`、support matrix 全部引入 `runtimeMode` 与 `evidence`
+- `expo-file-system`、`expo-image-picker` 优先冲刺 verified 所需的真 runtime 与 device 证据
+- `expo-location`、`expo-camera` 从 throw-only shim 推进到可验证的 adapter-backed preview
+- 发布节奏改成双轨：
+  `latest` 只承接完整验收的 verified 能力，`next` 承接 preview fast track
 
-- 存储、安全、设备信息、资产、多媒体、剪贴板、触感等高频官方模块
-- 每个能力都必须沿用 v1.7 建立的 onboarding / acceptance 模型
-- 继续保持单一 `verified` runtime matrix，对外承诺不膨胀
+### v1.9 App Foundation Modules
 
-### v2.0 Core Expo Full Coverage
+目标日期：`2026-07-31`
 
-定义：在单一 `verified` runtime matrix 下，把“核心 Expo 生产项目”推进到完整可用、可构建、可交付。
+目标：优先补齐最能解锁真实 Managed/CNG Expo 项目的基础官方模块。
 
-- 官方 Expo 常用能力达到明确公开支持
-- 主流 UI stack、常见设备 API、常见交付链形成完整故事
-- 高频能力达到 `verified`
-- 具备明确 release readiness 路径
-- roadmap 对外叙事从“能跑 sample”升级为“核心 Expo 项目可稳定交付”
+- 依序接入：`expo-secure-store`、`expo-device`、`expo-asset`、`expo-clipboard`、`expo-haptics`
+- 每个能力都必须同时具备：
+  fixture、sample route、doctor、sync-template、bundle、debug build、acceptance 记录
+- 完成 `expo-location`、`expo-camera` verified 晋升
+- 如果某项能力无法在同版晋升，则必须明确记录阻塞点与缺失证据，而不是模糊停留
+
+### v2.0 Managed/CNG Core Expo Coverage
+
+目标日期：`2026-10-31`
+
+定义：在单一 `verified` runtime matrix 下，把主流 `Managed/CNG Expo` 生产项目推进到完整可用、可构建、可交付。
+
+- 官方高频 Expo 能力覆盖达到可交付水平
+- `latest` 只包含完整验收能力
+- release readiness 路径完整闭环
+- roadmap 对外叙事从“sample 可跑”升级为“核心 Managed/CNG Expo 项目可稳定交付”
+
+这是最早可以对外宣告“主目标收官”的时间点。
 
 ### v2.x Long-tail Native Module Extension
 
-目标：在完成核心 Expo 全覆盖后，再去逼近“任何 Expo 项目都能打包成鸿蒙 APP”的长期目标。
+目标日期：`2027-03-31` 前启动
 
-- 引入长尾第三方 native module 的 extension / onboarding 模型
-- 为第三方适配建立 capability registry、adapter、fixture、acceptance 规范
-- 不对未知或未验证 native package 提前给出正式可用承诺
+目标：把“任何 Expo 项目都能打包成鸿蒙 APP”从内建承诺，转成有边界、可扩展、可持续维护的 extension model。
+
+- 引入第三方 native module extension / onboarding 模型
+- 建立 capability registry、adapter、fixture、acceptance 规范
+- 把未知或未验证第三方包从“公开承诺”切换为“显式扩展”
+- 不对未验证长尾模块提前给出正式可用声明
 
 ## 长期方向
 
-- 先做到 `Core Expo Full Coverage`
-- 再做到 `Long-tail Native Module Coverage`
-- “推进速度”与“完全可用”并行，而不是先扩承诺再补证据
+- 先做到 `Managed/CNG Core Expo Coverage`
+- 再通过 `Long-tail Native Module Extension` 逼近“任意 Expo 项目”
+- 推进速度依赖 `next` 快速收敛反馈，但公开承诺继续由 `latest` 控制
 
 ## 路线约束
 
-- `v2.0` 前继续坚持单一 verified runtime matrix，不提前开启多 Expo / RNOH 并行正式承诺
+- `v2.0` 前继续坚持单一 verified runtime matrix
+- `v2.0` 前不把 bare Expo 拉进主线，只保留 `Managed/CNG`
 - `doctor --strict` 继续只代表 `verified`
+- `latest` 只承诺完整验收的 `verified` 能力
+- `next` 可以承接 preview fast track，但不得伪装成 verified
 - roadmap、support matrix、README、acceptance 记录必须在同一 PR 同步更新
 - 没有 sample、fixture、文档、构建证据、人工验收记录的能力，不得晋升到 `verified`
+
+## 风险与顺延条件
+
+- 收官前提是从 `2026-03-31` 起持续具备 Harmony 模拟器或真机验证条件，并保持周级别验收节奏
+- 如果 Expo SDK / RNOH 在 `2026-05-15` 前发生大矩阵漂移，`v2.0` 收官点应顺延到 `2026-12-31` 左右

@@ -8,6 +8,8 @@ const readmeEnPath = path.join(repoRoot, 'README.en.md');
 const licensePath = path.join(repoRoot, 'LICENSE');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const supportMatrixPath = path.join(repoRoot, 'docs', 'support-matrix.md');
+const roadmapPath = path.join(repoRoot, 'docs', 'roadmap.md');
+const npmReleasePath = path.join(repoRoot, 'docs', 'npm-release.md');
 
 function getLocalLinks(contents: string): string[] {
   const markdownMatches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
@@ -41,6 +43,10 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('expo55-rnoh082-ui-stack');
     expect(readmeZh).toContain('./docs/official-ui-stack-sample.md');
     expect(readmeEn).toContain('./docs/official-ui-stack-sample.md');
+    expect(readmeZh).toContain('`latest` 只承诺完整验收的 `verified` 能力');
+    expect(readmeEn).toContain('`latest` only carries fully accepted `verified` capabilities');
+    expect(readmeZh).toContain('`next`');
+    expect(readmeEn).toContain('`next`');
 
     for (const link of linkedFiles) {
       const target = path.resolve(repoRoot, link);
@@ -65,5 +71,18 @@ describe('documentation metadata', () => {
       expect(supportMatrix).toContain(adapter.adapterPackageName);
       expect(supportMatrix).toContain(getUiStackAdapterSpecifier(adapter));
     }
+  });
+
+  it('keeps roadmap and release docs aligned with stable/latest plus fast-track/next', async () => {
+    const roadmap = await fs.readFile(roadmapPath, 'utf8');
+    const npmRelease = await fs.readFile(npmReleasePath, 'utf8');
+
+    expect(roadmap).toContain('2026-05-15');
+    expect(roadmap).toContain('Capability Graduation + Fast Track Release');
+    expect(roadmap).toContain('Managed/CNG Core Expo Coverage');
+    expect(roadmap).toContain('Long-tail Native Module Extension');
+    expect(npmRelease).toContain('`latest`');
+    expect(npmRelease).toContain('`next`');
+    expect(npmRelease).toContain('official-native-capabilities-sample');
   });
 });

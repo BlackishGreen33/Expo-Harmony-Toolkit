@@ -5,9 +5,16 @@ const fs = require('fs-extra');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
+const releaseChannel = process.env.EXPO_HARMONY_RELEASE_CHANNEL === 'next' ? 'next' : 'latest';
 const smokeSampleRoot = path.resolve(
   process.env.EXPO_HARMONY_RELEASE_SMOKE_SAMPLE ??
-    path.join(repoRoot, 'examples', 'official-ui-stack-sample'),
+    path.join(
+      repoRoot,
+      'examples',
+      releaseChannel === 'next'
+        ? 'official-native-capabilities-sample'
+        : 'official-ui-stack-sample',
+    ),
 );
 const skipHap = process.env.EXPO_HARMONY_RELEASE_SKIP_HAP === '1';
 const smokeTempRootBase = path.resolve(process.env.EXPO_HARMONY_RELEASE_SMOKE_TEMP_ROOT ?? '/tmp');
@@ -18,6 +25,10 @@ const packEnv = {
   ...process.env,
   npm_config_ignore_scripts: 'true',
 };
+const doctorArgs =
+  releaseChannel === 'next'
+    ? ['doctor', '--project-root', '.', '--target-tier', 'preview']
+    : ['doctor', '--project-root', '.', '--strict'];
 
 function run(file, args, options = {}) {
   const result = spawnSync(file, args, {
@@ -134,7 +145,7 @@ async function main() {
         CI: '1',
       },
     });
-    run('pnpm', ['exec', 'expo-harmony', 'doctor', '--project-root', '.', '--strict'], {
+    run('pnpm', ['exec', 'expo-harmony', ...doctorArgs], {
       cwd: tempSampleRoot,
     });
     run('pnpm', ['exec', 'expo-harmony', 'init', '--project-root', '.', '--force'], {

@@ -30,15 +30,32 @@ jobs:
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@11.5.1
 
+      - name: Resolve release channel
+        id: channel
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "$REF_NAME" in
+            *-next.*|*-beta.*|*-alpha.*)
+              echo "release_channel=next" >> "$GITHUB_OUTPUT"
+              echo "dist_tag=next" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "release_channel=latest" >> "$GITHUB_OUTPUT"
+              echo "dist_tag=latest" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Release Check
         env:
+          EXPO_HARMONY_RELEASE_CHANNEL: ${{ steps.channel.outputs.release_channel }}
           EXPO_HARMONY_RELEASE_SKIP_HAP: '1'
           CI: '1'
         run: pnpm release:check
 
       - name: Publish to npm
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        run: npm publish --tag latest --provenance --access public
+        run: npm publish --tag ${{ steps.channel.outputs.dist_tag }} --provenance --access public

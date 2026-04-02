@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.7` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 推进到 `preview`。当前对外路线仍然是先做到 `Core Expo Full Coverage`，再去覆盖长尾第三方 native module；这依然不是“任意 Expo 项目都能原样发布到 HarmonyOS”的声明。
+> `v1.7` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 推进到 `preview`。从这版文档开始，对外承诺进一步收紧为：`latest` 只承诺完整验收的 `verified` 能力，`next` 用于 preview fast track；路线仍然是先做到 `Managed/CNG Core Expo Coverage`，再通过 extension model 逼近“任意 Expo 项目”。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -54,6 +54,8 @@
 | `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
 | `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler` |
+| 发布轨 | `latest` = fully accepted verified only；`next` = preview fast track |
+| capability 遥测 | `runtimeMode` + `evidence(bundle/debugBuild/device/release)` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
@@ -168,13 +170,19 @@ pnpm exec expo-harmony build-hap --mode release
 
 ## 支持矩阵
 
-`v1.7` 继续采用支持分层：
+`v1.7` 继续采用支持分层，并开始把 capability 晋升距离写进公开报告：
 
 - `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
 - `preview`：`expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`
 - `experimental`：`expo-notifications`、`react-native-gesture-handler`
 
 `doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
+
+从本版开始：
+
+- `doctor-report.json` 的 `capabilities[]` 会带出 `runtimeMode`
+- `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`
+- `runtimeMode=shim` 说明当前仍未进入 verified runtime path，即使 bundle / debug build 已经可走通
 
 完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
@@ -230,14 +238,16 @@ pnpm exec expo-harmony build-hap --mode release
 - `pnpm build`
 - `pnpm test`
 - `npm pack --dry-run`
-- tarball 安装 smoke：`doctor --strict`、`init --force`、`bundle`
+- tarball 安装 smoke：
+  `latest` 走 `doctor --strict`、`init --force`、`bundle`
+  `next` 走 `doctor --target-tier preview`、`init --force`、`bundle`
 
-自动发布默认走 hosted CI only：
+自动发布默认走 hosted CI only，并区分双轨：
 
-- GitHub workflow 跑 `build/test/pack/tarball smoke`
-- `build-hap --mode debug` 不阻塞 npm publish
-- GitHub 自动发布使用 `latest` dist-tag 和 provenance
-- 本地手动发布使用 `latest` dist-tag
+- `stable/latest`：只承接 verified sample 与完整验收能力
+- `fast-track/next`：承接 preview sample 与 preview capability smoke
+- GitHub 自动发布按 tag 选择 `latest` 或 `next` dist-tag，并保留 provenance
+- `build-hap --mode debug` 继续不作为 hosted npm publish 的硬阻塞条件
 
 手动 Harmony 验收继续要求：
 
@@ -247,6 +257,12 @@ pnpm exec expo-harmony build-hap --mode release
 - 动画完成后路由跳转仍正常
 - `Build Debug Hap(s)` 成功
 - `official-native-capabilities-sample` 至少完成 Batch A+B preview route 的 bundle、permission 与 debug build 检查
+
+verified capability 晋升还必须补齐：
+
+- device-side 验收
+- release signing / `build-hap --mode release`
+- roadmap、support matrix、README、acceptance 记录同 PR 更新
 
 详见 [docs/npm-release.md](./docs/npm-release.md) 与 [docs/signing-and-release.md](./docs/signing-and-release.md)。
 

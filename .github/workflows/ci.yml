@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  validate:
+  stable-lane:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +31,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Strict doctor passes on official samples
+      - name: Strict doctor passes on verified official samples
         run: |
           node bin/expo-harmony.js doctor --project-root examples/official-minimal-sample --strict
           node bin/expo-harmony.js doctor --project-root examples/official-app-shell-sample --strict
@@ -48,7 +48,7 @@ jobs:
             fi
           done
 
-      - name: Official samples init and sync remain idempotent
+      - name: Verified official samples init and sync remain idempotent
         run: |
           pnpm --dir examples/official-minimal-sample run harmony:init
           pnpm --dir examples/official-minimal-sample run harmony:sync-template
@@ -60,8 +60,50 @@ jobs:
           pnpm --dir examples/official-ui-stack-sample run harmony:sync-template
           pnpm --dir examples/official-ui-stack-sample run harmony:sync-template
 
-      - name: Official samples bundle
+      - name: Verified official samples bundle
         run: |
           pnpm --dir examples/official-minimal-sample run harmony:bundle
           pnpm --dir examples/official-app-shell-sample run harmony:bundle
           pnpm --dir examples/official-ui-stack-sample run harmony:bundle
+
+  next-lane:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build
+        run: pnpm build
+
+      - name: Preview capability tests
+        run: pnpm exec jest --runInBand tests/officialNativeCapabilitiesSample.test.ts tests/build.test.ts
+
+      - name: Preview doctor passes on native capability sample
+        run: node bin/expo-harmony.js doctor --project-root examples/official-native-capabilities-sample --target-tier preview
+
+      - name: Strict doctor stays blocked on preview sample
+        run: |
+          exit_code=0
+          node bin/expo-harmony.js doctor --project-root examples/official-native-capabilities-sample --strict || exit_code=$?
+          if [ "$exit_code" -ne 2 ]; then
+            echo "Expected exit code 2 for examples/official-native-capabilities-sample, got $exit_code"
+            exit 1
+          fi
+
+      - name: Preview sample init, sync, and bundle
+        run: |
+          pnpm --dir examples/official-native-capabilities-sample run harmony:init
+          pnpm --dir examples/official-native-capabilities-sample run harmony:sync-template
+          pnpm --dir examples/official-native-capabilities-sample run harmony:bundle
