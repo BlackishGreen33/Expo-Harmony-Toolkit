@@ -47,7 +47,7 @@ pnpm run harmony:build:debug
 如果要继续验证 release 构建，先准备本地签名覆盖文件：
 
 ```bash
-mkdir -p .expo-harmony
+cp .expo-harmony/signing.local.example.json .expo-harmony/signing.local.json
 $EDITOR .expo-harmony/signing.local.json
 pnpm run harmony:env
 pnpm run harmony:build:release
@@ -55,6 +55,7 @@ pnpm run harmony:build:release
 
 说明：
 
+- `.expo-harmony/signing.local.example.json` 是可直接复制的本地 signing 範本
 - `.expo-harmony/signing.local.json` 是本地 signing 入口
 - signing 缺失时，release 构建应明确失败，而不是假成功
 

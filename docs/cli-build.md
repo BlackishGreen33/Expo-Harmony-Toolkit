@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.7.2` 延续 `verified + preview + experimental` 支持分层，并把四项 preview capability 的现有 `🟠` 缺口收口到明确 `🟡` 子集，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.7.3` 延续 `verified + preview + experimental` 支持分层，并把四项 preview capability 的现有 `🟠` 缺口收口到明确 `🟡` 子集，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 

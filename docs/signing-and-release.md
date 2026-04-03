@@ -27,6 +27,7 @@ expo-harmony env
 
 - `debug` 构建仍可继续做本地验证
 - `release` 构建不应视为 ready
+- 可以直接从 `.expo-harmony/signing.local.example.json` 复制出 `.expo-harmony/signing.local.json` 再填入真实材料
 
 ## 推荐流程
 
@@ -40,6 +41,8 @@ expo-harmony build-hap --mode debug
 ### Release 验证
 
 ```bash
+cp .expo-harmony/signing.local.example.json .expo-harmony/signing.local.json
+$EDITOR .expo-harmony/signing.local.json
 expo-harmony env
 expo-harmony build-hap --mode release
 ```

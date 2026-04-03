@@ -2,7 +2,7 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 是 `v1.7.2` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
+这个 sample 是 `v1.7.3` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
 
 标记说明：
 
@@ -108,7 +108,7 @@ pnpm run harmony:doctor:strict
 如果要继续验证 release 构建，先准备本地签名覆盖文件：
 
 ```bash
-mkdir -p .expo-harmony
+cp .expo-harmony/signing.local.example.json .expo-harmony/signing.local.json
 $EDITOR .expo-harmony/signing.local.json
 pnpm run harmony:env
 pnpm run harmony:build:release
@@ -116,6 +116,7 @@ pnpm run harmony:build:release
 
 说明：
 
+- `.expo-harmony/signing.local.example.json` 是可直接复制的本地 signing 範本
 - `.expo-harmony/signing.local.json` 是本地 signing 入口
 - toolkit 会把本地 signing 合并进 `harmony/build-profile.json5`
 - 即使 release 构建可走通，在没有真机前，这四项能力也仍保持 `preview`

@@ -5,6 +5,7 @@
 - `supportTier` 表示公开承诺层级
 - `runtimeMode` 表示当前运行时接入形态：`shim`、`adapter`、`verified`
 - `evidence` 表示距离 verified 还缺哪些证据格
+- `evidenceSource` 表示每个证据格来自自动化、人工记录，还是当前无证据
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -12,6 +13,7 @@
 
 唯一 `verified` 矩阵仍是 `expo55-rnoh082-ui-stack`。
 
+<!-- GENERATED:support-matrix-verified-matrix:start -->
 | 项目 | 要求 |
 | --- | --- |
 | Expo SDK | `55` |
@@ -21,9 +23,10 @@
 | `@react-native-oh/react-native-harmony-cli` | `0.82.18` |
 | `@react-native-community/cli` | `20.x` |
 | `metro` | `0.83.x` |
-| App Shell 依赖 | `expo-router` `6.x`、`expo-linking` `55.x`、`expo-constants` `55.x` |
+| App Shell 依赖 | `expo-router` `55.x`、`expo-linking` `55.x`、`expo-constants` `55.x`、`@expo/metro-runtime` `55.x`、`react-dom` `19.1.1` |
 | UI stack 依赖 | `react-native-reanimated` `3.6.0`、`react-native-svg` `15.0.0` |
 | 原生标识 | 至少设置 `android.package` 或 `ios.bundleIdentifier` |
+<!-- GENERATED:support-matrix-verified-matrix:end -->
 
 ## Support Tiers
 
@@ -36,26 +39,31 @@
 
 ## Verified Allowlist
 
+<!-- GENERATED:support-matrix-verified-allowlist:start -->
 - `expo`
+- `@expo/metro-runtime`
 - `expo-constants`
 - `expo-linking`
 - `expo-router`
 - `react`
+- `react-dom`
 - `react-native`
 - `expo-status-bar`
 - `@babel/runtime`
 - `@react-native-community/cli`
 - `metro`
-- `expo-harmony-toolkit`
 - `@react-native-oh/react-native-harmony`
 - `@react-native-oh/react-native-harmony-cli`
+- `expo-harmony-toolkit`
 - `react-native-reanimated`
-- `react-native-svg`
 - `@react-native-oh-tpl/react-native-reanimated`
+- `react-native-svg`
 - `@react-native-oh-tpl/react-native-svg`
+<!-- GENERATED:support-matrix-verified-allowlist:end -->
 
 ## Capability Telemetry
 
+<!-- GENERATED:support-matrix-capability-telemetry:start -->
 所有 capability 从现在开始都同时公开：
 
 - `supportTier`
@@ -64,12 +72,17 @@
 - `evidence.debugBuild`
 - `evidence.device`
 - `evidence.release`
+- `evidenceSource.bundle`
+- `evidenceSource.debugBuild`
+- `evidenceSource.device`
+- `evidenceSource.release`
 
 判读规则：
 
 - `runtimeMode=shim`：说明当前还在桥接或占位阶段，即使 bundle / debug build 已完成，也不应宣称 verified
 - `runtimeMode=adapter`：说明已经进入真实适配路径，但仍缺少某些验收证据
 - `runtimeMode=verified`：说明能力已进入正式承诺，且证据闭环完成
+<!-- GENERATED:support-matrix-capability-telemetry:end -->
 
 为了避免把“只差真机”与“当前子 API 还没实现到位”混在一起，`v1.7.x` 文档额外使用以下标记：
 
@@ -78,17 +91,20 @@
 
 ## Preview 能力
 
+<!-- GENERATED:support-matrix-preview-capabilities:start -->
 | Expo 能力 | 当前层级 | runtimeMode | evidence | Harmony 依赖方向 | 受管权限 | 官方 sample route |
 | --- | --- | --- | --- | --- | --- | --- |
-| `expo-file-system` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed sandbox file adapter | 无新增必需权限 | `/file-system` |
-| `expo-image-picker` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed Harmony media picker adapter | `ohos.permission.CAMERA`、`ohos.permission.MICROPHONE`、`ohos.permission.READ_IMAGEVIDEO` | `/image-picker` |
-| `expo-location` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed `@ohos.geoLocationManager` TurboModule | `ohos.permission.LOCATION`、`ohos.permission.APPROXIMATELY_LOCATION`、`ohos.permission.LOCATION_IN_BACKGROUND`、`ohos.permission.ACCELEROMETER` | `/location` |
-| `expo-camera` | `preview` | `adapter` | `bundle=yes, debugBuild=yes, device=yes, release=no` | toolkit-managed embedded camera preview + control TurboModule | `ohos.permission.CAMERA`、`ohos.permission.MICROPHONE` | `/camera` |
+| `expo-file-system` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-fs | 无新增必需权限 | `/file-system` |
+| `expo-image-picker` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-image-picker, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE、ohos.permission.READ_IMAGEVIDEO | `/image-picker` |
+| `expo-location` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | @react-native-community/geolocation, react-native-permissions | ohos.permission.LOCATION、ohos.permission.APPROXIMATELY_LOCATION、ohos.permission.LOCATION_IN_BACKGROUND、ohos.permission.ACCELEROMETER | `/location` |
+| `expo-camera` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-camera-kit, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/camera` |
+<!-- GENERATED:support-matrix-preview-capabilities:end -->
 
 说明：
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
-- 四项 preview capability 都已经进入 `adapter` 路径；`device=yes` 只表示已有样例侧与运行时路径证据，仍不代表 verified 或 release-ready
+- 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
+- 当前 preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
 - `expo-file-system`
   - `🟡` 当前主路径是 UTF-8/base64 sandbox I/O、append/partial read、`getInfoAsync({ md5: true })` 与 `downloadAsync`
 - `expo-image-picker`
@@ -107,6 +123,7 @@
 
 ## UI Stack 配对规则
 
+<!-- GENERATED:support-matrix-ui-stack:start -->
 canonical 包与 Harmony adapter 包固定为双向强制：
 
 - `react-native-reanimated` ↔ `@react-native-oh-tpl/react-native-reanimated`
@@ -123,6 +140,7 @@ canonical 包与 Harmony adapter 包固定为双向强制：
 
 - `@react-native-oh-tpl/react-native-reanimated`: `github:react-native-oh-library/react-native-harmony-reanimated#9fdbe676209937383907be0592291223c6ca7ad7&path:react-native-harmony-reanimated`
 - `@react-native-oh-tpl/react-native-svg`: `github:react-native-oh-library/react-native-harmony-svg#97c31d2f72559931d62fa84a9c86e86d343753d3&path:react-native-harmony-svg`
+<!-- GENERATED:support-matrix-ui-stack:end -->
 
 ## `doctor`
 
@@ -147,10 +165,15 @@ expo-harmony doctor --project-root /path/to/app --target-tier preview
 - `capabilities[].evidence.debugBuild`
 - `capabilities[].evidence.device`
 - `capabilities[].evidence.release`
+- `capabilities[].evidenceSource.bundle`
+- `capabilities[].evidenceSource.debugBuild`
+- `capabilities[].evidenceSource.device`
+- `capabilities[].evidenceSource.release`
 
 判读方式：
 
 - 任一 `evidence.* = false`，表示晋升到 verified 前仍缺证据
+- `evidenceSource.device = manual-doc`，表示该证据来自人工验收记录，不应被表述成自动化设备验证
 - `runtimeMode !== verified`，表示即使已有部分证据，也仍不属于正式承诺
 
 当前公开阻断 issue code 继续包括：
@@ -184,13 +207,14 @@ toolkit 受管的核心产物仍包括：
 
 - `entry/src/main/module.json5` 的 `requestPermissions` 由 toolkit 根据已启用能力自动补齐
 - preview / experimental 能力的 Metro import path 通过 `.expo-harmony/shims/<package>` 接管
-- `toolkit-config.json` 会记录 capability 的 `runtimeMode` 与 `evidence`
+- `toolkit-config.json` 会记录 capability 的 `runtimeMode`、`evidence` 与 `evidenceSource`
 - verified UI stack 依赖继续走现有 autolinking + `.har` 管理逻辑
 
 ## Release Tracks
 
 从 `v1.8` 开始，发布节奏按双轨设计：
 
+<!-- GENERATED:support-matrix-release-tracks:start -->
 - `latest`
   - 只承接完整验收的 `verified` 能力
   - 只允许 verified sample / gate 作为发布依据
@@ -198,6 +222,7 @@ toolkit 受管的核心产物仍包括：
   - 承接 preview fast track
   - 必须至少通过 preview sample、bundle、debug build gate
   - 不得被描述为 verified 或 release-ready
+<!-- GENERATED:support-matrix-release-tracks:end -->
 
 ## Capability Promotion Gate
 

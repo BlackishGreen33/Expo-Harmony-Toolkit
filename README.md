@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.2-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.3-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -45,9 +45,10 @@
 
 ## 当前状态
 
+<!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.7.2` |
+| 当前版本 | `v1.7.3` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
@@ -55,11 +56,12 @@
 | `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler` |
 | 发布轨 | `latest` = fully accepted verified only；`next` = preview fast track |
-| capability 遥测 | `runtimeMode` + `evidence(bundle/debugBuild/device/release)` |
+| capability 遥测 | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
 | 辅助 onboarding samples | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
+<!-- GENERATED:readme-current-status:end -->
 
 <details>
 <summary><strong>当前仍不在 verified 正式承诺范围</strong></summary>
@@ -170,19 +172,21 @@ pnpm exec expo-harmony build-hap --mode release
 
 ## 支持矩阵
 
-`v1.7` 继续采用支持分层，并开始把 capability 晋升距离写进公开报告：
-
+<!-- GENERATED:readme-support-matrix:start -->
 - `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
-- `preview`：`expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`
-- `experimental`：`expo-notifications`、`react-native-gesture-handler`
+- `preview`：`expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
+- `experimental`：`expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
 
-从本版开始：
-
 - `doctor-report.json` 的 `capabilities[]` 会带出 `runtimeMode`
 - `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`
+- `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidenceSource.bundle`、`evidenceSource.debugBuild`、`evidenceSource.device`、`evidenceSource.release`
 - `runtimeMode=shim` 说明当前仍未进入 verified runtime path，即使 bundle / debug build 已经可走通
+- `evidenceSource.device=manual-doc` 表示当前只有人工设备验收记录，不代表机器自动验证
+<!-- GENERATED:readme-support-matrix:end -->
+
+从本版开始，`doctor` 还会额外输出 `buildabilityRisk`，把“超出公开矩阵但看起来更像纯 JS 层”的依赖，与“存在明确原生风险”的依赖区分开来；这不会放宽 gate，只是让构建可诊断性更强。
 
 文档里的状态标记额外约定为：
 
@@ -233,9 +237,9 @@ pnpm exec expo-harmony build-hap --mode release
 - `metro.harmony.config.js`
 - `.expo-harmony/manifest.json`
 - `.expo-harmony/doctor-report.json`
+- `.expo-harmony/toolkit-config.json`
 - `.expo-harmony/env-report.json`
 - `.expo-harmony/build-report.json`
-- `.expo-harmony/toolkit-config.json`
 
 ## 发布与验收
 
@@ -254,6 +258,12 @@ pnpm exec expo-harmony build-hap --mode release
 - `fast-track/next`：承接 preview sample 与 preview capability smoke
 - GitHub 自动发布按 tag 选择 `latest` 或 `next` dist-tag，并保留 provenance
 - `build-hap --mode debug` 继续不作为 hosted npm publish 的硬阻塞条件
+
+preview 证据的额外说明：
+
+- `bundle/debugBuild` 标记为 `automated`
+- `device` 标记为 `manual-doc`，表示已有人工验收记录，不等于 CI 自动验收
+- `release` 标记为 `none`，表示当前仍没有 release 证据
 
 手动 Harmony 验收继续要求：
 
@@ -282,8 +292,9 @@ verified capability 晋升还必须补齐：
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
 - [npm 发布说明](./docs/npm-release.md)
 - [签名与 Release 说明](./docs/signing-and-release.md)
-- [v1.7.2 验收记录](./docs/v1.7.2-acceptance.md)
 - [路线图](./docs/roadmap.md)
+
+验收记录继续保留在 repo-only 的 [`acceptance/`](./acceptance/) 目录中，不随 npm tarball 一起发布。
 
 ## License
 

@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.2-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.3-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -45,9 +45,10 @@
 
 ## Current Status
 
+<!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.7.2` |
+| Current version | `v1.7.3` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
@@ -55,11 +56,12 @@
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler` |
 | Release tracks | `latest` = fully accepted `verified` only; `next` = preview fast track |
-| Capability telemetry | `runtimeMode` + `evidence(bundle/debugBuild/device/release)` |
+| Capability telemetry | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
 | Supporting onboarding samples | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
+<!-- GENERATED:readme-current-status:end -->
 
 <details>
 <summary><strong>Still outside the verified public promise</strong></summary>
@@ -170,19 +172,21 @@ Common decision points:
 
 ## Support Matrix
 
-`v1.7` keeps tiered support and now exposes capability promotion distance in public reports:
-
+<!-- GENERATED:readme-support-matrix:start -->
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
 - `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
 - `experimental`: `expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
 
-Starting in this refresh:
-
 - `doctor-report.json` exposes `capabilities[].runtimeMode`
 - `doctor-report.json` and `toolkit-config.json` expose `evidence.bundle`, `evidence.debugBuild`, `evidence.device`, and `evidence.release`
+- `doctor-report.json` and `toolkit-config.json` expose `evidenceSource.bundle`, `evidenceSource.debugBuild`, `evidenceSource.device`, and `evidenceSource.release`
 - `runtimeMode=shim` means the capability still has not reached a verified runtime path even if bundling and debug-build scaffolding already exist
+- `evidenceSource.device=manual-doc` means the current device signal comes from manual acceptance records, not automated verification
+<!-- GENERATED:readme-support-matrix:end -->
+
+Starting in this refresh, `doctor` also emits `buildabilityRisk` so matrix-out dependencies that still look JavaScript-only no longer get described the same way as packages with clear native risk. This does not relax any gate; it only improves diagnosis.
 
 See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, pairing rules, exact specifiers, issue codes, and release gates.
 
@@ -226,10 +230,10 @@ Key managed outputs include:
 - `harmony/entry/src/main/cpp/autolinking.cmake`
 - `metro.harmony.config.js`
 - `.expo-harmony/manifest.json`
+- `.expo-harmony/toolkit-config.json`
 - `.expo-harmony/doctor-report.json`
 - `.expo-harmony/env-report.json`
 - `.expo-harmony/build-report.json`
-- `.expo-harmony/toolkit-config.json`
 
 ## Release And Validation
 
@@ -248,6 +252,12 @@ Automatic publishing still defaults to hosted CI only, but now splits into two t
 - `fast-track/next`: preview sample smoke and preview capability validation
 - GitHub auto-publish selects `latest` or `next` based on the tag and keeps provenance enabled
 - `build-hap --mode debug` still does not block hosted npm publishing
+
+Additional preview evidence semantics:
+
+- `bundle/debugBuild` are marked as `automated`
+- `device` is marked as `manual-doc`, which means a human acceptance record exists rather than CI automation
+- `release` is marked as `none`, which means no release evidence exists yet
 
 Manual Harmony acceptance still requires:
 
@@ -276,8 +286,9 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
 - [npm Release Notes](./docs/npm-release.md)
 - [Signing and Release Notes](./docs/signing-and-release.md)
-- [v1.7.2 Acceptance Log](./docs/v1.7.2-acceptance.md)
 - [Roadmap](./docs/roadmap.md)
+
+Acceptance logs stay in the repo-only [`acceptance/`](./acceptance/) directory and are not shipped inside the npm tarball.
 
 ## License
 
