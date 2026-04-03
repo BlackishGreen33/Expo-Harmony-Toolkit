@@ -28,6 +28,10 @@ function getPackEnv(baseEnv = process.env) {
 }
 
 function runPack(args, options = {}) {
+  if ((options.cwd ?? repoRoot) === repoRoot) {
+    pruneUnexpectedBuildArtifacts();
+  }
+
   const result = spawnSync('npm', ['pack', ...args], {
     cwd: options.cwd ?? repoRoot,
     env: getPackEnv({
@@ -79,6 +83,25 @@ function listSourceFiles(currentPath) {
   return files;
 }
 
+function listBuildFiles(currentPath) {
+  const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const nextPath = path.join(currentPath, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listBuildFiles(nextPath));
+      continue;
+    }
+
+    if (entry.isFile()) {
+      files.push(nextPath);
+    }
+  }
+
+  return files;
+}
+
 function getExpectedBuildFilePaths() {
   const sourceRoot = path.join(repoRoot, 'src');
   const expectedPaths = new Set();
@@ -91,6 +114,25 @@ function getExpectedBuildFilePaths() {
   }
 
   return expectedPaths;
+}
+
+function pruneUnexpectedBuildArtifacts() {
+  const buildRoot = path.join(repoRoot, 'build');
+
+  if (!fs.existsSync(buildRoot)) {
+    return;
+  }
+
+  const expectedBuildFilePaths = getExpectedBuildFilePaths();
+  const buildFiles = listBuildFiles(buildRoot);
+
+  for (const buildFilePath of buildFiles) {
+    const tarballPath = `build/${path.relative(buildRoot, buildFilePath)}`.split(path.sep).join('/');
+
+    if (!expectedBuildFilePaths.has(tarballPath)) {
+      fs.unlinkSync(buildFilePath);
+    }
+  }
 }
 
 function getUnexpectedTarballFiles(files) {
@@ -144,6 +186,7 @@ module.exports = {
   getExpectedBuildFilePaths,
   getPackEnv,
   getUnexpectedTarballFiles,
+  pruneUnexpectedBuildArtifacts,
   packDryRunArtifacts,
   parseJsonArrayFromMixedOutput,
   runPack,
