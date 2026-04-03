@@ -1,5 +1,7 @@
 node_modules
 build
+!src/core/build/
+!src/core/build/*.ts
 coverage
 .DS_Store
 *.log
