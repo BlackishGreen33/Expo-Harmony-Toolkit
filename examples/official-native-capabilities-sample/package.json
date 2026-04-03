@@ -15,6 +15,7 @@
     "start": "expo start"
   },
   "dependencies": {
+    "@expo/metro-runtime": "55.0.7",
     "@babel/runtime": "^7.28.4",
     "@react-native-oh/react-native-harmony": "0.82.18",
     "@react-native-oh/react-native-harmony-cli": "0.82.18",
@@ -25,9 +26,10 @@
     "expo-image-picker": "~17.0.8",
     "expo-linking": "~55.0.8",
     "expo-location": "~55.1.4",
-    "expo-router": "~6.0.23",
+    "expo-router": "55.0.7",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.1",
+    "react-dom": "19.1.1",
     "react-native": "0.82.1"
   },
   "devDependencies": {

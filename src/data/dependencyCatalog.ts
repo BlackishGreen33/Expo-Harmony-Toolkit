@@ -39,6 +39,11 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     supportTier: 'verified',
     note: 'Toolkit can parse Expo config and scaffold Harmony sidecar files for managed/CNG projects.',
   },
+  '@expo/metro-runtime': {
+    status: 'supported',
+    supportTier: 'verified',
+    note: 'Metro runtime is part of the validated managed Expo routing/bundling chain and keeps Expo workspace peers aligned.',
+  },
   '@babel/runtime': {
     status: 'supported',
     supportTier: 'verified',
@@ -63,6 +68,11 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     status: 'supported',
     supportTier: 'verified',
     note: 'React is treated as a baseline JavaScript dependency.',
+  },
+  'react-dom': {
+    status: 'supported',
+    supportTier: 'verified',
+    note: 'React DOM is treated as a workspace peer for Expo Router and web-capable managed Expo projects inside the validated matrix.',
   },
   'react-native': {
     status: 'supported',

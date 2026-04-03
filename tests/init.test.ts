@@ -60,9 +60,12 @@ describe('init project', () => {
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
     expect(packageJson.scripts['harmony:build:debug']).toBe('expo-harmony build-hap --mode debug');
     expect(packageJson.pnpm?.overrides).toBeUndefined();
-    expect(manifest?.toolkitVersion).toBe('1.7.2');
+    expect(
+      await fs.pathExists(path.join(projectRoot, '.expo-harmony', 'signing.local.example.json')),
+    ).toBe(true);
+    expect(manifest?.toolkitVersion).toBe('1.7.3');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.7.2');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.7.3');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
@@ -108,10 +111,15 @@ describe('init project', () => {
       path.join(projectRoot, 'harmony', 'build-profile.json5'),
       'utf8',
     );
+    const signingExampleContents = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'signing.local.example.json'),
+      'utf8',
+    );
 
     expect(buildProfileContents).toContain('"signingConfigs"');
     expect(buildProfileContents).toContain('"storeFile": "./signing/release.p12"');
     expect(buildProfileContents).toContain('"signingConfig": "default"');
+    expect(signingExampleContents).toContain('<replace-with-store-password>');
   });
 
   it('surfaces metadata matrix drift in doctor and sync warnings', async () => {
@@ -193,6 +201,18 @@ describe('init project', () => {
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.device)).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.release === false)).toBe(
+      true,
+    );
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.bundle === 'automated')).toBe(
+      true,
+    );
+    expect(
+      toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.debugBuild === 'automated'),
+    ).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.device === 'manual-doc')).toBe(
+      true,
+    );
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.release === 'none')).toBe(
       true,
     );
     expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(

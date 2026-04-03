@@ -17,6 +17,16 @@ const nativeCapabilitiesSampleRoot = path.join(
   'official-native-capabilities-sample',
 );
 const execFileAsync = promisify(execFile);
+const FAKE_NOOP_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
+  func: async () => {}
+};
+`;
+const FAKE_THROWING_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
+  func: async () => {
+    throw new Error('simulated link failure');
+  }
+};
+`;
 
 async function createTempFixture(sourceRoot: string): Promise<string> {
   const tempBase = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-build-'));
@@ -37,6 +47,32 @@ async function createTempFixture(sourceRoot: string): Promise<string> {
     '@rnoh/react-native-openharmony',
   );
   return tempRoot;
+}
+
+async function removeHarmonyCliFromFixture(projectRoot: string): Promise<void> {
+  await fs.remove(
+    path.join(projectRoot, 'node_modules', '@react-native-oh', 'react-native-harmony-cli'),
+  );
+}
+
+async function installFakeHarmonyCli(
+  projectRoot: string,
+  linkHarmonyModuleContents: string,
+): Promise<void> {
+  const cliRoot = path.join(projectRoot, 'node_modules', '@react-native-oh', 'react-native-harmony-cli');
+  await fs.remove(cliRoot);
+  await fs.outputJson(
+    path.join(cliRoot, 'package.json'),
+    {
+      name: '@react-native-oh/react-native-harmony-cli',
+      version: '0.82.18',
+    },
+    { spaces: 2 },
+  );
+  await fs.outputFile(
+    path.join(cliRoot, 'dist', 'commands', 'link-harmony.js'),
+    linkHarmonyModuleContents,
+  );
 }
 
 async function createFakeDevEcoStudio(projectRoot: string): Promise<string> {
@@ -165,6 +201,69 @@ function createSuccessfulRunner(): CommandRunner {
 }
 
 describe('bundle and HAP build reports', () => {
+  it('falls back to managed empty autolinking artifacts when the Harmony CLI package is missing', async () => {
+    const projectRoot = await createTempFixture(minimalSampleRoot);
+
+    await removeHarmonyCliFromFixture(projectRoot);
+
+    const initResult = await initProject(projectRoot, true);
+
+    expect(initResult.sync.writtenFiles).toContain('harmony/entry/src/main/ets/RNOHPackagesFactory.ets');
+    expect(
+      await fs.readFile(
+        path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'),
+        'utf8',
+      ),
+    ).toContain('return [');
+  }, 120000);
+
+  it('fails init and sync when the Harmony CLI exists but link-harmony throws', async () => {
+    const projectRoot = await createTempFixture(minimalSampleRoot);
+
+    await installFakeHarmonyCli(projectRoot, FAKE_THROWING_LINK_HARMONY_MODULE);
+
+    await expect(initProject(projectRoot, true)).rejects.toThrow(
+      'Harmony autolinking failed during link-harmony.',
+    );
+    await expect(syncProjectTemplate(projectRoot, true)).rejects.toThrow(
+      'simulated link failure',
+    );
+  }, 120000);
+
+  it('returns failed bundle and HAP reports when autolinking output generation is incomplete', async () => {
+    const projectRoot = await createTempFixture(minimalSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    const runner = createSuccessfulRunner();
+
+    await installFakeHarmonyCli(projectRoot, FAKE_NOOP_LINK_HARMONY_MODULE);
+
+    const bundleReport = await bundleProject(projectRoot, { runner });
+
+    expect(bundleReport.status).toBe('failed');
+    expect(bundleReport.blockingIssues[0]?.message).toContain(
+      'Harmony autolinking failed during validate-generated-files.',
+    );
+    expect(bundleReport.blockingIssues[0]?.message).toContain('RNOHPackagesFactory.ets');
+    expect(bundleReport.blockingIssues[0]?.message).toContain('autolinking.cmake');
+
+    const hapReport = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(hapReport.status).toBe('failed');
+    expect(hapReport.blockingIssues[0]?.message).toContain(
+      'Harmony autolinking failed during validate-generated-files.',
+    );
+  }, 120000);
+
   it('chooses index.js for minimal samples and index.harmony.js for router samples', async () => {
     const minimalRoot = await createTempFixture(minimalSampleRoot);
     const routerRoot = await createTempFixture(appShellSampleRoot);
@@ -499,6 +598,7 @@ describe('bundle and HAP build reports', () => {
     expect(report.status).toBe('succeeded');
     expect(await fs.pathExists(path.join(projectRoot, 'harmony'))).toBe(true);
     expect(report.blockingIssues).toHaveLength(0);
+    expect(report.warnings.some((warning) => warning.includes('env.signing.missing'))).toBe(false);
     expect(report.warnings).not.toContain(
       'Harmony sidecar files are not present yet. Run expo-harmony init before bundle or build-hap.',
     );

@@ -51,6 +51,59 @@ async function cleanupGeneratedArtifacts(projectRoot: string) {
   await fs.remove(path.join(projectRoot, 'metro.harmony.config.js'));
 }
 
+async function createDoctorFixtureFromSample(): Promise<string> {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-doctor-'));
+  await fs.copy(sampleRoot, tempRoot, {
+    filter: (source) =>
+      !source.includes(`${path.sep}node_modules${path.sep}`) &&
+      !source.endsWith(`${path.sep}node_modules`) &&
+      !source.includes(`${path.sep}harmony${path.sep}`) &&
+      !source.endsWith(`${path.sep}harmony`) &&
+      !source.includes(`${path.sep}.expo-harmony${path.sep}`) &&
+      !source.endsWith(`${path.sep}.expo-harmony`) &&
+      !source.endsWith(`${path.sep}index.harmony.js`) &&
+      !source.endsWith(`${path.sep}metro.harmony.config.js`),
+  });
+  return tempRoot;
+}
+
+async function addFakeDependency(
+  projectRoot: string,
+  packageName: string,
+  version: string,
+  options: {
+    packageJson?: Record<string, unknown>;
+    extraPaths?: string[];
+  } = {},
+): Promise<void> {
+  const packageJsonPath = path.join(projectRoot, 'package.json');
+  const packageJson = await fs.readJson(packageJsonPath);
+  packageJson.dependencies = {
+    ...(packageJson.dependencies ?? {}),
+    [packageName]: version,
+  };
+  await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+  if (!options.packageJson) {
+    return;
+  }
+
+  const dependencyRoot = path.join(projectRoot, 'node_modules', ...packageName.split('/'));
+  await fs.outputJson(
+    path.join(dependencyRoot, 'package.json'),
+    {
+      name: packageName,
+      version,
+      ...options.packageJson,
+    },
+    { spaces: 2 },
+  );
+
+  for (const extraPath of options.extraPaths ?? []) {
+    await fs.ensureDir(path.join(dependencyRoot, extraPath));
+  }
+}
+
 describe('doctor report', () => {
   it('classifies known Expo and third-party dependencies and marks the legacy fixture as ineligible', async () => {
     const report = await buildDoctorReport(managedFixtureRoot);
@@ -141,6 +194,18 @@ describe('doctor report', () => {
     expect(report.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidence.device)).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidence.release === false)).toBe(true);
+    expect(report.capabilities.every((capability) => capability.evidenceSource.bundle === 'automated')).toBe(
+      true,
+    );
+    expect(report.capabilities.every((capability) => capability.evidenceSource.debugBuild === 'automated')).toBe(
+      true,
+    );
+    expect(report.capabilities.every((capability) => capability.evidenceSource.device === 'manual-doc')).toBe(
+      true,
+    );
+    expect(report.capabilities.every((capability) => capability.evidenceSource.release === 'none')).toBe(
+      true,
+    );
     expect(report.supportSummary.preview).toBeGreaterThan(0);
     expect(
       report.blockingIssues.some(
@@ -187,6 +252,9 @@ describe('doctor report', () => {
     expect(capabilityById.get('expo-image-picker')?.evidence.bundle).toBe(true);
     expect(capabilityById.get('expo-location')?.evidence.device).toBe(true);
     expect(capabilityById.get('expo-camera')?.evidence.release).toBe(false);
+    expect(capabilityById.get('expo-file-system')?.evidenceSource.bundle).toBe('automated');
+    expect(capabilityById.get('expo-location')?.evidenceSource.device).toBe('manual-doc');
+    expect(capabilityById.get('expo-camera')?.evidenceSource.release).toBe('none');
   });
 
   it('keeps the official ui-stack sample adapter specs aligned with the validated source of truth', async () => {
@@ -217,7 +285,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.7.2',
+      [TOOLKIT_PACKAGE_NAME]: '1.7.3',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -356,5 +424,62 @@ describe('doctor report', () => {
         'expo-camera',
       ]),
     );
+  });
+
+  it('classifies unresolved unknown dependencies separately from native-risk packages', async () => {
+    const tempRoot = await createDoctorFixtureFromSample();
+    await addFakeDependency(tempRoot, 'left-pad', '1.3.0');
+
+    const report = await buildDoctorReport(tempRoot);
+    const dependency = report.dependencies.find((entry) => entry.name === 'left-pad');
+
+    expect(dependency?.status).toBe('unknown');
+    expect(dependency?.buildabilityRisk).toBe('unresolved');
+    expect(
+      report.warnings.includes(
+        'Some unknown dependencies could not be inspected because their installed package metadata was unavailable. Install dependencies before treating the doctor report as a buildability signal.',
+      ),
+    ).toBe(true);
+  });
+
+  it('treats unknown JavaScript-only dependencies as lower buildability risk', async () => {
+    const tempRoot = await createDoctorFixtureFromSample();
+    await addFakeDependency(tempRoot, 'left-pad', '1.3.0', {
+      packageJson: {
+        main: 'index.js',
+      },
+    });
+
+    const report = await buildDoctorReport(tempRoot);
+    const dependency = report.dependencies.find((entry) => entry.name === 'left-pad');
+
+    expect(dependency?.status).toBe('unknown');
+    expect(dependency?.buildabilityRisk).toBe('js-only-unknown');
+    expect(
+      report.warnings.includes(
+        'Some unknown dependencies look JavaScript-only. They remain outside the public matrix, but they are less likely to block bundling or a debug HAP build outright.',
+      ),
+    ).toBe(true);
+  });
+
+  it('treats unknown dependencies with native markers as native-risk', async () => {
+    const tempRoot = await createDoctorFixtureFromSample();
+    await addFakeDependency(tempRoot, 'mystery-native-module', '1.0.0', {
+      packageJson: {
+        main: 'index.js',
+      },
+      extraPaths: ['android'],
+    });
+
+    const report = await buildDoctorReport(tempRoot);
+    const dependency = report.dependencies.find((entry) => entry.name === 'mystery-native-module');
+
+    expect(dependency?.status).toBe('unknown');
+    expect(dependency?.buildabilityRisk).toBe('native-risk');
+    expect(
+      report.warnings.includes(
+        'Some unknown dependencies appear to carry native surfaces. Treat them as real Harmony portability risks until they are explicitly onboarded.',
+      ),
+    ).toBe(true);
   });
 });

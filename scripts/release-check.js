@@ -3,6 +3,14 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('fs-extra');
 const path = require('node:path');
+const {
+  FORBIDDEN_TARBALL_PREFIXES,
+  packDryRunArtifacts,
+  parseJsonArrayFromMixedOutput,
+  runPack,
+  validatePackArtifacts,
+} = require('./pack');
+const { materializeSampleWorkspace } = require('./sample-workspace');
 
 const repoRoot = path.resolve(__dirname, '..');
 const releaseChannel = process.env.EXPO_HARMONY_RELEASE_CHANNEL === 'next' ? 'next' : 'latest';
@@ -20,11 +28,6 @@ const skipHap = process.env.EXPO_HARMONY_RELEASE_SKIP_HAP === '1';
 const smokeTempRootBase = path.resolve(process.env.EXPO_HARMONY_RELEASE_SMOKE_TEMP_ROOT ?? '/tmp');
 const smokeTempPrefix = 'eht-smoke-';
 const smokeSampleDirName = 'sample';
-const forbiddenTarballPrefixes = ['examples/', 'fixtures/', 'tests/'];
-const packEnv = {
-  ...process.env,
-  npm_config_ignore_scripts: 'true',
-};
 const doctorArgs =
   releaseChannel === 'next'
     ? ['doctor', '--project-root', '.', '--target-tier', 'preview']
@@ -62,60 +65,25 @@ function runCapture(file, args, options = {}) {
   return result.stdout;
 }
 
-function parseJsonArrayFromMixedOutput(rawOutput) {
-  const jsonStart = rawOutput.indexOf('[');
-  const jsonEnd = rawOutput.lastIndexOf(']');
-
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
-    throw new Error('Expected npm pack --json output to contain a JSON array.');
-  }
-
-  return JSON.parse(rawOutput.slice(jsonStart, jsonEnd + 1));
-}
-
-function shouldCopySample(source) {
-  return (
-    !source.includes(`${path.sep}node_modules${path.sep}`) &&
-    !source.endsWith(`${path.sep}node_modules`) &&
-    !source.includes(`${path.sep}harmony${path.sep}`) &&
-    !source.endsWith(`${path.sep}harmony`) &&
-    !source.includes(`${path.sep}.expo-harmony${path.sep}`) &&
-    !source.endsWith(`${path.sep}.expo-harmony`) &&
-    !source.endsWith(`${path.sep}index.harmony.js`) &&
-    !source.endsWith(`${path.sep}metro.harmony.config.js`)
-  );
-}
-
 async function main() {
   run('pnpm', ['build']);
   run('pnpm', ['test']);
-  run('npm', ['pack', '--dry-run'], {
-    env: packEnv,
-  });
-
-  const dryRunArtifacts = parseJsonArrayFromMixedOutput(
-    runCapture('npm', ['pack', '--json', '--dry-run'], {
-      env: packEnv,
-    }).trim(),
-  );
+  const dryRunArtifacts = packDryRunArtifacts();
   const dryRunFiles = dryRunArtifacts[0]?.files ?? [];
 
   for (const file of dryRunFiles) {
     const filePath = file.path ?? '';
 
-    if (forbiddenTarballPrefixes.some((prefix) => filePath.startsWith(prefix))) {
+    if (FORBIDDEN_TARBALL_PREFIXES.some((prefix) => filePath.startsWith(prefix))) {
       throw new Error(`Tarball should not include ${filePath}.`);
     }
   }
 
-  const packOutput = runCapture('npm', ['pack'], {
-    env: packEnv,
-  })
+  const packOutput = runPack(['--json'])
     .trim()
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const tarballFilename = [...packOutput].reverse().find((line) => line.endsWith('.tgz'));
+  const packArtifacts = parseJsonArrayFromMixedOutput(packOutput);
+  validatePackArtifacts(packArtifacts);
+  const tarballFilename = packArtifacts[0]?.filename;
 
   if (!tarballFilename) {
     throw new Error('npm pack did not return a tarball filename.');
@@ -125,19 +93,8 @@ async function main() {
   await fs.ensureDir(smokeTempRootBase);
   const tempRoot = await fs.mkdtemp(path.join(smokeTempRootBase, smokeTempPrefix));
   const tempSampleRoot = path.join(tempRoot, smokeSampleDirName);
-
   try {
-    await fs.copy(smokeSampleRoot, tempSampleRoot, {
-      filter: shouldCopySample,
-    });
-
-    run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile'], {
-      cwd: tempSampleRoot,
-      env: {
-        ...process.env,
-        CI: '1',
-      },
-    });
+    await materializeSampleWorkspace(smokeSampleRoot, tempSampleRoot);
     run('pnpm', ['add', '--ignore-scripts', '--save-dev', tarballPath], {
       cwd: tempSampleRoot,
       env: {

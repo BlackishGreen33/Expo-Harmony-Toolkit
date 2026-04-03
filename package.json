@@ -1,6 +1,6 @@
 {
   "name": "expo-harmony-toolkit",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链",
   "main": "app.plugin.js",
   "types": "build/index.d.ts",
@@ -23,12 +23,21 @@
     "README.md",
     "README.en.md",
     "LICENSE",
-    "docs"
+    "docs/cli-build.md",
+    "docs/npm-release.md",
+    "docs/official-app-shell-sample.md",
+    "docs/official-minimal-sample.md",
+    "docs/official-native-capabilities-sample.md",
+    "docs/official-ui-stack-sample.md",
+    "docs/roadmap.md",
+    "docs/signing-and-release.md",
+    "docs/support-matrix.md"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "rm -rf build && tsc --project tsconfig.json",
     "clean": "rm -rf build coverage",
-    "pack:check": "npm pack --dry-run",
+    "docs:sync": "node ./scripts/update-generated-docs.js",
+    "pack:check": "node ./scripts/pack.js --dry-run --json",
     "release:check": "node ./scripts/release-check.js",
     "test": "jest --runInBand",
     "prepare": "pnpm build"
@@ -77,7 +86,6 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.5.2",
     "@types/semver": "^7.7.1",
-    "expo": "^55.0.8",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.4",
     "typescript": "^5.9.2"

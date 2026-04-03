@@ -8,11 +8,25 @@ const PREVIEW_BASELINE_EVIDENCE = {
   release: false,
 } as const;
 
+const PREVIEW_BASELINE_EVIDENCE_SOURCE = {
+  bundle: 'automated',
+  debugBuild: 'automated',
+  device: 'manual-doc',
+  release: 'none',
+} as const;
+
 const EXPLORATORY_EVIDENCE = {
   bundle: false,
   debugBuild: false,
   device: false,
   release: false,
+} as const;
+
+const EXPLORATORY_EVIDENCE_SOURCE = {
+  bundle: 'none',
+  debugBuild: 'none',
+  device: 'none',
+  release: 'none',
 } as const;
 
 export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
@@ -23,7 +37,8 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony native file-system adapters cover the v1.7.2 preview subset: UTF-8/base64 sandbox I/O, append and partial reads, md5 metadata, and direct downloads into the app sandbox.',
+    evidenceSource: PREVIEW_BASELINE_EVIDENCE_SOURCE,
+    note: 'Toolkit-managed Harmony native file-system adapters cover the v1.7.3 preview subset: UTF-8/base64 sandbox I/O, append and partial reads, md5 metadata, and direct downloads into the app sandbox.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-fs.md',
     nativePackageNames: ['react-native-fs'],
     harmonyPermissions: [],
@@ -41,7 +56,8 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony adapters cover the v1.7.2 preview subset: media and camera permissions, single/multi-select library flows, system photo/video capture, pending-result restore, and richer video asset metadata.',
+    evidenceSource: PREVIEW_BASELINE_EVIDENCE_SOURCE,
+    note: 'Toolkit-managed Harmony adapters cover the v1.7.3 preview subset: media and camera permissions, single/multi-select library flows, system photo/video capture, pending-result restore, and richer video asset metadata.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-image-picker.md',
     nativePackageNames: ['react-native-image-picker', 'react-native-permissions'],
     harmonyPermissions: [
@@ -63,7 +79,8 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony adapters cover the v1.7.2 preview subset: foreground/background permission flows, current and last-known fixes, geocoding, continuous watch subscriptions, and sensor-backed heading updates.',
+    evidenceSource: PREVIEW_BASELINE_EVIDENCE_SOURCE,
+    note: 'Toolkit-managed Harmony adapters cover the v1.7.3 preview subset: foreground/background permission flows, current and last-known fixes, geocoding, continuous watch subscriptions, and sensor-backed heading updates.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/%40react-native-community-geolocation.md',
     nativePackageNames: ['@react-native-community/geolocation', 'react-native-permissions'],
     harmonyPermissions: [
@@ -86,7 +103,8 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'preview',
     runtimeMode: 'adapter',
     evidence: PREVIEW_BASELINE_EVIDENCE,
-    note: 'Toolkit-managed Harmony adapters cover the v1.7.2 preview subset: embedded camera preview, still capture, preview pause/resume, microphone permission, and in-session video recording controls.',
+    evidenceSource: PREVIEW_BASELINE_EVIDENCE_SOURCE,
+    note: 'Toolkit-managed Harmony adapters cover the v1.7.3 preview subset: embedded camera preview, still capture, preview pause/resume, microphone permission, and in-session video recording controls.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-camera-kit.md',
     nativePackageNames: ['react-native-camera-kit', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.CAMERA', 'ohos.permission.MICROPHONE'],
@@ -104,6 +122,7 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     supportTier: 'experimental',
     runtimeMode: 'shim',
     evidence: EXPLORATORY_EVIDENCE,
+    evidenceSource: EXPLORATORY_EVIDENCE_SOURCE,
     note: 'Notifications stay below the public promise until a complete Harmony delivery story is validated end to end.',
     docsUrl: 'https://github.com/react-native-oh-library',
     nativePackageNames: [],

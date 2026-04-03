@@ -10,6 +10,7 @@ import {
   TEMPLATE_VERSION,
   TOOLKIT_VERSION,
 } from './constants';
+import { annotateDependencyBuildability } from './dependencyInspection';
 import { DEPENDENCY_CATALOG } from '../data/dependencyCatalog';
 import {
   DEFAULT_VALIDATED_MATRIX_ID,
@@ -75,8 +76,9 @@ export async function buildDoctorReport(
     }
   }
 
-  const dependencies = [...dependencyRecords.values()].sort((left, right) =>
-    left.name.localeCompare(right.name),
+  const dependencies = await annotateDependencyBuildability(
+    loadedProject.projectRoot,
+    [...dependencyRecords.values()].sort((left, right) => left.name.localeCompare(right.name)),
   );
   const blockingIssues = await collectBlockingIssues(
     loadedProject.projectRoot,
@@ -97,6 +99,7 @@ export async function buildDoctorReport(
       supportTier: definition.supportTier,
       runtimeMode: definition.runtimeMode,
       evidence: { ...definition.evidence },
+      evidenceSource: { ...definition.evidenceSource },
       note: definition.note,
       docsUrl: definition.docsUrl,
       nativePackageNames: [...definition.nativePackageNames],
@@ -193,7 +196,9 @@ export function renderDoctorReport(report: DoctorReport): string {
     ...report.dependencies.map((dependency) => {
       const replacement = dependency.replacement ? ` | replacement: ${dependency.replacement}` : '';
       const blocking = dependency.blocking ? ' | blocking: yes' : '';
-      return `- [${dependency.status}/${dependency.supportTier}] ${dependency.name}@${dependency.version} (${dependency.source}) - ${dependency.note}${replacement}${blocking}`;
+      return `- [${dependency.status}/${dependency.supportTier}] ${dependency.name}@${dependency.version} (${dependency.source}) - ${dependency.note} | buildability: ${renderDependencyBuildabilityRisk(
+        dependency.buildabilityRisk,
+      )}${replacement}${blocking}`;
     }),
   ];
 
@@ -207,7 +212,10 @@ export function renderDoctorReport(report: DoctorReport): string {
             ? ` | permissions: ${capability.harmonyPermissions.join(', ')}`
             : '';
         const missingEvidence = getMissingCapabilityEvidence(capability.evidence);
-        const evidence = ` | evidence: ${renderCapabilityEvidence(capability.evidence)}`;
+        const evidence = ` | evidence: ${renderCapabilityEvidence(
+          capability.evidence,
+          capability.evidenceSource,
+        )}`;
         const promotionGaps = buildCapabilityPromotionGaps(capability.runtimeMode, missingEvidence);
         const gapSuffix =
           promotionGaps.length > 0
@@ -239,12 +247,15 @@ export function renderDoctorReport(report: DoctorReport): string {
   return sections.join('\n');
 }
 
-function renderCapabilityEvidence(evidence: CapabilityEvidence): string {
+function renderCapabilityEvidence(
+  evidence: CapabilityEvidence,
+  evidenceSource: ProjectCapabilityReport['evidenceSource'],
+): string {
   return [
-    `bundle=${evidence.bundle ? 'yes' : 'no'}`,
-    `debugBuild=${evidence.debugBuild ? 'yes' : 'no'}`,
-    `device=${evidence.device ? 'yes' : 'no'}`,
-    `release=${evidence.release ? 'yes' : 'no'}`,
+    `bundle=${evidence.bundle ? 'yes' : 'no'}[${evidenceSource.bundle}]`,
+    `debugBuild=${evidence.debugBuild ? 'yes' : 'no'}[${evidenceSource.debugBuild}]`,
+    `device=${evidence.device ? 'yes' : 'no'}[${evidenceSource.device}]`,
+    `release=${evidence.release ? 'yes' : 'no'}[${evidenceSource.release}]`,
   ].join(', ');
 }
 
@@ -280,6 +291,7 @@ function createDependencyRecord(
     source,
     status: matrixRecord.status,
     supportTier: matrixRecord.supportTier,
+    buildabilityRisk: 'known',
     blocking: false,
     note: matrixRecord.note,
     replacement: matrixRecord.replacement,
@@ -501,9 +513,21 @@ function buildWarnings(
     );
   }
 
-  if (dependencies.some((dependency) => dependency.status === 'unknown')) {
+  if (dependencies.some((dependency) => dependency.buildabilityRisk === 'js-only-unknown')) {
     warnings.push(
-      'Unknown dependencies were detected. The toolkit can scaffold the project, but runtime portability is not guaranteed.',
+      'Some unknown dependencies look JavaScript-only. They remain outside the public matrix, but they are less likely to block bundling or a debug HAP build outright.',
+    );
+  }
+
+  if (dependencies.some((dependency) => dependency.buildabilityRisk === 'native-risk')) {
+    warnings.push(
+      'Some unknown dependencies appear to carry native surfaces. Treat them as real Harmony portability risks until they are explicitly onboarded.',
+    );
+  }
+
+  if (dependencies.some((dependency) => dependency.buildabilityRisk === 'unresolved')) {
+    warnings.push(
+      'Some unknown dependencies could not be inspected because their installed package metadata was unavailable. Install dependencies before treating the doctor report as a buildability signal.',
     );
   }
 
@@ -554,6 +578,21 @@ function matchesVersionRange(rawVersion: string, range: string): boolean {
 
 function matchesDependencySpecifier(rawSpecifier: string, expectedSpecifier: string): boolean {
   return rawSpecifier.trim() === expectedSpecifier.trim();
+}
+
+function renderDependencyBuildabilityRisk(buildabilityRisk: DetectedDependency['buildabilityRisk']): string {
+  switch (buildabilityRisk) {
+    case 'known':
+      return 'known';
+    case 'js-only-unknown':
+      return 'unknown-js';
+    case 'native-risk':
+      return 'unknown-native';
+    case 'unresolved':
+      return 'unresolved';
+    default:
+      return buildabilityRisk;
+  }
 }
 
 function dedupeIssues(issues: BlockingIssue[]): BlockingIssue[] {

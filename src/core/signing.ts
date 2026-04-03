@@ -1,7 +1,11 @@
 import fs from 'fs-extra';
 import JSON5 from 'json5';
 import path from 'path';
-import { GENERATED_DIR, SIGNING_LOCAL_FILENAME } from './constants';
+import {
+  GENERATED_DIR,
+  SIGNING_LOCAL_EXAMPLE_FILENAME,
+  SIGNING_LOCAL_FILENAME,
+} from './constants';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -19,6 +23,10 @@ type SigningLocalAppFragment = {
 
 export function getSigningLocalPath(projectRoot: string): string {
   return path.join(projectRoot, GENERATED_DIR, SIGNING_LOCAL_FILENAME);
+}
+
+export function getSigningLocalExamplePath(projectRoot: string): string {
+  return path.join(projectRoot, GENERATED_DIR, SIGNING_LOCAL_EXAMPLE_FILENAME);
 }
 
 export async function readSigningLocalConfig(projectRoot: string): Promise<SigningLocalAppFragment | null> {
@@ -70,6 +78,38 @@ export function hasSigningLocalConfiguration(
   signingLocalConfig: SigningLocalAppFragment | null,
 ): boolean {
   return hasNonEmptySigningConfigList(signingLocalConfig?.signingConfigs);
+}
+
+export function renderSigningLocalExampleConfig(): string {
+  return (
+    JSON.stringify(
+      {
+        signingConfigs: [
+          {
+            name: 'default',
+            type: 'HarmonyOS',
+            material: {
+              storeFile: './signing/release.p12',
+              storePassword: '<replace-with-store-password>',
+              keyAlias: '<replace-with-key-alias>',
+              keyPassword: '<replace-with-key-password>',
+              signAlg: 'SHA256withECDSA',
+              profile: './signing/release.p7b',
+              certpath: './signing/release.cer',
+            },
+          },
+        ],
+        products: [
+          {
+            name: 'default',
+            signingConfig: 'default',
+          },
+        ],
+      },
+      null,
+      2,
+    ) + '\n'
+  );
 }
 
 function normalizeSigningLocalConfig(rawConfig: unknown): SigningLocalAppFragment {

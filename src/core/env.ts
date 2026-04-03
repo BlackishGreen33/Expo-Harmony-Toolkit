@@ -114,7 +114,7 @@ export async function buildEnvReport(
     advisories.push({
       code: 'env.signing.missing',
       message:
-        'Neither .expo-harmony/signing.local.json nor harmony/build-profile.json5 declares usable signingConfigs yet. Debug GUI flows may still work, but release builds require signing.',
+        'Neither .expo-harmony/signing.local.json nor harmony/build-profile.json5 declares usable signingConfigs yet. Copy .expo-harmony/signing.local.example.json to signing.local.json and fill your real release credentials before running release builds.',
     });
   }
 

@@ -14,6 +14,7 @@
     "start": "expo start"
   },
   "dependencies": {
+    "@expo/metro-runtime": "55.0.7",
     "@babel/runtime": "^7.28.4",
     "@react-native-oh/react-native-harmony": "0.82.18",
     "@react-native-oh/react-native-harmony-cli": "0.82.18",

@@ -6,10 +6,12 @@ export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-ui-stack';
 
 const BASE_ALLOWED_DEPENDENCIES = [
   'expo',
+  '@expo/metro-runtime',
   'expo-constants',
   'expo-linking',
   'expo-router',
   'react',
+  'react-dom',
   'react-native',
   'expo-status-bar',
   '@babel/runtime',
@@ -37,6 +39,9 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
         required: true,
         version: '>=55.0.0 <56.0.0',
       },
+      '@expo/metro-runtime': {
+        version: '>=55.0.0 <56.0.0',
+      },
       'expo-constants': {
         version: '>=55.0.0 <56.0.0',
       },
@@ -44,10 +49,13 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
         version: '>=55.0.0 <56.0.0',
       },
       'expo-router': {
-        version: '>=6.0.0 <7.0.0',
+        version: '>=55.0.0 <56.0.0',
       },
       react: {
         required: true,
+        version: '19.1.1',
+      },
+      'react-dom': {
         version: '19.1.1',
       },
       'react-native': {

@@ -3,6 +3,8 @@ export type EligibilityStatus = 'eligible' | 'ineligible';
 export type SupportTier = 'verified' | 'preview' | 'experimental' | 'unsupported';
 export type DoctorTargetTier = Exclude<SupportTier, 'unsupported'>;
 export type CapabilityRuntimeMode = 'shim' | 'adapter' | 'verified';
+export type CapabilityEvidenceSource = 'automated' | 'manual-doc' | 'none';
+export type DependencyBuildabilityRisk = 'known' | 'js-only-unknown' | 'native-risk' | 'unresolved';
 export type DependencySource =
   | 'dependency'
   | 'devDependency'
@@ -79,6 +81,7 @@ export interface DetectedDependency {
   source: DependencySource;
   status: CompatibilityStatus;
   supportTier: SupportTier;
+  buildabilityRisk: DependencyBuildabilityRisk;
   blocking: boolean;
   note: string;
   replacement?: string;
@@ -106,6 +109,13 @@ export interface CapabilityEvidence {
   release: boolean;
 }
 
+export interface CapabilityEvidenceSourceMap {
+  bundle: CapabilityEvidenceSource;
+  debugBuild: CapabilityEvidenceSource;
+  device: CapabilityEvidenceSource;
+  release: CapabilityEvidenceSource;
+}
+
 export interface CapabilityDefinition {
   id: string;
   packageName: string;
@@ -113,6 +123,7 @@ export interface CapabilityDefinition {
   supportTier: DoctorTargetTier;
   runtimeMode: CapabilityRuntimeMode;
   evidence: CapabilityEvidence;
+  evidenceSource: CapabilityEvidenceSourceMap;
   note: string;
   docsUrl?: string;
   nativePackageNames: string[];
@@ -128,6 +139,7 @@ export interface ProjectCapabilityReport {
   supportTier: DoctorTargetTier;
   runtimeMode: CapabilityRuntimeMode;
   evidence: CapabilityEvidence;
+  evidenceSource: CapabilityEvidenceSourceMap;
   note: string;
   docsUrl?: string;
   nativePackageNames: string[];
@@ -142,6 +154,7 @@ export interface ManagedCapabilityRecord {
   supportTier: DoctorTargetTier;
   runtimeMode: CapabilityRuntimeMode;
   evidence: CapabilityEvidence;
+  evidenceSource: CapabilityEvidenceSourceMap;
 }
 
 export interface DoctorReport {
