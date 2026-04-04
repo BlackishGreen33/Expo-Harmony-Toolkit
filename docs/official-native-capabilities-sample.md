@@ -2,7 +2,12 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 是 `v1.7.3` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
+这个 sample 是 `v1.8.0` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
+
+从 `v1.8.x` 开始，这个 sample 的角色会固定成两层：
+
+- combined smoke：负责四项 preview capability 的总回归
+- per-capability acceptance：每条 route 继续单独维护 device / release 记录，不再让 combined smoke 代替单项证据
 
 标记说明：
 
@@ -21,6 +26,10 @@
 - `/image-picker`
 - `/location`
 - `/camera`
+
+对应的逐 capability 追踪板见：
+
+- [v1.8.x capability board](../acceptance/v1.8.x-capability-board.md)
 
 ## 每条 route 的真实范围
 
