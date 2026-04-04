@@ -1,11 +1,19 @@
-# v1.7 支持矩阵
+# v1.8 支持矩阵
 
-`v1.7` 继续采用 tiered support model，但从现在开始把“层级”与“晋升距离”拆开表达：
+`v1.8` 继续采用 tiered support model，但从现在开始把“层级”与“晋升距离”拆开表达：
 
 - `supportTier` 表示公开承诺层级
 - `runtimeMode` 表示当前运行时接入形态：`shim`、`adapter`、`verified`
 - `evidence` 表示距离 verified 还缺哪些证据格
 - `evidenceSource` 表示每个证据格来自自动化、人工记录，还是当前无证据
+- `coverageProfile` 表示当前项目属于哪条主线输入形态
+- `nextActions` 表示 toolkit 为当前项目生成的有序下一步
+
+同时，`v1.8.x` 的 roadmap 已经改成单一 `mainline capability catalog` 方向：
+
+- bare workflow 与第三方 native package 不再被描述成“收官后才考虑的另一条 extension 终局”
+- `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
+- 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -84,7 +92,7 @@
 - `runtimeMode=verified`：说明能力已进入正式承诺，且证据闭环完成
 <!-- GENERATED:support-matrix-capability-telemetry:end -->
 
-为了避免把“只差真机”与“当前子 API 还没实现到位”混在一起，`v1.7.x` 文档额外使用以下标记：
+为了避免把“只差真机”与“当前子 API 还没实现到位”混在一起，`v1.8.x` 文档额外使用以下标记：
 
 - `🟡 可用待晋升`：当前子集已经有可信实现，样例和模拟器路径可用；下一步主要缺真机 / release 证据
 - `⛔ 完全不支持`：能力仍在 catalog 外，或根本不在当前公开承诺范围
@@ -105,6 +113,7 @@
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
 - 当前 preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
+- `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
 - `expo-file-system`
   - `🟡` 当前主路径是 UTF-8/base64 sandbox I/O、append/partial read、`getInfoAsync({ md5: true })` 与 `downloadAsync`
 - `expo-image-picker`
@@ -169,12 +178,18 @@ expo-harmony doctor --project-root /path/to/app --target-tier preview
 - `capabilities[].evidenceSource.debugBuild`
 - `capabilities[].evidenceSource.device`
 - `capabilities[].evidenceSource.release`
+- `coverageProfile`
+- `dependencies[].gapCategory`
+- `nextActions[]`
 
 判读方式：
 
 - 任一 `evidence.* = false`，表示晋升到 verified 前仍缺证据
 - `evidenceSource.device = manual-doc`，表示该证据来自人工验收记录，不应被表述成自动化设备验证
 - `runtimeMode !== verified`，表示即使已有部分证据，也仍不属于正式承诺
+- `coverageProfile=bare`，表示当前项目已落入 bare workflow 主线规划，但不等于当前 matrix 已正式支持 bare
+- `gapCategory=third-party-native-gap`，表示问题不应再被模糊描述成普通 matrix drift，而是主线 blocker
+- `nextActions[]` 的顺序即 toolkit 当前建议的处理顺序
 
 当前公开阻断 issue code 继续包括：
 
@@ -208,6 +223,7 @@ toolkit 受管的核心产物仍包括：
 - `entry/src/main/module.json5` 的 `requestPermissions` 由 toolkit 根据已启用能力自动补齐
 - preview / experimental 能力的 Metro import path 通过 `.expo-harmony/shims/<package>` 接管
 - `toolkit-config.json` 会记录 capability 的 `runtimeMode`、`evidence` 与 `evidenceSource`
+- `toolkit-config.json` 也会记录当前项目的 `coverageProfile` 与有序 `nextActions`
 - verified UI stack 依赖继续走现有 autolinking + `.har` 管理逻辑
 
 ## Release Tracks
@@ -236,8 +252,13 @@ toolkit 受管的核心产物仍包括：
 - release signing / release HAP 验收完成
 - 文档、矩阵、roadmap、acceptance 记录同 PR 更新
 
-## 当前不在短期输入范围
+## 当前仍未进入正式公开承诺
 
 - bare Expo
 - 多 Expo / RNOH 并行 verified 矩阵
 - 任意第三方 native package 的即时正式承诺
+
+说明：
+
+- 上述项目并没有从 roadmap 消失；它们会逐步进入同一条主线 capability catalog
+- 这份 support matrix 只记录当前已经公开验证到哪一步，而不是未来愿景本身

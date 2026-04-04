@@ -52,7 +52,7 @@ export function renderReadmeCurrentStatus(locale: DocsLocale): string {
     `| ${previewLabel} | ${joinInlineCode(PREVIEW_CAPABILITY_DEFINITIONS.map((definition) => definition.packageName), listJoiner)} |`,
     `| ${experimentalLabel} | ${joinInlineCode(EXPERIMENTAL_CAPABILITY_NAMES, listJoiner)} |`,
     `| ${releaseTracksLabel} | ${releaseTracksValue} |`,
-    `| ${telemetryLabel} | \`runtimeMode\` + \`evidence(...)\` + \`evidenceSource(...)\` |`,
+    `| ${telemetryLabel} | \`runtimeMode\` + \`evidence(...)\` + \`evidenceSource(...)\` + \`coverageProfile\` + \`nextActions\` |`,
     `| ${buildPathLabel} | \`doctor -> init -> bundle -> build-hap\` |`,
     `| ${primarySampleLabel} | \`${PRIMARY_SAMPLE_PATH}\` |`,
     `| ${previewSampleLabel} | \`${PREVIEW_SAMPLE_PATH}\` |`,
@@ -85,6 +85,7 @@ export function renderReadmeSupportMatrixSection(locale: DocsLocale): string {
           '- `doctor-report.json` 的 `capabilities[]` 会带出 `runtimeMode`',
           '- `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`',
           '- `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidenceSource.bundle`、`evidenceSource.debugBuild`、`evidenceSource.device`、`evidenceSource.release`',
+          '- `doctor-report.json` 与 `toolkit-config.json` 也会带出 `coverageProfile` 与按顺序排列的 `nextActions`',
           '- `runtimeMode=shim` 说明当前仍未进入 verified runtime path，即使 bundle / debug build 已经可走通',
           '- `evidenceSource.device=manual-doc` 表示当前只有人工设备验收记录，不代表机器自动验证',
         ]
@@ -92,6 +93,7 @@ export function renderReadmeSupportMatrixSection(locale: DocsLocale): string {
           '- `doctor-report.json` exposes `capabilities[].runtimeMode`',
           '- `doctor-report.json` and `toolkit-config.json` expose `evidence.bundle`, `evidence.debugBuild`, `evidence.device`, and `evidence.release`',
           '- `doctor-report.json` and `toolkit-config.json` expose `evidenceSource.bundle`, `evidenceSource.debugBuild`, `evidenceSource.device`, and `evidenceSource.release`',
+          '- `doctor-report.json` and `toolkit-config.json` also expose `coverageProfile` plus ordered `nextActions`',
           '- `runtimeMode=shim` means the capability still has not reached a verified runtime path even if bundling and debug-build scaffolding already exist',
           '- `evidenceSource.device=manual-doc` means the current device signal comes from manual acceptance records, not automated verification',
         ];

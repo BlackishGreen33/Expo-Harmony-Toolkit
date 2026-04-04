@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.7` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 推进到 `preview`。从这版文档开始，对外承诺进一步收紧为：`latest` 只承诺完整验收的 `verified` 能力，`next` 用于 preview fast track；路线仍然是先做到 `Managed/CNG Core Expo Coverage`，再通过 extension model 逼近“任意 Expo 项目”。
+> `v1.8` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 继续保持在 `preview`。当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，`next` 用于 preview fast track。最新 roadmap 已把 `v2.0.0` 直接定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”，因此中间版本会继续拆小，但这不等于当前 `verified` 边界已经放宽。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.7.3` |
+| 当前版本 | `v1.8.0` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
@@ -56,7 +56,7 @@
 | `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler` |
 | 发布轨 | `latest` = fully accepted verified only；`next` = preview fast track |
-| capability 遥测 | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` |
+| capability 遥测 | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
@@ -182,11 +182,12 @@ pnpm exec expo-harmony build-hap --mode release
 - `doctor-report.json` 的 `capabilities[]` 会带出 `runtimeMode`
 - `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`
 - `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidenceSource.bundle`、`evidenceSource.debugBuild`、`evidenceSource.device`、`evidenceSource.release`
+- `doctor-report.json` 与 `toolkit-config.json` 也会带出 `coverageProfile` 与按顺序排列的 `nextActions`
 - `runtimeMode=shim` 说明当前仍未进入 verified runtime path，即使 bundle / debug build 已经可走通
 - `evidenceSource.device=manual-doc` 表示当前只有人工设备验收记录，不代表机器自动验证
 <!-- GENERATED:readme-support-matrix:end -->
 
-从本版开始，`doctor` 还会额外输出 `buildabilityRisk`，把“超出公开矩阵但看起来更像纯 JS 层”的依赖，与“存在明确原生风险”的依赖区分开来；这不会放宽 gate，只是让构建可诊断性更强。
+从本版开始，`doctor` 还会额外输出 `buildabilityRisk`、`coverageProfile`、`gapCategory` 与有序 `nextActions`，把“矩阵漂移”“官方模块缺口”“第三方 native blocker”“bare workflow 轨道”分开描述；这不会放宽 gate，只是让构建可诊断性更强。
 
 文档里的状态标记额外约定为：
 
@@ -196,12 +197,14 @@ pnpm exec expo-harmony build-hap --mode release
 
 完整白名单、配对规则、exact specifier、issue code 与 release gate 见 [docs/support-matrix.md](./docs/support-matrix.md)。
 
+如果你要跟进 `v1.8.x` 的并行晋升节奏，可直接看 [acceptance/v1.8.x-capability-board.md](./acceptance/v1.8.x-capability-board.md)。
+
 ## 官方 Samples
 
 - `examples/official-ui-stack-sample`
   当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-native-capabilities-sample`
-  `v1.7.x` 的 Batch A+B preview walkthrough sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的核心支持子集、permission、bundle 与 debug build 验收。
+  `v1.8.x` 的 preview walkthrough sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的核心支持子集、permission、bundle、debug build 与逐 capability 验收追踪。
 - `examples/official-app-shell-sample`
   最小可理解的 App Shell onboarding sample，用来展示 router、linking、constants、pathname、observed URL 与 generated deep link。
 - `examples/official-minimal-sample`

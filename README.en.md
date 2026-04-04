@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.7.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.7` keeps the `verified + preview + experimental` model and moves `expo-location` and `expo-camera` into `preview`. Starting with this documentation refresh, the public promise is tighter: `latest` only carries fully accepted `verified` capabilities, while `next` is reserved for preview fast-track work. The roadmap still targets `Managed/CNG Core Expo Coverage` first and long-tail extension coverage second.
+> `v1.8` keeps the `verified + preview + experimental` model and continues to keep `expo-location` and `expo-camera` in `preview`. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, while `next` is reserved for preview fast-track work. The roadmap now defines `v2.0.0` itself as “reliable Harmony packaging for any Expo project”, so the intermediate versions will keep getting split smaller, but that still does not widen the current `verified` boundary yet.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.7.3` |
+| Current version | `v1.8.0` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
@@ -56,7 +56,7 @@
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler` |
 | Release tracks | `latest` = fully accepted `verified` only; `next` = preview fast track |
-| Capability telemetry | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` |
+| Capability telemetry | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
@@ -182,20 +182,23 @@ Common decision points:
 - `doctor-report.json` exposes `capabilities[].runtimeMode`
 - `doctor-report.json` and `toolkit-config.json` expose `evidence.bundle`, `evidence.debugBuild`, `evidence.device`, and `evidence.release`
 - `doctor-report.json` and `toolkit-config.json` expose `evidenceSource.bundle`, `evidenceSource.debugBuild`, `evidenceSource.device`, and `evidenceSource.release`
+- `doctor-report.json` and `toolkit-config.json` also expose `coverageProfile` plus ordered `nextActions`
 - `runtimeMode=shim` means the capability still has not reached a verified runtime path even if bundling and debug-build scaffolding already exist
 - `evidenceSource.device=manual-doc` means the current device signal comes from manual acceptance records, not automated verification
 <!-- GENERATED:readme-support-matrix:end -->
 
-Starting in this refresh, `doctor` also emits `buildabilityRisk` so matrix-out dependencies that still look JavaScript-only no longer get described the same way as packages with clear native risk. This does not relax any gate; it only improves diagnosis.
+Starting in this refresh, `doctor` also emits `buildabilityRisk`, `coverageProfile`, `gapCategory`, and ordered `nextActions` so matrix drift, official-module gaps, third-party native blockers, and bare-workflow tracks no longer get described the same way. This does not relax any gate; it only improves diagnosis.
 
 See [docs/support-matrix.md](./docs/support-matrix.md) for the full allowlist, pairing rules, exact specifiers, issue codes, and release gates.
+
+If you want the `v1.8.x` promotion board directly, use [acceptance/v1.8.x-capability-board.md](./acceptance/v1.8.x-capability-board.md).
 
 ## Official Samples
 
 - `examples/official-ui-stack-sample`
   The current public main sample, covering router, linking, constants, SVG, reanimated, and the Harmony sidecar build flow.
 - `examples/official-native-capabilities-sample`
-  The `v1.7.x` Batch A+B preview walkthrough sample, covering the supported core subsets for `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` plus permission, bundle, and debug-build validation.
+  The `v1.8.x` preview walkthrough sample, covering the supported core subsets for `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` plus permission, bundle, debug-build validation, and per-capability acceptance tracking.
 - `examples/official-app-shell-sample`
   The minimal App Shell onboarding sample that demonstrates router, linking, constants, pathname, observed URL, and a generated deep-link flow.
 - `examples/official-minimal-sample`

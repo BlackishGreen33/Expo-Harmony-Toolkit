@@ -77,8 +77,14 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('`evidenceSource.device=manual-doc`');
     expect(readmeZh).toContain('`buildabilityRisk`');
     expect(readmeEn).toContain('`buildabilityRisk`');
+    expect(readmeZh).toContain('`coverageProfile`');
+    expect(readmeEn).toContain('`coverageProfile`');
+    expect(readmeZh).toContain('`nextActions`');
+    expect(readmeEn).toContain('`nextActions`');
     expect(readmeZh).toContain('./acceptance/');
     expect(readmeEn).toContain('./acceptance/');
+    expect(readmeZh).toContain('./acceptance/v1.8.x-capability-board.md');
+    expect(readmeEn).toContain('./acceptance/v1.8.x-capability-board.md');
     expect(readmeZh).not.toContain('./docs/v1.7.3-acceptance.md');
     expect(readmeEn).not.toContain('./docs/v1.7.3-acceptance.md');
 
@@ -128,7 +134,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(packageJson.version).toBe('1.7.3');
+    expect(packageJson.version).toBe('1.8.0');
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
     expect(packageJson.homepage).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit#readme');
@@ -150,9 +156,23 @@ describe('documentation metadata', () => {
     const acceptanceEntries = await fs.readdir(acceptanceRootPath);
 
     expect(roadmap).toContain('2026-05-15');
-    expect(roadmap).toContain('Capability Graduation + Fast Track Release');
-    expect(roadmap).toContain('Managed/CNG Core Expo Coverage');
-    expect(roadmap).toContain('Long-tail Native Module Extension');
+    expect(roadmap).toContain('2026-06-15');
+    expect(roadmap).toContain('2026-08-31');
+    expect(roadmap).toContain('2026-09-30');
+    expect(roadmap).toContain('2026-10-31');
+    expect(roadmap).toContain('2026-11-15');
+    expect(roadmap).toContain('2026-11-30');
+    expect(roadmap).toContain('2026-12-31');
+    expect(roadmap).toContain('mainline capability catalog');
+    expect(roadmap).toContain('Intake Hardening + Parallel Promotion');
+    expect(roadmap).toContain('Bare Workflow Baseline + App Foundation Modules');
+    expect(roadmap).toContain('Third-party Native Wave A');
+    expect(roadmap).toContain('Third-party Native Wave B + Regression Farm');
+    expect(roadmap).toContain('Any-project Intake Freeze');
+    expect(roadmap).toContain('Final Blocker Burn-down');
+    expect(roadmap).toContain('Any Expo Project Reliable Packaging');
+    expect(roadmap).toContain('任何 Expo 项目都能可靠打包成鸿蒙 App');
+    expect(roadmap).not.toContain('Long-tail Native Module Extension');
     expect(npmRelease).toContain('`latest`');
     expect(npmRelease).toContain('`next`');
     expect(npmRelease).toContain('official-native-capabilities-sample');
@@ -165,6 +185,16 @@ describe('documentation metadata', () => {
         'v1.7.1-acceptance.md',
         'v1.7.2-acceptance.md',
         'v1.7.3-acceptance.md',
+        'v1.8.0-acceptance.md',
+        'v1.8.x-capability-board.md',
+        'v1.8.x-expo-file-system-device.md',
+        'v1.8.x-expo-file-system-release.md',
+        'v1.8.x-expo-image-picker-device.md',
+        'v1.8.x-expo-image-picker-release.md',
+        'v1.8.x-expo-location-device.md',
+        'v1.8.x-expo-location-release.md',
+        'v1.8.x-expo-camera-device.md',
+        'v1.8.x-expo-camera-release.md',
       ]),
     );
   });
