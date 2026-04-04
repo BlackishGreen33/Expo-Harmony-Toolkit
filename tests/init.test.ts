@@ -63,10 +63,14 @@ describe('init project', () => {
     expect(
       await fs.pathExists(path.join(projectRoot, '.expo-harmony', 'signing.local.example.json')),
     ).toBe(true);
-    expect(manifest?.toolkitVersion).toBe('1.7.3');
+    expect(manifest?.toolkitVersion).toBe('1.8.0');
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.7.3');
+    expect(toolkitConfig?.toolkitVersion).toBe('1.8.0');
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
+    expect(toolkitConfig?.coverageProfile).toBe('managed-native-heavy');
+    expect(toolkitConfig?.nextActions).toContain(
+      'Align Expo SDK, React Native, RNOH, and validated adapter versions to expo55-rnoh082-ui-stack, then rerun `expo-harmony doctor --project-root . --strict`.',
+    );
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'RNOHPackagesFactory.ets'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'RNOHPackagesFactory.h'))).toBe(true);
     expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'cpp', 'autolinking.cmake'))).toBe(true);
@@ -194,6 +198,7 @@ describe('init project', () => {
       'expo-image-picker',
       'expo-location',
     ]);
+    expect(toolkitConfig?.coverageProfile).toBe('managed-native-heavy');
     expect(toolkitConfig?.capabilities.every((capability) => capability.runtimeMode === 'adapter')).toBe(
       true,
     );
@@ -225,6 +230,12 @@ describe('init project', () => {
         'ohos.permission.LOCATION_IN_BACKGROUND',
         'ohos.permission.ACCELEROMETER',
       ]),
+    );
+    expect(toolkitConfig?.nextActions).toContain(
+      'Use `expo-harmony doctor --project-root . --target-tier preview` to measure the current preview-capability baseline while keeping `latest` pinned to verified-only releases.',
+    );
+    expect(toolkitConfig?.nextActions).toContain(
+      'Keep combined sample smoke for regression coverage, but track bundle/debug/device/release evidence separately for each preview capability before promotion.',
     );
   });
 });

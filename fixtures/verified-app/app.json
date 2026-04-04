@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Verified Fixture",
+    "slug": "verified-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.verifiedfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.verifiedfixture"
+    }
+  }
+}

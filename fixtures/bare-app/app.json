@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Bare Fixture",
+    "slug": "bare-fixture",
+    "version": "1.0.0",
+    "plugins": [
+      "expo-build-properties"
+    ],
+    "android": {
+      "package": "com.blackishgreen.barefixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.barefixture"
+    }
+  }
+}

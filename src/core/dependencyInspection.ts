@@ -58,7 +58,11 @@ async function resolveDependencyBuildabilityRisk(
     return 'known';
   }
 
-  const packageJsonPath = resolveInstalledDependencyPackageJson(projectRoot, dependency.name);
+  const packageJsonPath = resolveInstalledDependencyPackageJson(
+    projectRoot,
+    dependency.name,
+    dependency.version,
+  );
   if (!packageJsonPath || !(await fs.pathExists(packageJsonPath))) {
     return 'unresolved';
   }
@@ -77,13 +81,43 @@ async function resolveDependencyBuildabilityRisk(
   return 'js-only-unknown';
 }
 
-function resolveInstalledDependencyPackageJson(projectRoot: string, dependencyName: string): string | null {
+function resolveInstalledDependencyPackageJson(
+  projectRoot: string,
+  dependencyName: string,
+  dependencyVersion: string,
+): string | null {
+  const localPackageJsonPath = resolveLocalDependencyPackageJson(projectRoot, dependencyVersion);
+
+  if (localPackageJsonPath) {
+    return localPackageJsonPath;
+  }
+
   try {
     const projectRequire = createRequire(path.join(projectRoot, 'package.json'));
     return projectRequire.resolve(`${dependencyName}/package.json`);
   } catch {
     return null;
   }
+}
+
+function resolveLocalDependencyPackageJson(projectRoot: string, dependencyVersion: string): string | null {
+  const trimmedVersion = dependencyVersion.trim();
+
+  for (const prefix of ['file:', 'link:', 'portal:']) {
+    if (!trimmedVersion.startsWith(prefix)) {
+      continue;
+    }
+
+    const relativeTarget = trimmedVersion.slice(prefix.length).trim();
+
+    if (!relativeTarget) {
+      return null;
+    }
+
+    return path.resolve(projectRoot, relativeTarget, 'package.json');
+  }
+
+  return null;
 }
 
 function looksLikeNativeDependencyByPackageName(dependencyName: string): boolean {

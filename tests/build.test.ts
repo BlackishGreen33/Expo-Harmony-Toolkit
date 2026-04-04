@@ -16,6 +16,7 @@ const nativeCapabilitiesSampleRoot = path.join(
   'examples',
   'official-native-capabilities-sample',
 );
+const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
 const execFileAsync = promisify(execFile);
 const FAKE_NOOP_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
   func: async () => {}
@@ -201,6 +202,17 @@ function createSuccessfulRunner(): CommandRunner {
 }
 
 describe('bundle and HAP build reports', () => {
+  it('keeps bundle preparation deterministic for the dedicated gesture-handler fixture', async () => {
+    const projectRoot = await createTempFixture(gestureHandlerFixtureRoot);
+    const report = await bundleProject(projectRoot, {
+      runner: createSuccessfulRunner(),
+    });
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+
+    expect(report.status).toBe('succeeded');
+    expect(metroConfig).toContain("'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')");
+  }, 120000);
+
   it('falls back to managed empty autolinking artifacts when the Harmony CLI package is missing', async () => {
     const projectRoot = await createTempFixture(minimalSampleRoot);
 

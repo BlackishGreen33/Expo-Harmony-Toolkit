@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Third Party Native Gap Fixture",
+    "slug": "third-party-native-gap-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.thirdpartynativegapfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.thirdpartynativegapfixture"
+    }
+  }
+}

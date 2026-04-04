@@ -19,6 +19,7 @@ import {
   LoadedProject,
   ManagedFileRecord,
   PackageJson,
+  DoctorReport,
   SyncResult,
   TemplateFileDefinition,
   ToolkitConfig,
@@ -128,11 +129,14 @@ export const BUILD_REQUIRED_MANAGED_FILE_PATHS = [
 interface SyncProjectTemplateOptions {
   forceManagedPaths?: readonly string[];
   skipJavaScriptDependencyNormalization?: boolean;
+  doctorReport?: DoctorReport;
 }
 
 export async function initProject(projectRoot: string, force = false): Promise<InitResult> {
   const report = await buildDoctorReport(projectRoot);
-  const sync = await syncProjectTemplate(projectRoot, force);
+  const sync = await syncProjectTemplate(projectRoot, force, {
+    doctorReport: report,
+  });
   const packageWarnings = await syncPackageScripts(projectRoot, force);
   const doctorReportPath = await writeDoctorReport(projectRoot, report);
 
@@ -152,7 +156,13 @@ export async function syncProjectTemplate(
   const loadedProject = await loadProject(projectRoot);
   const identifiers = deriveHarmonyIdentifiers(loadedProject.expoConfig, loadedProject.packageJson);
   const previousToolkitConfig = await readToolkitConfig(loadedProject.projectRoot);
-  const desiredFiles = await buildManagedFiles(loadedProject, identifiers, previousToolkitConfig);
+  const doctorReport = options.doctorReport ?? (await buildDoctorReport(loadedProject.projectRoot));
+  const desiredFiles = await buildManagedFiles(
+    loadedProject,
+    identifiers,
+    previousToolkitConfig,
+    doctorReport,
+  );
   const previousManifest = await readManifest(loadedProject.projectRoot);
   const forceManagedPaths = new Set(options.forceManagedPaths ?? []);
   const result: SyncResult = {
@@ -227,9 +237,10 @@ async function buildManagedFiles(
   loadedProject: LoadedProject,
   identifiers: HarmonyIdentifiers,
   previousToolkitConfig: ToolkitConfig | null,
+  doctorReport: DoctorReport,
 ): Promise<TemplateFileDefinition[]> {
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
-  const enabledCapabilities = getCapabilityDefinitionsForProject(loadedProject.packageJson);
+  const enabledCapabilities = doctorReport.capabilities;
   const hasManagedExpoHarmonyPackage = enabledCapabilities.some(
     (capability) => capability.runtimeMode !== 'shim',
   );
@@ -294,6 +305,7 @@ async function buildManagedFiles(
     rnohCliVersion: RNOH_CLI_VERSION,
     bundleName: identifiers.bundleName,
     entryModuleName: identifiers.entryModuleName,
+    coverageProfile: doctorReport.coverageProfile,
     capabilities: enabledCapabilities.map((capability) => ({
       id: capability.id,
       packageName: capability.packageName,
@@ -303,6 +315,7 @@ async function buildManagedFiles(
       evidenceSource: { ...capability.evidenceSource },
     })),
     requestedHarmonyPermissions,
+    nextActions: [...doctorReport.nextActions],
     project: {
       name: loadedProject.expoConfig.name ?? identifiers.appName,
       slug: loadedProject.expoConfig.slug ?? identifiers.slug,

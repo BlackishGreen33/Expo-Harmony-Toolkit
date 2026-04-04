@@ -17,6 +17,10 @@ const nativeCapabilitiesSampleRoot = path.join(
 );
 const missingIdentifiersRoot = path.join(__dirname, '..', 'fixtures', 'missing-identifiers-app');
 const nativePreviewRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
+const verifiedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'verified-app');
+const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
+const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
+const thirdPartyNativeGapRoot = path.join(__dirname, '..', 'fixtures', 'third-party-native-gap-app');
 const minimalRouterRoot = path.join(__dirname, '..', 'fixtures', 'minimal-router-app');
 const routerMissingPluginRoot = path.join(__dirname, '..', 'fixtures', 'router-missing-plugin-app');
 const missingReanimatedAdapterRoot = path.join(
@@ -135,8 +139,22 @@ describe('doctor report', () => {
 
     expect(report.expoSdkVersion).toBe(55);
     expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-core');
     expect(report.blockingIssues).toHaveLength(0);
+    expect(report.nextActions).toContain(
+      'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.',
+    );
     expect(report.dependencies.every((dependency) => dependency.blocking === false)).toBe(true);
+  });
+
+  it('classifies the dedicated verified fixture as managed-core with matrix-drift dependency buckets', async () => {
+    const report = await buildDoctorReport(verifiedFixtureRoot);
+    const expoDependency = report.dependencies.find((dependency) => dependency.name === 'expo');
+
+    expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-core');
+    expect(expoDependency?.gapCategory).toBe('matrix-drift');
+    expect(report.nextActions[0]).toContain('Stay on the verified lane');
   });
 
   it('marks the official app-shell sample as eligible and exposes schemes/plugins in the report', async () => {
@@ -170,8 +188,10 @@ describe('doctor report', () => {
 
     expect(report.targetTier).toBe('verified');
     expect(report.eligibility).toBe('ineligible');
+    expect(report.coverageProfile).toBe('managed-native-heavy');
     expect(byName.get('expo-file-system')?.status).toBe('manual');
     expect(byName.get('expo-file-system')?.supportTier).toBe('preview');
+    expect(byName.get('expo-file-system')?.gapCategory).toBe('official-module-gap');
     expect(byName.get('expo-image-picker')?.supportTier).toBe('preview');
     expect(byName.get('expo-location')?.supportTier).toBe('preview');
     expect(byName.get('expo-camera')?.supportTier).toBe('preview');
@@ -217,6 +237,12 @@ describe('doctor report', () => {
         (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-location',
       ),
     ).toBe(true);
+    expect(report.nextActions).toContain(
+      'Use `expo-harmony doctor --project-root . --target-tier preview` to measure the current preview-capability baseline while keeping `latest` pinned to verified-only releases.',
+    );
+    expect(report.nextActions).toContain(
+      'Keep combined sample smoke for regression coverage, but track bundle/debug/device/release evidence separately for each preview capability before promotion.',
+    );
   });
 
   it('marks preview native capabilities as eligible when the doctor target tier is preview', async () => {
@@ -227,6 +253,7 @@ describe('doctor report', () => {
 
     expect(report.targetTier).toBe('preview');
     expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-native-heavy');
     expect(report.blockingIssues).toHaveLength(0);
     expect(report.capabilities).toHaveLength(4);
     expect(capabilityById.get('expo-file-system')?.harmonyPermissions).toEqual([]);
@@ -255,6 +282,9 @@ describe('doctor report', () => {
     expect(capabilityById.get('expo-file-system')?.evidenceSource.bundle).toBe('automated');
     expect(capabilityById.get('expo-location')?.evidenceSource.device).toBe('manual-doc');
     expect(capabilityById.get('expo-camera')?.evidenceSource.release).toBe('none');
+    expect(report.nextActions).not.toContain(
+      'Use `expo-harmony doctor --project-root . --target-tier preview` to measure the current preview-capability baseline while keeping `latest` pinned to verified-only releases.',
+    );
   });
 
   it('keeps the official ui-stack sample adapter specs aligned with the validated source of truth', async () => {
@@ -285,7 +315,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.7.3',
+      [TOOLKIT_PACKAGE_NAME]: '1.8.0',
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -386,13 +416,32 @@ describe('doctor report', () => {
     ).toBe(true);
   });
 
-  it('flags gesture-handler as outside the current public matrix', async () => {
+  it('classifies the dedicated gesture-handler fixture as a third-party-native-heavy unblocker', async () => {
+    const report = await buildDoctorReport(gestureHandlerFixtureRoot);
+
+    expect(report.eligibility).toBe('ineligible');
+    expect(report.coverageProfile).toBe('third-party-native-heavy');
+    expect(
+      report.dependencies.find((dependency) => dependency.name === 'react-native-gesture-handler')?.gapCategory,
+    ).toBe('third-party-native-gap');
+    expect(
+      report.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.not_allowed' && issue.subject === 'react-native-gesture-handler',
+      ),
+    ).toBe(true);
+    expect(report.nextActions).toContain(
+      'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
+    );
+    expect(report.nextActions).toContain(
+      'Keep `react-native-gesture-handler` out of the verified lane until its Harmony adapter path has stable doctor, sample, and build coverage.',
+    );
+  });
+
+  it('still flags the matrix regression fixture when the gesture-handler adapter is missing', async () => {
     const report = await buildDoctorReport(missingGestureAdapterRoot);
 
     expect(report.eligibility).toBe('ineligible');
-    expect(report.dependencies.find((dependency) => dependency.name === 'react-native-gesture-handler')?.status).toBe(
-      'manual',
-    );
     expect(
       report.blockingIssues.some(
         (issue) =>
@@ -481,5 +530,33 @@ describe('doctor report', () => {
         'Some unknown dependencies appear to carry native surfaces. Treat them as real Harmony portability risks until they are explicitly onboarded.',
       ),
     ).toBe(true);
+  });
+
+  it('classifies the dedicated bare fixture onto the bare workflow track', async () => {
+    const report = await buildDoctorReport(bareFixtureRoot);
+    const expoBuildProperties = report.dependencies.find(
+      (dependency) => dependency.name === 'expo-build-properties',
+    );
+
+    expect(report.eligibility).toBe('ineligible');
+    expect(report.coverageProfile).toBe('bare');
+    expect(expoBuildProperties?.gapCategory).toBe('bare-workflow-gap');
+    expect(report.nextActions).toContain(
+      'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
+    );
+  });
+
+  it('classifies the dedicated third-party native fixture separately from matrix drift', async () => {
+    const report = await buildDoctorReport(thirdPartyNativeGapRoot);
+    const dependency = report.dependencies.find((entry) => entry.name === 'mystery-native-module');
+
+    expect(report.eligibility).toBe('ineligible');
+    expect(report.coverageProfile).toBe('third-party-native-heavy');
+    expect(dependency?.status).toBe('unknown');
+    expect(dependency?.buildabilityRisk).toBe('native-risk');
+    expect(dependency?.gapCategory).toBe('third-party-native-gap');
+    expect(report.nextActions).toContain(
+      'Inspect unknown native-looking dependencies and either replace them, gate them behind preview work, or onboard them explicitly before promising Harmony portability.',
+    );
   });
 });

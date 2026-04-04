@@ -5,6 +5,16 @@ export type DoctorTargetTier = Exclude<SupportTier, 'unsupported'>;
 export type CapabilityRuntimeMode = 'shim' | 'adapter' | 'verified';
 export type CapabilityEvidenceSource = 'automated' | 'manual-doc' | 'none';
 export type DependencyBuildabilityRisk = 'known' | 'js-only-unknown' | 'native-risk' | 'unresolved';
+export type CoverageProfile =
+  | 'managed-core'
+  | 'managed-native-heavy'
+  | 'bare'
+  | 'third-party-native-heavy';
+export type GapCategory =
+  | 'matrix-drift'
+  | 'official-module-gap'
+  | 'third-party-native-gap'
+  | 'bare-workflow-gap';
 export type DependencySource =
   | 'dependency'
   | 'devDependency'
@@ -82,6 +92,7 @@ export interface DetectedDependency {
   status: CompatibilityStatus;
   supportTier: SupportTier;
   buildabilityRisk: DependencyBuildabilityRisk;
+  gapCategory: GapCategory;
   blocking: boolean;
   note: string;
   replacement?: string;
@@ -169,6 +180,7 @@ export interface DoctorReport {
   rnohCliVersion: string;
   expoSdkVersion: number | null;
   targetTier: DoctorTargetTier;
+  coverageProfile: CoverageProfile;
   expoConfig: {
     name: string | null;
     slug: string | null;
@@ -183,6 +195,7 @@ export interface DoctorReport {
   supportSummary: SupportTierSummary;
   capabilities: ProjectCapabilityReport[];
   blockingIssues: BlockingIssue[];
+  nextActions: string[];
   advisories: string[];
   warnings: string[];
 }
@@ -258,8 +271,10 @@ export interface ToolkitConfig {
   rnohCliVersion: string;
   bundleName: string;
   entryModuleName: string;
+  coverageProfile: CoverageProfile;
   capabilities: ManagedCapabilityRecord[];
   requestedHarmonyPermissions: string[];
+  nextActions: string[];
   project: {
     name: string;
     slug: string;

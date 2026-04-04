@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Gesture Handler Fixture",
+    "slug": "gesture-handler-fixture",
+    "version": "1.0.0",
+    "scheme": "gesturehandlerfixture",
+    "plugins": [
+      "expo-router"
+    ],
+    "android": {
+      "package": "com.blackishgreen.gesturehandlerfixture"
+    }
+  }
+}
