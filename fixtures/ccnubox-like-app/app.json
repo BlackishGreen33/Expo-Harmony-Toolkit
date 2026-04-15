@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "CCNUBox Like App",
+    "slug": "ccnubox-like",
+    "version": "1.0.0",
+    "scheme": "ccnubox",
+    "plugins": [
+      "expo-router",
+      "mx-jpush-expo",
+      "@bacons/apple-targets",
+      "./plugins/config-android-url-scheme.js"
+    ],
+    "extra": {
+      "expoHarmony": {
+        "doctor": {
+          "excludeDependencies": [
+            "@ant-design/react-native",
+            "@bacons/apple-targets",
+            "expo-notifications",
+            "expo-secure-store",
+            "jpush-react-native",
+            "mx-jpush-expo"
+          ],
+          "excludePlugins": [
+            "@bacons/apple-targets",
+            "./plugins/config-android-url-scheme.js",
+            "mx-jpush-expo"
+          ],
+          "coverageProfile": "managed-native-heavy"
+        }
+      }
+    },
+    "android": {
+      "package": "com.example.ccnuboxlike"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.ccnuboxlike"
+    }
+  }
+}

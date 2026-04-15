@@ -1,0 +1,40 @@
+{
+  "name": "ccnubox-like-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "expo start"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@expo/metro-runtime": "55.0.7",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-oh/react-native-harmony": "0.82.18",
+    "@react-native-oh/react-native-harmony-cli": "0.82.18",
+    "@react-native-oh-tpl/react-native-reanimated": "github:react-native-oh-library/react-native-harmony-reanimated#9fdbe676209937383907be0592291223c6ca7ad7&path:react-native-harmony-reanimated",
+    "@react-native-oh-tpl/react-native-svg": "github:react-native-oh-library/react-native-harmony-svg#97c31d2f72559931d62fa84a9c86e86d343753d3&path:react-native-harmony-svg",
+    "@ant-design/react-native": "^5.4.1",
+    "@bacons/apple-targets": "^3.0.6",
+    "expo": "^55.0.8",
+    "expo-constants": "~55.0.9",
+    "expo-linking": "~55.0.8",
+    "expo-notifications": "^0.31.4",
+    "expo-router": "55.0.7",
+    "expo-secure-store": "~15.0.7",
+    "expo-status-bar": "~3.0.8",
+    "jpush-react-native": "3.2.1",
+    "mx-jpush-expo": "^1.2.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-native": "0.82.1",
+    "react-native-reanimated": "3.6.0",
+    "react-native-safe-area-context": "5.6.2",
+    "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.0.0",
+    "react-native-webview": "13.16.0"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^20.1.2",
+    "metro": "^0.83.1"
+  }
+}

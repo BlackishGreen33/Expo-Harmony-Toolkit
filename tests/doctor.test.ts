@@ -19,6 +19,7 @@ const missingIdentifiersRoot = path.join(__dirname, '..', 'fixtures', 'missing-i
 const nativePreviewRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
 const verifiedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'verified-app');
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
+const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
 const thirdPartyNativeGapRoot = path.join(__dirname, '..', 'fixtures', 'third-party-native-gap-app');
 const minimalRouterRoot = path.join(__dirname, '..', 'fixtures', 'minimal-router-app');
@@ -543,6 +544,33 @@ describe('doctor report', () => {
     expect(expoBuildProperties?.gapCategory).toBe('bare-workflow-gap');
     expect(report.nextActions).toContain(
       'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
+    );
+  });
+
+  it('supports ccnubox-like intake overrides so sidecar-bound projects are not forced onto the bare lane', async () => {
+    const report = await buildDoctorReport(ccnuboxLikeFixtureRoot, {
+      targetTier: 'experimental',
+    });
+
+    expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-native-heavy');
+    expect(report.expoConfig.plugins).toEqual(['expo-router']);
+    expect(report.dependencies.some((dependency) => dependency.name === '@ant-design/react-native')).toBe(false);
+    expect(report.dependencies.some((dependency) => dependency.name === 'mx-jpush-expo')).toBe(false);
+    expect(report.dependencies.some((dependency) => dependency.name === 'jpush-react-native')).toBe(false);
+    expect(
+      report.dependencies.some((dependency) => dependency.name === '@react-native-async-storage/async-storage'),
+    ).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'react-native-webview')).toBe(true);
+    expect(report.blockingIssues).toHaveLength(0);
+    expect(report.nextActions).toContain(
+      'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
+    );
+    expect(report.nextActions).not.toContain(
+      'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
+    );
+    expect(report.advisories).toContain(
+      'Expo Harmony doctor forced coverage profile to managed-native-heavy.',
     );
   });
 

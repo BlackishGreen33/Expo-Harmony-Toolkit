@@ -6,6 +6,7 @@ import { readManifest, readToolkitConfig } from '../src/core/metadata';
 
 const fixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 const nativePreviewFixtureRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
+const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 
 async function createTempFixture(): Promise<string> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-toolkit-'));
@@ -16,6 +17,12 @@ async function createTempFixture(): Promise<string> {
 async function createTempPreviewFixture(): Promise<string> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-preview-toolkit-'));
   await fs.copy(nativePreviewFixtureRoot, tempRoot);
+  return tempRoot;
+}
+
+async function createTempCcnuboxLikeFixture(): Promise<string> {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-ccnubox-like-'));
+  await fs.copy(ccnuboxLikeFixtureRoot, tempRoot);
   return tempRoot;
 }
 
@@ -236,6 +243,33 @@ describe('init project', () => {
     );
     expect(toolkitConfig?.nextActions).toContain(
       'Keep combined sample smoke for regression coverage, but track bundle/debug/device/release evidence separately for each preview capability before promotion.',
+    );
+  });
+
+  it('persists doctor overrides into toolkit metadata for ccnubox-like sidecar intake fixtures', async () => {
+    const projectRoot = await createTempCcnuboxLikeFixture();
+
+    await syncProjectTemplate(projectRoot, true);
+
+    const toolkitConfig = await readToolkitConfig(projectRoot);
+
+    expect(toolkitConfig?.coverageProfile).toBe('managed-native-heavy');
+    expect(toolkitConfig?.doctorConfig.coverageProfile).toBe('managed-native-heavy');
+    expect(toolkitConfig?.doctorConfig.excludePlugins).toEqual([
+      './plugins/config-android-url-scheme.js',
+      '@bacons/apple-targets',
+      'mx-jpush-expo',
+    ]);
+    expect(toolkitConfig?.doctorConfig.excludeDependencies).toEqual([
+      '@ant-design/react-native',
+      '@bacons/apple-targets',
+      'expo-notifications',
+      'expo-secure-store',
+      'jpush-react-native',
+      'mx-jpush-expo',
+    ]);
+    expect(toolkitConfig?.nextActions).toContain(
+      'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
     );
   });
 });
