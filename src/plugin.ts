@@ -20,9 +20,14 @@ export const withExpoHarmony: ConfigPlugin<ExpoHarmonyPluginProps> = (config, pr
   validatePluginProps(props);
 
   const identifiers = deriveHarmonyIdentifiers(config, undefined, props);
+  const existingExpoHarmonyConfig =
+    config.extra && typeof config.extra.expoHarmony === 'object' && config.extra.expoHarmony
+      ? config.extra.expoHarmony
+      : {};
   config.extra = {
     ...(config.extra ?? {}),
     expoHarmony: {
+      ...existingExpoHarmonyConfig,
       bundleName: identifiers.bundleName,
       entryModuleName: identifiers.entryModuleName,
       templateVersion: props.templateVersion ?? TEMPLATE_VERSION,

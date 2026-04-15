@@ -160,18 +160,29 @@ export function isSupportTierAllowed(
 
 export function getCapabilityDefinitionsForProject(
   packageJson: PackageJson,
+  options: {
+    excludedDependencies?: ReadonlySet<string>;
+  } = {},
 ): CapabilityDefinition[] {
+  const excludedDependencies = options.excludedDependencies ?? new Set<string>();
+
   return CAPABILITY_DEFINITIONS.filter((definition) =>
+    !excludedDependencies.has(definition.packageName) &&
     hasDeclaredDependency(packageJson, definition.packageName),
   ).sort((left, right) => left.packageName.localeCompare(right.packageName));
 }
 
 export function collectCapabilityHarmonyPermissions(
   packageJson: PackageJson,
+  options: {
+    excludedDependencies?: ReadonlySet<string>;
+  } = {},
 ): string[] {
   return Array.from(
     new Set(
-      getCapabilityDefinitionsForProject(packageJson).flatMap((definition) => definition.harmonyPermissions),
+      getCapabilityDefinitionsForProject(packageJson, options).flatMap(
+        (definition) => definition.harmonyPermissions,
+      ),
     ),
   ).sort((left, right) => left.localeCompare(right));
 }

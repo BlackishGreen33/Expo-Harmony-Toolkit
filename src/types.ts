@@ -21,6 +21,18 @@ export type DependencySource =
   | 'peerDependency'
   | 'expo-plugin';
 
+export interface ExpoHarmonyDoctorConfig {
+  excludeDependencies?: string[];
+  excludePlugins?: string[];
+  coverageProfile?: CoverageProfile;
+}
+
+export interface ExpoHarmonyResolvedDoctorConfig {
+  excludeDependencies: string[];
+  excludePlugins: string[];
+  coverageProfile: CoverageProfile | null;
+}
+
 export interface ExpoHarmonyPluginProps {
   bundleName?: string;
   entryModuleName?: string;
@@ -272,6 +284,7 @@ export interface ToolkitConfig {
   bundleName: string;
   entryModuleName: string;
   coverageProfile: CoverageProfile;
+  doctorConfig: ExpoHarmonyResolvedDoctorConfig;
   capabilities: ManagedCapabilityRecord[];
   requestedHarmonyPermissions: string[];
   nextActions: string[];

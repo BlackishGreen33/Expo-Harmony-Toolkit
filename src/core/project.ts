@@ -6,10 +6,12 @@ import semver from 'semver';
 import { DEFAULT_HVIGOR_PLUGIN_FILENAME, RNOH_CLI_VERSION, SUPPORTED_EXPO_SDKS } from './constants';
 import {
   DependencySource,
+  ExpoHarmonyResolvedDoctorConfig,
   ExpoHarmonyPluginProps,
   HarmonyIdentifiers,
   LoadedProject,
   PackageJson,
+  CoverageProfile,
 } from '../types';
 
 const APP_CONFIG_CANDIDATES = [
@@ -116,6 +118,37 @@ export function collectExpoPlugins(expoConfig: Record<string, any>): string[] {
   }
 
   return [...names].sort((left, right) => left.localeCompare(right));
+}
+
+export function resolveExpoHarmonyDoctorConfig(
+  expoConfig: Record<string, any>,
+): ExpoHarmonyResolvedDoctorConfig {
+  const rawDoctorConfig = expoConfig.extra?.expoHarmony?.doctor;
+  const coverageProfile = normalizeCoverageProfile(rawDoctorConfig?.coverageProfile);
+
+  return {
+    excludeDependencies: normalizeStringArray(rawDoctorConfig?.excludeDependencies),
+    excludePlugins: normalizeStringArray(rawDoctorConfig?.excludePlugins),
+    coverageProfile,
+  };
+}
+
+export function applyDependencyExclusions(
+  packageJson: PackageJson,
+  excludedDependencies: readonly string[],
+): PackageJson {
+  if (excludedDependencies.length === 0) {
+    return packageJson;
+  }
+
+  const excludedDependencySet = new Set(excludedDependencies);
+
+  return {
+    ...packageJson,
+    dependencies: filterDependencySection(packageJson.dependencies, excludedDependencySet),
+    devDependencies: filterDependencySection(packageJson.devDependencies, excludedDependencySet),
+    peerDependencies: filterDependencySection(packageJson.peerDependencies, excludedDependencySet),
+  };
 }
 
 export function collectExpoSchemes(expoConfig: Record<string, any>): string[] {
@@ -262,4 +295,43 @@ function sanitizeIdentifierSegment(value: string): string {
     .replace(/^_+/, '');
 
   return cleaned.length > 0 ? cleaned : 'entry';
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [...new Set(
+    value
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0),
+  )].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeCoverageProfile(value: unknown): CoverageProfile | null {
+  if (
+    value === 'managed-core' ||
+    value === 'managed-native-heavy' ||
+    value === 'bare' ||
+    value === 'third-party-native-heavy'
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
+function filterDependencySection(
+  section: Record<string, string> | undefined,
+  excludedDependencies: Set<string>,
+): Record<string, string> | undefined {
+  if (!section) {
+    return section;
+  }
+
+  return Object.fromEntries(
+    Object.entries(section).filter(([dependencyName]) => !excludedDependencies.has(dependencyName)),
+  );
 }

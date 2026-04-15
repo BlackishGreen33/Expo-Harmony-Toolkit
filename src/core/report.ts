@@ -37,12 +37,14 @@ import {
   ValidatedReleaseMatrix,
 } from '../types';
 import {
+  applyDependencyExclusions,
   collectDeclaredDependencies,
   collectExpoPlugins,
   collectExpoSchemes,
   detectExpoSdkVersion,
   getExpoSdkWarning,
   loadProject,
+  resolveExpoHarmonyDoctorConfig,
 } from './project';
 import { HARMONY_ROUTER_ENTRY_FILENAME } from './constants';
 
@@ -60,13 +62,21 @@ export async function buildDoctorReport(
   options: { targetTier?: DoctorTargetTier } = {},
 ): Promise<DoctorReport> {
   const loadedProject = await loadProject(projectRoot);
+  const doctorConfig = resolveExpoHarmonyDoctorConfig(loadedProject.expoConfig);
+  const filteredPackageJson = applyDependencyExclusions(
+    loadedProject.packageJson,
+    doctorConfig.excludeDependencies,
+  );
   const expoSdkVersion = detectExpoSdkVersion(loadedProject.packageJson);
   const matrix = VALIDATED_RELEASE_MATRICES[DEFAULT_VALIDATED_MATRIX_ID];
   const targetTier = options.targetTier ?? 'verified';
-  const expoPlugins = collectExpoPlugins(loadedProject.expoConfig);
+  const excludedPlugins = new Set(doctorConfig.excludePlugins);
+  const expoPlugins = collectExpoPlugins(loadedProject.expoConfig).filter(
+    (pluginName) => !excludedPlugins.has(pluginName),
+  );
   const expoSchemes = collectExpoSchemes(loadedProject.expoConfig);
   const dependencyRecords = new Map<string, DetectedDependency>();
-  const declaredDependencies = collectDeclaredDependencies(loadedProject.packageJson);
+  const declaredDependencies = collectDeclaredDependencies(filteredPackageJson);
 
   for (const dependency of declaredDependencies) {
     dependencyRecords.set(
@@ -88,7 +98,7 @@ export async function buildDoctorReport(
   const blockingIssues = await collectBlockingIssues(
     loadedProject.projectRoot,
     loadedProject.expoConfig,
-    loadedProject.packageJson,
+    filteredPackageJson,
     expoPlugins,
     expoSchemes,
     expoSdkVersion,
@@ -96,7 +106,10 @@ export async function buildDoctorReport(
     matrix,
     targetTier,
   );
-  const capabilities = getCapabilityDefinitionsForProject(loadedProject.packageJson).map(
+  const excludedDependencies = new Set(doctorConfig.excludeDependencies);
+  const capabilities = getCapabilityDefinitionsForProject(filteredPackageJson, {
+    excludedDependencies,
+  }).map(
     (definition): ProjectCapabilityReport => ({
       id: definition.id,
       packageName: definition.packageName,
@@ -115,8 +128,9 @@ export async function buildDoctorReport(
   );
   const coverageProfile = await detectCoverageProfile(
     loadedProject.projectRoot,
-    loadedProject.packageJson,
+    filteredPackageJson,
     dependencies,
+    doctorConfig.coverageProfile,
   );
   const blockingDependencyNames = new Set(
     blockingIssues
@@ -138,7 +152,7 @@ export async function buildDoctorReport(
   });
 
   const warnings = buildWarnings(loadedProject.expoConfig, expoSdkVersion, resolvedDependencies);
-  const advisories = buildAdvisories(loadedProject.expoConfig);
+  const advisories = buildAdvisories(loadedProject.expoConfig, doctorConfig);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -507,7 +521,12 @@ async function detectCoverageProfile(
   projectRoot: string,
   packageJson: PackageJson,
   dependencies: DetectedDependency[],
+  coverageProfileOverride: CoverageProfile | null,
 ): Promise<CoverageProfile> {
+  if (coverageProfileOverride) {
+    return coverageProfileOverride;
+  }
+
   for (const directoryName of BARE_WORKFLOW_DIRECTORY_NAMES) {
     if (await fs.pathExists(path.join(projectRoot, directoryName))) {
       return 'bare';
@@ -749,8 +768,25 @@ function buildWarnings(
   return warnings;
 }
 
-function buildAdvisories(expoConfig: Record<string, any>): string[] {
+function buildAdvisories(
+  expoConfig: Record<string, any>,
+  doctorConfig: ReturnType<typeof resolveExpoHarmonyDoctorConfig>,
+): string[] {
   const advisories: string[] = [];
+
+  if (doctorConfig.excludeDependencies.length > 0) {
+    advisories.push(
+      `Expo Harmony doctor excluded dependencies: ${doctorConfig.excludeDependencies.join(', ')}.`,
+    );
+  }
+
+  if (doctorConfig.excludePlugins.length > 0) {
+    advisories.push(`Expo Harmony doctor excluded plugins: ${doctorConfig.excludePlugins.join(', ')}.`);
+  }
+
+  if (doctorConfig.coverageProfile) {
+    advisories.push(`Expo Harmony doctor forced coverage profile to ${doctorConfig.coverageProfile}.`);
+  }
 
   if (!expoConfig.android?.package && expoConfig.ios?.bundleIdentifier) {
     advisories.push(
@@ -770,13 +806,13 @@ function isDependencyAllowedForTargetTier(
     return true;
   }
 
-  const capability = CAPABILITY_BY_PACKAGE[dependencyName];
-
-  if (!capability) {
-    return false;
+  const catalogRecord = DEPENDENCY_CATALOG[dependencyName];
+  if (catalogRecord) {
+    return isSupportTierAllowed(catalogRecord.supportTier, targetTier);
   }
 
-  return isSupportTierAllowed(capability.supportTier, targetTier);
+  const capability = CAPABILITY_BY_PACKAGE[dependencyName];
+  return capability ? isSupportTierAllowed(capability.supportTier, targetTier) : false;
 }
 
 function matchesVersionRange(rawVersion: string, range: string): boolean {

@@ -34,6 +34,7 @@ import {
   createGeneratedSha,
   deriveHarmonyIdentifiers,
   loadProject,
+  resolveExpoHarmonyDoctorConfig,
   resolveRnohHvigorPluginFilename,
 } from './project';
 import { normalizeKnownJavaScriptDependencies } from './javascriptDependencies';
@@ -240,11 +241,14 @@ async function buildManagedFiles(
   doctorReport: DoctorReport,
 ): Promise<TemplateFileDefinition[]> {
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
+  const doctorConfig = resolveExpoHarmonyDoctorConfig(loadedProject.expoConfig);
   const enabledCapabilities = doctorReport.capabilities;
   const hasManagedExpoHarmonyPackage = enabledCapabilities.some(
     (capability) => capability.runtimeMode !== 'shim',
   );
-  const requestedHarmonyPermissions = collectCapabilityHarmonyPermissions(loadedProject.packageJson);
+  const requestedHarmonyPermissions = collectCapabilityHarmonyPermissions(loadedProject.packageJson, {
+    excludedDependencies: new Set(doctorConfig.excludeDependencies),
+  });
   const signingLocalConfig = await readSigningLocalConfig(loadedProject.projectRoot);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
   const renderedHarmonyRootPackage = renderTemplate(
@@ -306,6 +310,7 @@ async function buildManagedFiles(
     bundleName: identifiers.bundleName,
     entryModuleName: identifiers.entryModuleName,
     coverageProfile: doctorReport.coverageProfile,
+    doctorConfig,
     capabilities: enabledCapabilities.map((capability) => ({
       id: capability.id,
       packageName: capability.packageName,

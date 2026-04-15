@@ -114,6 +114,30 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     supportTier: 'verified',
     note: 'File-based routing is treated as part of the validated App Shell matrix when router peers, scheme, and plugin config are present.',
   },
+  '@react-native-async-storage/async-storage': {
+    status: 'manual',
+    supportTier: 'experimental',
+    note: 'Async storage is a high-frequency startup dependency. Treat it as an experimental Harmony intake dependency until the managed adapter path has stable doctor, sample, and build coverage.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+  },
+  'react-native-safe-area-context': {
+    status: 'supported',
+    supportTier: 'experimental',
+    note: 'Safe-area handling is shimmed by the toolkit for Harmony so App Shell layouts can keep rendering while the native path remains outside the verified matrix.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+  },
+  'react-native-screens': {
+    status: 'manual',
+    supportTier: 'experimental',
+    note: 'Navigation stacks frequently depend on react-native-screens. Keep it on the experimental lane until the Harmony adapter path has repeatable sample and device coverage.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+  },
+  'react-native-webview': {
+    status: 'manual',
+    supportTier: 'experimental',
+    note: 'WebView is a common app-shell blocker. Treat it as an experimental intake dependency until the Harmony runtime path is validated on device.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+  },
   ...UI_STACK_COMPATIBILITY_RECORDS,
   'react-native-gesture-handler': {
     status: 'manual',
