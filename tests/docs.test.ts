@@ -10,6 +10,7 @@ import {
   renderSupportMatrixVerifiedAllowlist,
   renderSupportMatrixVerifiedMatrix,
 } from '../src/docs/render';
+import { TOOLKIT_VERSION } from '../src/core/constants';
 import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from '../src/data/uiStack';
 
 const repoRoot = path.join(__dirname, '..');
@@ -134,7 +135,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(packageJson.version).toBe('1.8.0');
+    expect(packageJson.version).toBe(TOOLKIT_VERSION);
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
     expect(packageJson.homepage).toBe('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit#readme');

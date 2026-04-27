@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
+import { TOOLKIT_VERSION } from '../src/core/constants';
 import { initProject, syncProjectTemplate } from '../src/core/template';
 import { readManifest, readToolkitConfig } from '../src/core/metadata';
 
@@ -70,9 +71,9 @@ describe('init project', () => {
     expect(
       await fs.pathExists(path.join(projectRoot, '.expo-harmony', 'signing.local.example.json')),
     ).toBe(true);
-    expect(manifest?.toolkitVersion).toBe('1.8.0');
+    expect(manifest?.toolkitVersion).toBe(TOOLKIT_VERSION);
     expect(manifest?.matrixId).toBe('expo55-rnoh082-ui-stack');
-    expect(toolkitConfig?.toolkitVersion).toBe('1.8.0');
+    expect(toolkitConfig?.toolkitVersion).toBe(TOOLKIT_VERSION);
     expect(toolkitConfig?.matrixId).toBe('expo55-rnoh082-ui-stack');
     expect(toolkitConfig?.coverageProfile).toBe('managed-native-heavy');
     expect(toolkitConfig?.nextActions).toContain(

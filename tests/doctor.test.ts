@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
-import { TOOLKIT_PACKAGE_NAME } from '../src/core/constants';
+import { TOOLKIT_PACKAGE_NAME, TOOLKIT_VERSION } from '../src/core/constants';
 import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from '../src/data/uiStack';
 import { buildDoctorReport } from '../src/core/report';
 
@@ -316,7 +316,7 @@ describe('doctor report', () => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.devDependencies = {
       ...(packageJson.devDependencies ?? {}),
-      [TOOLKIT_PACKAGE_NAME]: '1.8.0',
+      [TOOLKIT_PACKAGE_NAME]: TOOLKIT_VERSION,
     };
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
