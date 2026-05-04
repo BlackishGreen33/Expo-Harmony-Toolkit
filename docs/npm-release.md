@@ -60,6 +60,7 @@ pnpm release:check
 
 - hosted CI 默认仍可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建
 - debug / release HAP gate 继续由 capability acceptance、带工具链环境的 CI 或本地验收补齐
+- `v1.8.2` 已补一条 ccnubox release HAP 的本地签名、模拟器安装与启动记录；该记录不替代真机 device acceptance，也不把 preview capability 标为 release-ready
 - preview capability 若在报告里显示 `device=yes`，必须同时以 `evidenceSource.device=manual-doc` 对外说明其来源，不得表述成 CI 自动设备验证
 
 ## 手动发布

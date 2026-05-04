@@ -113,6 +113,7 @@
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
 - 当前 preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
+- `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录只证明 app-shell release 构建链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
 - `expo-file-system`
   - `🟡` 当前主路径是 UTF-8/base64 sandbox I/O、append/partial read、`getInfoAsync({ md5: true })` 与 `downloadAsync`
@@ -251,6 +252,8 @@ toolkit 受管的核心产物仍包括：
 - device-side 场景验收完成
 - release signing / release HAP 验收完成
 - 文档、矩阵、roadmap、acceptance 记录同 PR 更新
+
+`v1.8.2` 记录的 simulator release-HAP evidence 只覆盖 ccnubox app-shell 的 signed HAP 构建、安装和启动；单 capability 的 release acceptance 仍必须按各自记录单独关闭。
 
 ## 当前仍未进入正式公开承诺
 

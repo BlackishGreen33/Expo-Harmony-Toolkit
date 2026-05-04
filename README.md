@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.1-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.2-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.8.1` |
+| 当前版本 | `v1.8.2` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目 |
@@ -267,6 +267,7 @@ preview 证据的额外说明：
 - `bundle/debugBuild` 标记为 `automated`
 - `device` 标记为 `manual-doc`，表示已有人工验收记录，不等于 CI 自动验收
 - `release` 标记为 `none`，表示当前仍没有 release 证据
+- `v1.8.2` 额外记录了 ccnubox release HAP 的本地签名、模拟器安装与启动证据；这只证明 app-shell release HAP 最低链路，不关闭单 capability release acceptance
 
 手动 Harmony 验收继续要求：
 

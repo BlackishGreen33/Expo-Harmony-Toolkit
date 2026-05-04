@@ -11,6 +11,36 @@
 - `harmony/build-profile.json5` 中存在可用的 `signingConfigs`
 - AppGallery Connect / 本地签名材料与工程配置一致
 
+`.expo-harmony/signing.local.json` 的最小结构与 `.expo-harmony/signing.local.example.json` 一致：
+
+```json
+{
+  "signingConfigs": [
+    {
+      "name": "default",
+      "type": "HarmonyOS",
+      "material": {
+        "storeFile": "./signing/release.p12",
+        "storePassword": "<replace-with-store-password>",
+        "keyAlias": "<replace-with-key-alias>",
+        "keyPassword": "<replace-with-key-password>",
+        "signAlg": "SHA256withECDSA",
+        "profile": "./signing/release.p7b",
+        "certpath": "./signing/release.cer"
+      }
+    }
+  ],
+  "products": [
+    {
+      "name": "default",
+      "signingConfig": "default"
+    }
+  ]
+}
+```
+
+真实发布时，这些材料应来自 DevEco / AppGallery Connect。OpenHarmony 本地自签材料只适合模拟器或内部验证，不能当作生产发布凭据。
+
 ## 如何检查
 
 在项目根目录执行：
@@ -51,6 +81,18 @@ expo-harmony build-hap --mode release
 
 - `env-report.json` 不再提示 `env.signing.missing`
 - DevEco / AppGallery Connect 的 release profile 已准备完成
+- release profile 覆盖了 HAP 中申请的 restricted permission；否则模拟器或设备可能在安装阶段报 `grant request permissions failed`
+
+## v1.8.2 本地模拟器证据
+
+`v1.8.2` 已在 ccnubox 本地验证目标上记录：
+
+- `expo-harmony env`：`Signing: configured`
+- `expo-harmony build-hap --mode release`：release signed HAP 构建成功
+- `hdc install -r <release-hap>`：模拟器安装成功
+- `aa start -a EntryAbility -b com.muxixyz.ccnubox`：启动成功
+
+这条记录只说明 release HAP 的本地签名、安装、启动链路可走通。它不代表 AppGallery 生产签名、不代表真机通过，也不关闭 preview capability 的 release runtime acceptance。
 
 ## 关系说明
 

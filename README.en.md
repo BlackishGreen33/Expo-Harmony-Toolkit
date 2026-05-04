@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.1-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.2-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
   </p>
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.8.1` |
+| Current version | `v1.8.2` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects |
@@ -261,6 +261,7 @@ Additional preview evidence semantics:
 - `bundle/debugBuild` are marked as `automated`
 - `device` is marked as `manual-doc`, which means a human acceptance record exists rather than CI automation
 - `release` is marked as `none`, which means no release evidence exists yet
+- `v1.8.2` additionally records local signing plus simulator install/start evidence for the ccnubox release HAP; this only proves the minimal app-shell release-HAP path and does not close per-capability release acceptance
 
 Manual Harmony acceptance still requires:
 
