@@ -18,6 +18,8 @@ import {
   ensureRnohGeneratedTsShim,
   findHarmonyArtifacts,
   normalizeLocalHarDependencies,
+  patchKnownHarmonyAdapterCodegenOutputs,
+  patchRnohGeneratedCodegenForNormalizedLocalPackage,
 } from './build/localHar';
 import {
   buildInvocation,
@@ -432,6 +434,8 @@ export async function buildHapProject(
     if (!normalizedLocalHarPackages.some((localPackage) => localPackage.packageName === '@rnoh/react-native-openharmony')) {
       await ensureRnohGeneratedTsShim(harmonyProjectRoot);
     }
+    await patchRnohGeneratedCodegenForNormalizedLocalPackage(harmonyProjectRoot);
+    await patchKnownHarmonyAdapterCodegenOutputs(harmonyProjectRoot);
 
     const hvigorCommand = buildInvocation(envReport.hvigorPath as string, [
       'assembleHap',

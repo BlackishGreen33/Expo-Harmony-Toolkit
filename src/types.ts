@@ -57,6 +57,7 @@ export interface BlockingIssue {
 export interface ValidatedDependencyRule {
   version?: string;
   specifier?: string;
+  specifiers?: string[];
   required?: boolean;
 }
 

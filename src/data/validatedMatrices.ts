@@ -95,7 +95,10 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
           [
             entry.adapterPackageName,
             {
-              specifier: getUiStackAdapterSpecifier(entry),
+              specifiers: [
+                getUiStackAdapterSpecifier(entry),
+                'npmSpecifier' in entry ? entry.npmSpecifier : entry.adapterVersion,
+              ],
             },
           ],
         ]),

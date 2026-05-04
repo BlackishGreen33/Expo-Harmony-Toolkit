@@ -391,10 +391,21 @@ async function collectBlockingIssues(
         subject: dependencyName,
       });
     }
+
+    if (
+      rule.specifiers &&
+      !rule.specifiers.some((specifier) => matchesDependencySpecifier(dependency.version, specifier))
+    ) {
+      issues.push({
+        code: 'dependency.specifier_mismatch',
+        message: `Dependency ${dependencyName} does not match any validated dependency spec: ${rule.specifiers.join(', ')}.`,
+        subject: dependencyName,
+      });
+    }
   }
 
   for (const dependency of dependencies) {
-    if (!isDependencyAllowedForTargetTier(dependency.name, matrix, targetTier)) {
+    if (shouldBlockDependencyForTargetTier(dependency, matrix, targetTier)) {
       issues.push({
         code: 'dependency.not_allowed',
         message: `${dependency.name} is outside the ${targetTier} support tier for ${matrix.id}.`,
@@ -813,6 +824,22 @@ function isDependencyAllowedForTargetTier(
 
   const capability = CAPABILITY_BY_PACKAGE[dependencyName];
   return capability ? isSupportTierAllowed(capability.supportTier, targetTier) : false;
+}
+
+function shouldBlockDependencyForTargetTier(
+  dependency: DetectedDependency,
+  matrix: ValidatedReleaseMatrix,
+  targetTier: DoctorTargetTier,
+): boolean {
+  if (dependency.source === 'devDependency') {
+    return false;
+  }
+
+  if (dependency.buildabilityRisk === 'js-only-unknown') {
+    return false;
+  }
+
+  return !isDependencyAllowedForTargetTier(dependency.name, matrix, targetTier);
 }
 
 function matchesVersionRange(rawVersion: string, range: string): boolean {

@@ -480,12 +480,26 @@ function createGestureHandlerCompatibilityDescriptorHeader(
 }
 
 function patchGestureHandlerCompatibilityPackageHeader(contents: string): string {
-  if (contents.includes('createComponentDescriptorProviders() override;')) {
-    return contents;
+  let nextContents = contents;
+
+  if (!nextContents.includes('createTurboModuleFactoryDelegate() override;')) {
+    nextContents = nextContents.replace(
+      /    EventEmitRequestHandlers createEventEmitRequestHandlers\(\);\r?\n/,
+      [
+        '    std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate() override;',
+        '',
+        '    EventEmitRequestHandlers createEventEmitRequestHandlers();',
+        '',
+      ].join('\n'),
+    );
   }
 
-  return contents.replace(
-    '    std::vector<ArkTSMessageHandler::Shared> createArkTSMessageHandlers() override;\n',
+  if (nextContents.includes('createComponentDescriptorProviders() override;')) {
+    return nextContents;
+  }
+
+  return nextContents.replace(
+    /    std::vector<ArkTSMessageHandler::Shared> createArkTSMessageHandlers\(\) override;\r?\n/,
     [
       '    std::vector<facebook::react::ComponentDescriptorProvider> createComponentDescriptorProviders() override;',
       '',
@@ -505,8 +519,13 @@ function patchGestureHandlerCompatibilityPackageSource(contents: string): string
     )
   ) {
     nextContents = nextContents.replace(
-      '#include "RNOH/RNInstanceCAPI.h"\n',
-      '#include "RNOH/RNInstanceCAPI.h"\n#include "RNOHCorePackage/ComponentBinders/ViewComponentJSIBinder.h"\n',
+      /#include "RNOH\/RNInstanceCAPI\.h"\r?\n/,
+      '#include "RNOH/RNInstanceCAPI.h"\n#include "RNOH/ArkTSTurboModule.h"\n#include "RNOHCorePackage/ComponentBinders/ViewComponentJSIBinder.h"\n',
+    );
+  } else if (!nextContents.includes('#include "RNOH/ArkTSTurboModule.h"')) {
+    nextContents = nextContents.replace(
+      /#include "RNOH\/RNInstanceCAPI\.h"\r?\n/,
+      '#include "RNOH/RNInstanceCAPI.h"\n#include "RNOH/ArkTSTurboModule.h"\n',
     );
   }
 
@@ -516,14 +535,14 @@ function patchGestureHandlerCompatibilityPackageSource(contents: string): string
     )
   ) {
     nextContents = nextContents.replace(
-      '#include "componentInstances/RNGestureHandlerRootViewComponentInstance.h"\n',
+      /#include "componentInstances\/RNGestureHandlerRootViewComponentInstance\.h"\r?\n/,
       '#include "componentInstances/RNGestureHandlerRootViewComponentInstance.h"\n#include "generated/RNGestureHandlerButtonComponentDescriptor.h"\n#include "generated/RNGestureHandlerRootViewComponentDescriptor.h"\n',
     );
   }
 
   if (!nextContents.includes('class RNGestureHandlerComponentJSIBinder')) {
     nextContents = nextContents.replace(
-      'using namespace rnoh;\nusing namespace facebook;\n\n',
+      /using namespace rnoh;\r?\nusing namespace facebook;\r?\n\r?\n/,
       [
         'using namespace rnoh;',
         'using namespace facebook;',
@@ -562,13 +581,69 @@ function patchGestureHandlerCompatibilityPackageSource(contents: string): string
     );
   }
 
+  if (!nextContents.includes('class RNGestureHandlerTurboModule : public ArkTSTurboModule')) {
+    nextContents = nextContents.replace(
+      /using namespace rnoh;\r?\nusing namespace facebook;\r?\n\r?\n/,
+      [
+        'using namespace rnoh;',
+        'using namespace facebook;',
+        '',
+        'class RNGestureHandlerTurboModule : public ArkTSTurboModule {',
+        'public:',
+        '    RNGestureHandlerTurboModule(const ArkTSTurboModule::Context ctx, const std::string name)',
+        '        : ArkTSTurboModule(ctx, name) {',
+        '        methodMap_ = {',
+        '            ARK_METHOD_METADATA(handleSetJSResponder, 2),',
+        '            ARK_METHOD_METADATA(handleClearJSResponder, 0),',
+        '            ARK_METHOD_METADATA(createGestureHandler, 3),',
+        '            ARK_METHOD_METADATA(attachGestureHandler, 3),',
+        '            ARK_METHOD_METADATA(updateGestureHandler, 2),',
+        '            ARK_METHOD_METADATA(dropGestureHandler, 1),',
+        '            ARK_METHOD_METADATA(install, 0),',
+        '            ARK_METHOD_METADATA(flushOperations, 0),',
+        '        };',
+        '    }',
+        '};',
+        '',
+        'class RNGestureHandlerTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {',
+        'public:',
+        '    SharedTurboModule createTurboModule(Context ctx, const std::string &name) const override {',
+        '        if (name == "RNGestureHandlerModule") {',
+        '            return std::make_shared<RNGestureHandlerTurboModule>(ctx, name);',
+        '        }',
+        '        return nullptr;',
+        '    };',
+        '};',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  if (
+    !nextContents.includes(
+      'RnohReactNativeHarmonyGestureHandlerPackage::createTurboModuleFactoryDelegate()',
+    )
+  ) {
+    nextContents = nextContents.replace(
+      /EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers\(\) \{\r?\n/,
+      [
+        'std::unique_ptr<TurboModuleFactoryDelegate>',
+        'RnohReactNativeHarmonyGestureHandlerPackage::createTurboModuleFactoryDelegate() {',
+        '    return std::make_unique<RNGestureHandlerTurboModuleFactoryDelegate>();',
+        '}',
+        '',
+        'EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers() {\n',
+      ].join('\n'),
+    );
+  }
+
   if (
     !nextContents.includes(
       'RnohReactNativeHarmonyGestureHandlerPackage::createComponentDescriptorProviders()',
     )
   ) {
     nextContents = nextContents.replace(
-      'EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers() {\n',
+      /EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers\(\) \{\r?\n/,
       [
         'std::vector<facebook::react::ComponentDescriptorProvider>',
         'RnohReactNativeHarmonyGestureHandlerPackage::createComponentDescriptorProviders() {',
@@ -589,7 +664,7 @@ function patchGestureHandlerCompatibilityPackageSource(contents: string): string
         '    };',
         '}',
         '',
-        'EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers() {',
+        'EventEmitRequestHandlers RnohReactNativeHarmonyGestureHandlerPackage::createEventEmitRequestHandlers() {\n',
       ].join('\n'),
     );
   }

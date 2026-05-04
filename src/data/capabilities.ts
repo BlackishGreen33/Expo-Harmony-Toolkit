@@ -180,9 +180,9 @@ export function collectCapabilityHarmonyPermissions(
 ): string[] {
   return Array.from(
     new Set(
-      getCapabilityDefinitionsForProject(packageJson, options).flatMap(
-        (definition) => definition.harmonyPermissions,
-      ),
+      getCapabilityDefinitionsForProject(packageJson, options)
+        .filter((definition) => definition.runtimeMode !== 'shim')
+        .flatMap((definition) => definition.harmonyPermissions),
     ),
   ).sort((left, right) => left.localeCompare(right));
 }

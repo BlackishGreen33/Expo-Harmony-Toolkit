@@ -4,6 +4,17 @@
     "externalNativeOptions": {
       "path": "./src/main/cpp/CMakeLists.txt",
       "arguments": ""
+    },
+    "nativeLib": {
+      "filter": {
+        "pickFirsts": [
+          "**/libhermestooling.so",
+          "**/libjsi.so",
+          "**/libreactnative.so",
+          "**/librnoh_core.so",
+          "**/librnoh_core_package.so"
+        ]
+      }
     }
   },
   "targets": [

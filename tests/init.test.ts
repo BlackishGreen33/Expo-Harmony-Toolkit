@@ -86,6 +86,9 @@ describe('init project', () => {
     expect(await fs.readFile(path.join(projectRoot, 'harmony', 'build-profile.json5'), 'utf8')).toContain(
       'useNormalizedOHMUrl',
     );
+    expect(await fs.readFile(path.join(projectRoot, 'harmony', 'entry', 'build-profile.json5'), 'utf8')).toContain(
+      '**/librnoh_core.so',
+    );
     expect(await fs.readFile(path.join(projectRoot, 'harmony', 'entry', 'hvigorfile.ts'), 'utf8')).toContain(
       'autolinking: null',
     );
@@ -261,14 +264,7 @@ describe('init project', () => {
       '@bacons/apple-targets',
       'mx-jpush-expo',
     ]);
-    expect(toolkitConfig?.doctorConfig.excludeDependencies).toEqual([
-      '@ant-design/react-native',
-      '@bacons/apple-targets',
-      'expo-notifications',
-      'expo-secure-store',
-      'jpush-react-native',
-      'mx-jpush-expo',
-    ]);
+    expect(toolkitConfig?.doctorConfig.excludeDependencies).toEqual(['@bacons/apple-targets']);
     expect(toolkitConfig?.nextActions).toContain(
       'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
     );

@@ -2,7 +2,11 @@ import fs from 'fs-extra';
 import JSON5 from 'json5';
 import os from 'os';
 import path from 'path';
-import { UI_STACK_ADAPTER_PACKAGE_NAMES, UI_STACK_VALIDATED_ADAPTERS } from '../data/uiStack';
+import {
+  HARMONY_NATIVE_ADAPTERS,
+  HARMONY_NATIVE_ADAPTER_PACKAGE_NAMES,
+  HarmonyNativeAdapter,
+} from '../data/uiStack';
 import { PackageJson, TemplateFileDefinition } from '../types';
 
 export const AUTOLINKED_FILE_PATHS = [
@@ -16,32 +20,48 @@ type PackageJsonNormalizer = (
   packageJson: Record<string, unknown>,
 ) => Record<string, unknown> | null;
 
-const HARMONY_PACKAGE_JSON_NORMALIZERS: Record<string, PackageJsonNormalizer> = {
-  '@react-native-oh-tpl/react-native-gesture-handler': (packageJson) => {
-    const harmony =
-      packageJson.harmony && typeof packageJson.harmony === 'object' && !Array.isArray(packageJson.harmony)
-        ? { ...packageJson.harmony }
-        : null;
+const stripHarmonyCodegenConfig: PackageJsonNormalizer = (packageJson) => {
+  const harmony =
+    packageJson.harmony && typeof packageJson.harmony === 'object' && !Array.isArray(packageJson.harmony)
+      ? { ...packageJson.harmony }
+      : null;
 
-    if (!harmony || !('codegenConfig' in harmony)) {
-      return null;
-    }
+  if (!harmony || !('codegenConfig' in harmony)) {
+    return null;
+  }
 
-    delete harmony.codegenConfig;
-    return {
-      ...packageJson,
-      harmony,
-    };
-  },
+  delete harmony.codegenConfig;
+  return {
+    ...packageJson,
+    harmony,
+  };
 };
+
+const ADAPTERS_REQUIRING_RNOH_CODEGEN = new Set([
+  '@react-native-oh-tpl/camera-roll',
+  '@react-native-oh-tpl/react-native-fs',
+]);
+
+const HARMONY_PACKAGE_JSON_NORMALIZERS: Record<string, PackageJsonNormalizer> = Object.fromEntries(
+  HARMONY_NATIVE_ADAPTERS.filter(
+    (adapter) => !ADAPTERS_REQUIRING_RNOH_CODEGEN.has(adapter.adapterPackageName),
+  ).map((adapter) => [adapter.adapterPackageName, stripHarmonyCodegenConfig]),
+);
 
 type ManagedAutolinkingEntry = {
   adapterPackageName: string;
-  etsImportPath: string;
-  etsPackageName: string;
-  cppHeaderName: string;
-  cppPackageName: string;
-  cmakeTargetName: string;
+  etsImportPath?: string;
+  etsPackageName?: string;
+  cppHeaderName?: string;
+  cppPackageName?: string;
+  cmakeTargetName?: string;
+};
+
+type ManagedAutolinkingConfig = Omit<ManagedAutolinkingEntry, 'adapterPackageName'>;
+
+type InstalledHarmonyAdapter = {
+  adapter: HarmonyNativeAdapter;
+  dependencySpecifier: string;
 };
 
 type AutolinkingArtifacts = {
@@ -151,6 +171,7 @@ async function generateAutolinkingArtifacts(
     projectRoot,
     harmonyRootPackageContents,
   );
+  const installedHarmonyAdapters = await resolveInstalledHarmonyAdapters(projectRoot);
   const managedAutolinkingEntries = await resolveManagedAutolinkingEntries(projectRoot);
 
   if (!rnohCliPackageJsonPath) {
@@ -174,6 +195,9 @@ async function generateAutolinkingArtifacts(
         rnohCliPackageJsonPath,
         temporaryHarmonyRoot,
         commandDescription,
+        installedHarmonyAdapters
+          .filter(({ adapter }) => adapter.supportsAutolinking)
+          .map(({ adapter }) => adapter.adapterPackageName),
       );
 
       await assertGeneratedAutolinkingFilesExist(temporaryHarmonyRoot, commandDescription);
@@ -232,14 +256,14 @@ async function generateAutolinkingArtifacts(
 
 async function resolveManagedAutolinkingEntries(projectRoot: string): Promise<ManagedAutolinkingEntry[]> {
   const entries: Array<ManagedAutolinkingEntry | null> = await Promise.all(
-    UI_STACK_VALIDATED_ADAPTERS.map(async (adapter) => {
-      if (adapter.supportsAutolinking || !adapter.managedAutolinking) {
+    HARMONY_NATIVE_ADAPTERS.map(async (adapter) => {
+      if (!hasManagedAutolinking(adapter)) {
         return null;
       }
 
       const dependencySpecifier = await resolveHarmonyAdapterHarDependency(
         projectRoot,
-        adapter.adapterPackageName,
+        adapter,
       );
 
       if (!dependencySpecifier) {
@@ -247,8 +271,8 @@ async function resolveManagedAutolinkingEntries(projectRoot: string): Promise<Ma
       }
 
       return {
-        adapterPackageName: adapter.adapterPackageName,
         ...adapter.managedAutolinking,
+        adapterPackageName: adapter.adapterPackageName,
       } satisfies ManagedAutolinkingEntry;
     }),
   );
@@ -298,7 +322,7 @@ async function normalizeAutolinkingEtsFactoryContents(
     /import\s+([A-Za-z_$][\w$]*)\s+from ['"]@react-native-oh-tpl\/react-native-gesture-handler['"];?/,
     (_match, importName: string) => {
       gestureHandlerPackageImportName = importName;
-      return "import { GestureHandlerPackage } from '@react-native-oh-tpl/react-native-gesture-handler/ts';";
+      return "import RnohReactNativeHarmonyGestureHandlerPackage from '@react-native-oh-tpl/react-native-gesture-handler';";
     },
   );
 
@@ -308,7 +332,7 @@ async function normalizeAutolinkingEtsFactoryContents(
 
   return normalizedContents.replace(
     new RegExp(`new\\s+${escapeRegExp(gestureHandlerPackageImportName)}\\(ctx\\)`, 'g'),
-    'new GestureHandlerPackage(ctx)',
+    'new RnohReactNativeHarmonyGestureHandlerPackage(ctx)',
   );
 }
 
@@ -321,7 +345,12 @@ function injectManagedAutolinkingIntoEtsFactory(
   }
 
   const missingImports = entries
-    .filter((entry) => !contents.includes(`from '${entry.etsImportPath}'`))
+    .filter(
+      (entry) =>
+        entry.etsImportPath &&
+        entry.etsPackageName &&
+        !contents.includes(`from '${entry.etsImportPath}'`),
+    )
     .map((entry) => `import { ${entry.etsPackageName} } from '${entry.etsImportPath}';`);
 
   if (missingImports.length > 0) {
@@ -332,7 +361,11 @@ function injectManagedAutolinkingIntoEtsFactory(
   }
 
   const missingFactoryEntries = entries
-    .filter((entry) => !contents.includes(`new ${entry.etsPackageName}(ctx)`))
+    .filter(
+      (entry) =>
+        entry.etsPackageName &&
+        !contents.includes(`new ${entry.etsPackageName}(ctx)`),
+    )
     .map((entry) => `    new ${entry.etsPackageName}(ctx),`);
 
   if (missingFactoryEntries.length > 0) {
@@ -377,6 +410,14 @@ async function normalizeAutolinkingCppFactoryContents(
     .replace(
       /\brnoh::ReactNativeOhTplReactNativeGestureHandlerPackage\b/g,
       'rnoh::RnohReactNativeHarmonyGestureHandlerPackage',
+    )
+    .replace(
+      /#include "ReactNativeOhTplReactNativeScreensPackage\.h"/,
+      '#include "ScreensPackage.h"',
+    )
+    .replace(
+      /std::make_shared<rnoh::ReactNativeOhTplReactNativeScreensPackage>\(ctx\)/g,
+      'std::make_shared<ScreensPackage>(ctx)',
     );
 }
 
@@ -389,7 +430,12 @@ function injectManagedAutolinkingIntoCppFactory(
   }
 
   const missingIncludes = entries
-    .filter((entry) => !contents.includes(`#include "${entry.cppHeaderName}"`))
+    .filter(
+      (entry) =>
+        entry.cppHeaderName &&
+        entry.cppPackageName &&
+        !contents.includes(`#include "${entry.cppHeaderName}"`),
+    )
     .map((entry) => `#include "${entry.cppHeaderName}"`);
 
   if (missingIncludes.length > 0) {
@@ -400,7 +446,11 @@ function injectManagedAutolinkingIntoCppFactory(
   }
 
   const missingFactoryEntries = entries
-    .filter((entry) => !contents.includes(`std::make_shared<rnoh::${entry.cppPackageName}>(ctx)`))
+    .filter(
+      (entry) =>
+        entry.cppPackageName &&
+        !contents.includes(`std::make_shared<rnoh::${entry.cppPackageName}>(ctx)`),
+    )
     .map((entry) => `    std::make_shared<rnoh::${entry.cppPackageName}>(ctx),`);
 
   if (missingFactoryEntries.length > 0) {
@@ -419,7 +469,11 @@ function injectManagedAutolinkingIntoCmake(
   }
 
   const missingSubdirectories = entries
-    .filter((entry) => !contents.includes(`./${entry.cmakeTargetName}`))
+    .filter(
+      (entry) =>
+        entry.cmakeTargetName &&
+        !contents.includes(`./${entry.cmakeTargetName}`),
+    )
     .map(
       (entry) =>
         `    add_subdirectory("\${OH_MODULES_DIR}/${entry.adapterPackageName}/src/main/cpp" ./${entry.cmakeTargetName})`,
@@ -433,7 +487,11 @@ function injectManagedAutolinkingIntoCmake(
   }
 
   const missingLibraryTargets = entries
-    .filter((entry) => !contents.includes(`        ${entry.cmakeTargetName}`))
+    .filter(
+      (entry) =>
+        entry.cmakeTargetName &&
+        !contents.includes(`        ${entry.cmakeTargetName}`),
+    )
     .map((entry) => `        ${entry.cmakeTargetName}`);
 
   if (missingLibraryTargets.length > 0) {
@@ -451,6 +509,7 @@ async function runRnohLinkHarmonyCommand(
   rnohCliPackageJsonPath: string,
   harmonyProjectPath: string,
   commandDescription: string,
+  includeNpmPackages: readonly string[],
 ): Promise<void> {
   const rnohCliRoot = path.dirname(rnohCliPackageJsonPath);
   let commandLinkHarmony:
@@ -479,7 +538,7 @@ async function runRnohLinkHarmonyCommand(
       cppRnohPackagesFactoryPathRelativeToHarmony: './entry/src/main/cpp/RNOHPackagesFactory.h',
       etsRnohPackagesFactoryPathRelativeToHarmony: './entry/src/main/ets/RNOHPackagesFactory.ets',
       ohPackagePathRelativeToHarmony: './oh-package.json5',
-      includeNpmPackages: UI_STACK_ADAPTER_PACKAGE_NAMES,
+      includeNpmPackages,
     });
   } catch (error) {
     throw new AutolinkingFailureError('link-harmony', commandDescription, {
@@ -530,15 +589,8 @@ async function buildManagedHarmonyRootPackageContents(
     ...(await readPreservedHarmonyRootDependencies(projectRoot)),
   };
 
-  for (const adapter of UI_STACK_VALIDATED_ADAPTERS) {
-    const dependencySpecifier = await resolveHarmonyAdapterHarDependency(
-      projectRoot,
-      adapter.adapterPackageName,
-    );
-
-    if (dependencySpecifier) {
-      dependencies[adapter.adapterPackageName] = dependencySpecifier;
-    }
+  for (const { adapter, dependencySpecifier } of await resolveInstalledHarmonyAdapters(projectRoot)) {
+    dependencies[adapter.adapterPackageName] = dependencySpecifier;
   }
 
   parsedPackageJson.dependencies = sortRecordByKey(dependencies);
@@ -560,7 +612,7 @@ async function readPreservedHarmonyRootDependencies(
     dependencies?: Record<string, unknown>;
   };
   const preservedDependencies: Record<string, string> = {};
-  const validatedAdapterPackageNames = new Set<string>(UI_STACK_ADAPTER_PACKAGE_NAMES);
+  const managedAdapterPackageNames = new Set<string>(HARMONY_NATIVE_ADAPTER_PACKAGE_NAMES);
 
   for (const [packageName, specifier] of Object.entries(
     currentHarmonyRootPackage.dependencies ?? {},
@@ -569,7 +621,7 @@ async function readPreservedHarmonyRootDependencies(
       continue;
     }
 
-    if (validatedAdapterPackageNames.has(packageName)) {
+    if (managedAdapterPackageNames.has(packageName)) {
       continue;
     }
 
@@ -581,18 +633,10 @@ async function readPreservedHarmonyRootDependencies(
 
 async function resolveHarmonyAdapterHarDependency(
   projectRoot: string,
-  adapterPackageName: string,
+  adapter: HarmonyNativeAdapter,
 ): Promise<string | null> {
-  const adapterEntry = UI_STACK_VALIDATED_ADAPTERS.find(
-    (candidate) => candidate.adapterPackageName === adapterPackageName,
-  );
-
-  if (!adapterEntry) {
-    return null;
-  }
-
-  const adapterRoot = path.join(projectRoot, 'node_modules', ...adapterPackageName.split('/'));
-  const harPath = path.join(adapterRoot, 'harmony', adapterEntry.harmonyHarFileName);
+  const adapterRoot = path.join(projectRoot, 'node_modules', ...adapter.adapterPackageName.split('/'));
+  const harPath = path.join(adapterRoot, 'harmony', adapter.harmonyHarFileName);
 
   if (!(await fs.pathExists(harPath))) {
     return null;
@@ -600,6 +644,26 @@ async function resolveHarmonyAdapterHarDependency(
 
   const relativeHarPath = path.relative(path.join(projectRoot, 'harmony'), harPath).replace(/\\/g, '/');
   return `file:${relativeHarPath}`;
+}
+
+async function resolveInstalledHarmonyAdapters(projectRoot: string): Promise<InstalledHarmonyAdapter[]> {
+  const entries: InstalledHarmonyAdapter[] = [];
+
+  for (const adapter of HARMONY_NATIVE_ADAPTERS) {
+    const dependencySpecifier = await resolveHarmonyAdapterHarDependency(projectRoot, adapter);
+
+    if (dependencySpecifier) {
+      entries.push({ adapter, dependencySpecifier });
+    }
+  }
+
+  return entries;
+}
+
+function hasManagedAutolinking(
+  adapter: HarmonyNativeAdapter,
+): adapter is HarmonyNativeAdapter & { managedAutolinking: ManagedAutolinkingConfig } {
+  return 'managedAutolinking' in adapter && Boolean(adapter.managedAutolinking);
 }
 
 function createEmptyAutolinkingArtifacts(

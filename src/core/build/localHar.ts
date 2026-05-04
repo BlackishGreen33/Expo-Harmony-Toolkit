@@ -375,6 +375,105 @@ export async function ensureRnohGeneratedTsShim(harmonyProjectRoot: string): Pro
   await fs.writeFile(shimPath, `export * from '${relativeTarget}';\n`);
 }
 
+export async function patchRnohGeneratedCodegenForNormalizedLocalPackage(
+  harmonyProjectRoot: string,
+): Promise<void> {
+  const generatedRootPath = path.join(
+    harmonyProjectRoot,
+    'expo-harmony-local-deps',
+    'rnoh-react-native-openharmony-react_native_openharmony',
+    'generated',
+  );
+
+  if (!(await fs.pathExists(generatedRootPath))) {
+    return;
+  }
+
+  const generatedFilePaths = await listFilesRecursively(generatedRootPath);
+  await Promise.all(
+    generatedFilePaths
+      .filter((filePath) => filePath.endsWith('.ts') || filePath.endsWith('.ets'))
+      .map(async (filePath) => {
+        const originalContents = await fs.readFile(filePath, 'utf8');
+        let updatedContents = originalContents.replace(
+          /from\s+['"]@rnoh\/react-native-openharmony\/ts['"]/g,
+          () => {
+            let relativeTarget = path.relative(
+              path.dirname(filePath),
+              path.join(
+                harmonyProjectRoot,
+                'expo-harmony-local-deps',
+                'rnoh-react-native-openharmony-react_native_openharmony',
+                'ts.ts',
+              ),
+            );
+            relativeTarget = relativeTarget.replace(/\\/g, '/').replace(/\.ts$/, '');
+            return `from '${relativeTarget.startsWith('.') ? relativeTarget : `./${relativeTarget}`}'`;
+          },
+        );
+
+        if (path.basename(filePath) === 'RNCCameraRoll.ts') {
+          updatedContents = updatedContents.replace(
+            /getPhotoThumbnail\(internalID: string, options: Object\): Promise<void>;/,
+            'getPhotoThumbnail(internalID: string, options: Object): Promise<Object>;',
+          );
+        }
+
+        if (updatedContents !== originalContents) {
+          await fs.writeFile(filePath, updatedContents);
+        }
+      }),
+  );
+}
+
+export async function patchKnownHarmonyAdapterCodegenOutputs(
+  harmonyProjectRoot: string,
+): Promise<void> {
+  await patchSafeAreaContextGeneratedProps(harmonyProjectRoot);
+}
+
+async function patchSafeAreaContextGeneratedProps(harmonyProjectRoot: string): Promise<void> {
+  const propsHeaderPath = path.join(
+    harmonyProjectRoot,
+    'oh_modules',
+    '@react-native-oh-tpl',
+    'react-native-safe-area-context',
+    'src',
+    'main',
+    'cpp',
+    'generated',
+    'react',
+    'renderer',
+    'components',
+    'react_native_safe_area_context',
+    'Props.h',
+  );
+
+  if (!(await fs.pathExists(propsHeaderPath))) {
+    return;
+  }
+
+  const originalContents = await fs.readFile(propsHeaderPath, 'utf8');
+  let updatedContents = originalContents.replace(
+    /\bbutter::map<std::string, RawValue>/g,
+    'std::unordered_map<std::string, RawValue>',
+  );
+
+  if (
+    updatedContents !== originalContents &&
+    !updatedContents.includes('#include <unordered_map>')
+  ) {
+    updatedContents = updatedContents.replace(
+      '#include <react/renderer/components/view/ViewProps.h>',
+      '#include <unordered_map>\n\n#include <react/renderer/components/view/ViewProps.h>',
+    );
+  }
+
+  if (updatedContents !== originalContents) {
+    await fs.writeFile(propsHeaderPath, updatedContents);
+  }
+}
+
 export async function alignRnohCodegenWithNormalizedLocalPackage(
   harmonyProjectRoot: string,
   localHarPackages: NormalizedLocalHarPackage[],
@@ -429,6 +528,24 @@ export async function alignRnohCodegenWithNormalizedLocalPackage(
 
     await fs.remove(backupRootPath);
   };
+}
+
+async function listFilesRecursively(rootPath: string): Promise<string[]> {
+  const entries = await fs.readdir(rootPath, { withFileTypes: true });
+  const nestedEntries = await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = path.join(rootPath, entry.name);
+      if (entry.isDirectory()) {
+        return listFilesRecursively(entryPath);
+      }
+      if (entry.isFile()) {
+        return [entryPath];
+      }
+      return [];
+    }),
+  );
+
+  return nestedEntries.flat();
 }
 
 export async function findHarmonyArtifacts(harmonyProjectRoot: string): Promise<string[]> {

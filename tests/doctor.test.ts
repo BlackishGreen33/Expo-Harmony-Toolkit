@@ -327,6 +327,25 @@ describe('doctor report', () => {
     expect(report.eligibility).toBe('eligible');
   });
 
+  it('does not block runtime eligibility on unsupported devDependencies', async () => {
+    const tempRoot = await createDoctorFixtureFromSample();
+    const packageJsonPath = path.join(tempRoot, 'package.json');
+    const packageJson = await fs.readJson(packageJsonPath);
+    packageJson.devDependencies = {
+      ...(packageJson.devDependencies ?? {}),
+      'custom-build-tool': '1.0.0',
+    };
+    await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+    const report = await buildDoctorReport(tempRoot);
+    const dependency = report.dependencies.find((entry) => entry.name === 'custom-build-tool');
+
+    expect(dependency?.source).toBe('devDependency');
+    expect(dependency?.blocking).toBe(false);
+    expect(report.blockingIssues.some((issue) => issue.subject === 'custom-build-tool')).toBe(false);
+    expect(report.eligibility).toBe('eligible');
+  });
+
   it('flags missing native identifiers as a blocking issue', async () => {
     const report = await buildDoctorReport(missingIdentifiersRoot);
 
@@ -505,6 +524,8 @@ describe('doctor report', () => {
 
     expect(dependency?.status).toBe('unknown');
     expect(dependency?.buildabilityRisk).toBe('js-only-unknown');
+    expect(dependency?.blocking).toBe(false);
+    expect(report.blockingIssues.some((issue) => issue.subject === 'left-pad')).toBe(false);
     expect(
       report.warnings.includes(
         'Some unknown dependencies look JavaScript-only. They remain outside the public matrix, but they are less likely to block bundling or a debug HAP build outright.',
@@ -555,12 +576,16 @@ describe('doctor report', () => {
     expect(report.eligibility).toBe('eligible');
     expect(report.coverageProfile).toBe('managed-native-heavy');
     expect(report.expoConfig.plugins).toEqual(['expo-router']);
-    expect(report.dependencies.some((dependency) => dependency.name === '@ant-design/react-native')).toBe(false);
-    expect(report.dependencies.some((dependency) => dependency.name === 'mx-jpush-expo')).toBe(false);
-    expect(report.dependencies.some((dependency) => dependency.name === 'jpush-react-native')).toBe(false);
+    expect(report.dependencies.some((dependency) => dependency.name === '@ant-design/react-native')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'mx-jpush-expo')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'jpush-react-native')).toBe(true);
     expect(
       report.dependencies.some((dependency) => dependency.name === '@react-native-async-storage/async-storage'),
     ).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === '@react-native-oh-tpl/async-storage')).toBe(
+      true,
+    );
+    expect(report.dependencies.some((dependency) => dependency.name === '@shopify/react-native-skia')).toBe(true);
     expect(report.dependencies.some((dependency) => dependency.name === 'react-native-webview')).toBe(true);
     expect(report.blockingIssues).toHaveLength(0);
     expect(report.nextActions).toContain(

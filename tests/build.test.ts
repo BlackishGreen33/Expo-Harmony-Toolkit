@@ -1182,6 +1182,9 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
           'utf8',
         );
         expect(normalizedPackageHeaderContents).toContain(
+          'createTurboModuleFactoryDelegate() override;',
+        );
+        expect(normalizedPackageHeaderContents).toContain(
           'createComponentDescriptorProviders() override;',
         );
         expect(normalizedPackageHeaderContents).toContain(
@@ -1194,6 +1197,15 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
         const normalizedPackageSourceContents = await fs.readFile(
           normalizedPackageSourcePath,
           'utf8',
+        );
+        expect(normalizedPackageSourceContents).toContain(
+          'class RNGestureHandlerTurboModule : public ArkTSTurboModule',
+        );
+        expect(normalizedPackageSourceContents).toContain(
+          'ARK_METHOD_METADATA(createGestureHandler, 3)',
+        );
+        expect(normalizedPackageSourceContents).toContain(
+          'RnohReactNativeHarmonyGestureHandlerPackage::createTurboModuleFactoryDelegate()',
         );
         expect(normalizedPackageSourceContents).toContain(
           'class RNGestureHandlerComponentJSIBinder : public ViewComponentJSIBinder',
