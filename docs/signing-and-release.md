@@ -94,6 +94,10 @@ expo-harmony build-hap --mode release
 
 这条记录只说明 release HAP 的本地签名、安装、启动链路可走通。它不代表 AppGallery 生产签名、不代表真机通过，也不关闭 preview capability 的 release runtime acceptance。
 
+## v1.8.3 矩阵 patch 说明
+
+`v1.8.3` 将 RNOH runtime 与 CLI 从 `0.82.18` 刷新到 `0.82.29`。npm 上当前仍没有可用的 RNOH `0.83.x` 包，因此公开矩阵继续要求 `react-native@0.82.1`；下游项目如需 Harmony build-chain，应按该矩阵锁定 React Native，而不是把模拟器构建证据扩写成 RN `0.83.x` verified。
+
 ## 关系说明
 
 - `doctor --strict` 负责项目是否落入公开矩阵

@@ -66,7 +66,7 @@ async function installFakeHarmonyCli(
     path.join(cliRoot, 'package.json'),
     {
       name: '@react-native-oh/react-native-harmony-cli',
-      version: '0.82.18',
+      version: '0.82.29',
     },
     { spaces: 2 },
   );

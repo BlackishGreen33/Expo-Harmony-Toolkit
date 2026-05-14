@@ -27,8 +27,8 @@
 | Expo SDK | `55` |
 | React | `19.1.1` |
 | React Native | `0.82.1` |
-| `@react-native-oh/react-native-harmony` | `0.82.18` |
-| `@react-native-oh/react-native-harmony-cli` | `0.82.18` |
+| `@react-native-oh/react-native-harmony` | `0.82.29` |
+| `@react-native-oh/react-native-harmony-cli` | `0.82.29` |
 | `@react-native-community/cli` | `20.x` |
 | `metro` | `0.83.x` |
 | App Shell 依赖 | `expo-router` `55.x`、`expo-linking` `55.x`、`expo-constants` `55.x`、`@expo/metro-runtime` `55.x`、`react-dom` `19.1.1` |

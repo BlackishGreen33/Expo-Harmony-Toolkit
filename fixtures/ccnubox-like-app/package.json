@@ -13,8 +13,8 @@
     "@expo/vector-icons": "^14.1.0",
     "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-async-storage/async-storage": "2.1.2",
-    "@react-native-oh/react-native-harmony": "0.82.18",
-    "@react-native-oh/react-native-harmony-cli": "0.82.18",
+    "@react-native-oh/react-native-harmony": "0.82.29",
+    "@react-native-oh/react-native-harmony-cli": "0.82.29",
     "@react-native-oh-tpl/async-storage": "1.21.0-0.2.2",
     "@react-native-oh-tpl/lottie-react-native": "6.4.1-0.1.9-1",
     "@react-native-oh-tpl/react-native-gesture-handler": "2.14.17-rc.0",
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@react-native-community/cli": "^20.1.2",
-    "expo-harmony-toolkit": "1.8.2",
+    "expo-harmony-toolkit": "1.8.3",
     "metro": "^0.83.1"
   }
 }

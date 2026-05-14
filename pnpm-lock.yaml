@@ -63,11 +63,11 @@ importers:
         specifier: 55.0.7
         version: 55.0.7(@expo/dom-webview@55.0.3)(expo@55.0.8)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony':
-        specifier: 0.82.18
-        version: 0.82.18(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
+        specifier: 0.82.29
+        version: 0.82.29(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony-cli':
-        specifier: 0.82.18
-        version: 0.82.18(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
+        specifier: 0.82.29
+        version: 0.82.29(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
       expo:
         specifier: ^55.0.8
         version: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
@@ -109,11 +109,11 @@ importers:
         specifier: 55.0.7
         version: 55.0.7(@expo/dom-webview@55.0.3)(expo@55.0.8)(react-dom@19.2.4(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony':
-        specifier: 0.82.18
-        version: 0.82.18(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
+        specifier: 0.82.29
+        version: 0.82.29(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony-cli':
-        specifier: 0.82.18
-        version: 0.82.18(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
+        specifier: 0.82.29
+        version: 0.82.29(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
       expo:
         specifier: ^55.0.8
         version: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.10)(react-dom@19.2.4(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
@@ -143,11 +143,11 @@ importers:
         specifier: 55.0.7
         version: 55.0.7(@expo/dom-webview@55.0.3)(expo@55.0.8)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony':
-        specifier: 0.82.18
-        version: 0.82.18(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
+        specifier: 0.82.29
+        version: 0.82.29(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony-cli':
-        specifier: 0.82.18
-        version: 0.82.18(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
+        specifier: 0.82.29
+        version: 0.82.29(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
       expo:
         specifier: ^55.0.8
         version: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
@@ -207,11 +207,11 @@ importers:
         specifier: github:react-native-oh-library/react-native-harmony-svg#97c31d2f72559931d62fa84a9c86e86d343753d3&path:react-native-harmony-svg
         version: https://codeload.github.com/react-native-oh-library/react-native-harmony-svg/tar.gz/97c31d2f72559931d62fa84a9c86e86d343753d3#path:react-native-harmony-svg(react-native-svg@15.0.0(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony':
-        specifier: 0.82.18
-        version: 0.82.18(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
+        specifier: 0.82.29
+        version: 0.82.29(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       '@react-native-oh/react-native-harmony-cli':
-        specifier: 0.82.18
-        version: 0.82.18(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
+        specifier: 0.82.29
+        version: 0.82.29(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)
       expo:
         specifier: ^55.0.8
         version: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
@@ -1800,14 +1800,14 @@ packages:
       react-native: '*'
       react-native-svg: 15.0.0
 
-  '@react-native-oh/react-native-harmony-cli@0.82.18':
-    resolution: {integrity: sha512-KrJ/vMaQdH2fpJGV/FVjhi5RLyqqlsY8VkJ7mzclEerI8reGfMyIsfrAli1nhhj+RSRHAJV9d52JcB9L7SlvgA==}
+  '@react-native-oh/react-native-harmony-cli@0.82.29':
+    resolution: {integrity: sha512-U5+hhGWSe6mP3fh5OgOhCPfeOeQs1Lz22owaxp6qAY7DLc9o5w8L5hl26oztEmpfgSkMqGEsAJc1CHT56mu9KA==}
     hasBin: true
     peerDependencies:
       metro: ^0.83.1
 
-  '@react-native-oh/react-native-harmony@0.82.18':
-    resolution: {integrity: sha512-qpg+vGXfO6MIpBl0ZAAbhCMoYO8woJvQN6+I6YhMLESvQ8W1GUstIa136SDgr1ZZ5b5bo9n2ROnjmnj9hMOLSQ==}
+  '@react-native-oh/react-native-harmony@0.82.29':
+    resolution: {integrity: sha512-JjGNScw/3CyqeuXzp8pKOFXA1G6jpuPW6KpamEZSVFwcLoVKK433WeosK3YaQWwtIvG2sIqeE4NbWDnkO9t63Q==}
     engines: {node: '>=18'}
     peerDependencies:
       react-native: 0.82.1
@@ -8022,7 +8022,7 @@ snapshots:
       react-native: 0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1)
       react-native-svg: 15.0.0(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
 
-  '@react-native-oh/react-native-harmony-cli@0.82.18(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)':
+  '@react-native-oh/react-native-harmony-cli@0.82.29(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/node@24.12.0)(metro@0.83.3)':
     dependencies:
       '@react-native-community/cli-tools': 13.6.9
       '@react-native/codegen': 0.82.1(@babel/core@7.29.0)
@@ -8046,7 +8046,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@react-native-oh/react-native-harmony@0.82.18(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)':
+  '@react-native-oh/react-native-harmony@0.82.29(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@react-native/assets-registry': 0.82.1
       '@react-native/js-polyfills': 0.82.1

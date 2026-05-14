@@ -64,11 +64,11 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
       },
       '@react-native-oh/react-native-harmony': {
         required: true,
-        version: '0.82.18',
+        version: '0.82.29',
       },
       '@react-native-oh/react-native-harmony-cli': {
         required: true,
-        version: '0.82.18',
+        version: '0.82.29',
       },
       '@react-native-community/cli': {
         required: true,
