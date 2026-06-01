@@ -6,6 +6,7 @@
 
 - 所有 Expo project types 与 package categories，最终都进入同一条 `mainline capability catalog`
 - `v2.0.0` 本身就要接近最完美、最最终的交付形态，而不是“还差最后一段 extension”
+- `v2.0.0` 的可靠打包承诺收敛为 catalog-covered Expo projects：只要依赖已经进入主线 capability catalog，就必须稳定闭环
 - 公开承诺仍然按 evidence gate 逐步放开，而不是因为目标扩大就提前放宽 `latest`
 - `latest` 继续只承接完整验收的 `verified`
 - `next` 继续承接 fast track，用来加速收敛，但不伪装成 `verified`
@@ -65,6 +66,8 @@
 
 ## 当前主线
 
+`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
+
 ### v1.8.0 Intake Hardening + Parallel Promotion
 
 目标日期：`2026-05-15`
@@ -98,7 +101,9 @@
 
 目标日期：`2026-06-15`
 
-目标：把 v1.8.0 建好的 intake + promotion 架子收口到可持续执行的证据节奏。
+状态：repo-only closeout complete；device / release evidence carryover。
+
+目标：把 v1.8.0 建好的 intake + promotion 架子收口到可持续执行的证据节奏，并把外部验收项从 repo 内可完成项中拆开。
 
 - 每个 preview capability 必须单独维护：
   - bundle evidence
@@ -108,12 +113,16 @@
 - combined sample 只负责回归烟测，不再替代单 capability 证据
 - `toolkit-config.json`、`doctor-report.json`、roadmap、support matrix、acceptance board 保持同源同步
 - `latest` 仍不承接任何证据未闭环的 capability
+- 不需要真机或 release HAP 的收尾项已经完成，可以进入 `v1.9.x`
+- 仍然顺延的外部证据：
+  - 单 capability 真机 device acceptance record
+  - 单 capability release HAP runtime acceptance
 
 ### v1.9.0 Bare Workflow Baseline + App Foundation Modules
 
 目标日期：`2026-08-31`
 
-目标：先把 bare workflow 拉进主线，并补齐最容易卡死真实项目的官方基础模块。
+目标：把 bare workflow 拉进主线，补齐最容易卡死真实项目的官方基础模块，并先建立第三方 blocker 的正式接入切片。
 
 - bare workflow 正式进入主线里程碑
 - 优先补齐：
@@ -123,6 +132,15 @@
   - `expo-clipboard`
   - `expo-haptics`
 - 高频第三方 native dependencies 开始进入同一 capability catalog
+- `react-native-gesture-handler` 进入 formal acceptance slice：
+  - 保留 experimental / non-verified 边界
+  - 补齐 sample / fixture / doctor / debug build evidence
+  - device / release evidence 仍按 promotion gate 单独关闭
+- project-shape regression farm 建立最小版本：
+  - managed core
+  - managed native heavy
+  - bare
+  - third-party native heavy
 - 对每个新能力继续坚持：
   - fixture
   - sample route
@@ -139,10 +157,10 @@
 目标：优先清掉最容易挡住“任何 Expo 项目”的高频第三方 native blocker。
 
 - 第一批高频第三方 native blocker 进入正式 onboarding：
-  - `react-native-gesture-handler`
   - `react-native-safe-area-context`
   - `react-native-screens`
   - `@react-native-async-storage/async-storage`
+- `react-native-gesture-handler` 如果在 `v1.9.0` 已完成 formal acceptance slice，则本阶段只继续补 device / release evidence 与 promotion 决策
 - 建立第三方 native capability onboarding checklist：
   - catalog entry
   - shim / adapter strategy
@@ -155,10 +173,10 @@
 
 目标日期：`2026-10-31`
 
-目标：扩大第三方 native 覆盖，并建立“任何 Expo 项目”目标需要的持续回归面。
+目标：扩大第三方 native 覆盖，并把 `v1.9.0` 建好的最小 regression farm 扩容成持续回归面。
 
 - 第二批高频第三方 native 依赖进入主线
-- 引入 project-shape regression farm：
+- 扩容 project-shape regression farm：
   - managed core
   - managed native heavy
   - bare
@@ -193,13 +211,16 @@
 - 对仍无法在 `v2.0.0` 前关闭的项，必须提前明确降级策略与替代路径
 - `v2.0.0` 不接受“先宣布完成，再慢慢补长尾”
 
-### v2.0.0 Any Expo Project Reliable Packaging
+### v2.0.0 Catalog-covered Expo Project Reliable Packaging
+
+原 `Any Expo Project Reliable Packaging` 叙事保留为 intake 目标，但可靠打包承诺明确收敛到 catalog-covered 项目。
 
 目标日期：`2026-12-31`
 
-定义：任何 Expo 项目，只要依赖已经存在于主线 capability catalog 内，就能可靠打包成鸿蒙 App；`v2.0.0` 本身就是基本接近最完美、最最终的形态。
+定义：任何 Expo 项目，只要依赖已经存在于主线 capability catalog 内，就能可靠打包成鸿蒙 App；未进入 catalog 的依赖必须至少被 `doctor` 明确分类、指出 blocker，并给出下一步。`v2.0.0` 本身就是基本接近最完美、最最终的形态。
 
-- 不再只覆盖“主流项目”，而是把“任何 Expo 项目都能可靠打包成鸿蒙 App”作为正式版本定义
+- 不再只覆盖“主流项目”，而是把 catalog-covered Expo projects 的可靠打包作为正式版本定义
+- “任何 Expo 项目都能可靠打包成鸿蒙 App”不得被简化成无边界长尾承诺；真实承诺边界是 mainline capability catalog
 - `Managed/CNG` 与 bare workflow 都必须进入稳定交付路径
 - 高频官方 Expo 模块与高频第三方 native blockers 必须已经进入同一公开 capability catalog
 - `doctor -> sync-template -> bundle -> build-hap --mode debug|release` 必须对主线 catalog 内项目形成稳定闭环
@@ -208,7 +229,8 @@
 ## 长期方向
 
 - 所有输入最终都进入同一个 `mainline capability catalog`
-- `v2.0.0` 就是“任何 Expo 项目可靠打包成鸿蒙 App”的正式目标版本
+- `v2.0.0` 就是 catalog-covered Expo projects 可靠打包成鸿蒙 App 的正式目标版本
+- 对 catalog 外项目，正式目标是完整 intake：能分类、能说明 blocker、能给下一步，而不是伪装成已经可靠打包
 - `latest` 只由完整验收能力驱动
 - `next` 用来加速收敛主线 backlog，而不是制造伪 verified 叙事
 - roadmap 的关键问题不再是“要不要把某类项目算进主线”，而是“它何时进入主线、当前缺哪格 evidence、下一步怎么 unblock”
