@@ -17,6 +17,7 @@ const nativeCapabilitiesSampleRoot = path.join(
   'official-native-capabilities-sample',
 );
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
+const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const execFileAsync = promisify(execFile);
 const FAKE_NOOP_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
   func: async () => {}
@@ -211,6 +212,28 @@ describe('bundle and HAP build reports', () => {
 
     expect(report.status).toBe('succeeded');
     expect(metroConfig).toContain("'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')");
+  }, 120000);
+
+  it('records a debug HAP baseline for the dedicated bare workflow fixture with the fake runner', async () => {
+    const projectRoot = await createTempFixture(bareFixtureRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner: createSuccessfulRunner(),
+      env: {
+        ...process.env,
+        DEVECO_STUDIO_PATH: devecoRoot,
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(report.mode).toBe('debug');
+    expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
+    expect(report.steps.map((step) => step.label)).toEqual([
+      'bundle-harmony',
+      'ohpm install',
+      'hvigor assembleHap',
+    ]);
   }, 120000);
 
   it('falls back to managed empty autolinking artifacts when the Harmony CLI package is missing', async () => {

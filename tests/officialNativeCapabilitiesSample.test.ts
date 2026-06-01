@@ -52,7 +52,17 @@ describe('official native capabilities sample', () => {
       'utf8',
     );
 
-    for (const routePath of ['file-system', 'image-picker', 'location', 'camera']) {
+    for (const routePath of [
+      'asset',
+      'clipboard',
+      'device',
+      'file-system',
+      'image-picker',
+      'location',
+      'camera',
+      'haptics',
+      'secure-store',
+    ]) {
       routeSourceByPath.set(
         routePath,
         await fs.readFile(path.join(sampleRoot, 'app', `${routePath}.tsx`), 'utf8'),
@@ -80,6 +90,11 @@ describe('official native capabilities sample', () => {
         'expo-image-picker',
         'expo-location',
         'expo-camera',
+        'expo-secure-store',
+        'expo-asset',
+        'expo-device',
+        'expo-clipboard',
+        'expo-haptics',
       ]),
     );
     expect(report.nextActions).toContain(
@@ -104,6 +119,34 @@ describe('official native capabilities sample', () => {
     expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-camera', 'index.js'))).toBe(
       true,
     );
+    expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-secure-store', 'index.js'))).toBe(
+      true,
+    );
+    expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-asset', 'index.js'))).toBe(
+      true,
+    );
+    expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-device', 'index.js'))).toBe(
+      true,
+    );
+    expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-clipboard', 'index.js'))).toBe(
+      true,
+    );
+    expect(await fs.pathExists(path.join(workspaceRoot, '.expo-harmony', 'shims', 'expo-haptics', 'index.js'))).toBe(
+      true,
+    );
+  });
+
+  it('keeps dedicated v1.9 app-foundation routes and bundle acceptance slices', () => {
+    expect(routeSourceByPath.get('secure-store') ?? '').toContain('expo-secure-store foundation check');
+    expect(routeSourceByPath.get('asset') ?? '').toContain('expo-asset foundation check');
+    expect(routeSourceByPath.get('device') ?? '').toContain('expo-device foundation check');
+    expect(routeSourceByPath.get('clipboard') ?? '').toContain('expo-clipboard foundation check');
+    expect(routeSourceByPath.get('haptics') ?? '').toContain('expo-haptics foundation check');
+    expect(bundleContents).toContain('setItemAsync');
+    expect(bundleContents).toContain('Asset fromURI metadata OK.');
+    expect(bundleContents).toContain('Harmony preview device');
+    expect(bundleContents).toContain('Clipboard setStringAsync OK.');
+    expect(bundleContents).toContain('Haptics notificationAsync OK.');
   });
 
   it('keeps a dedicated file-system route and bundle acceptance slice', () => {

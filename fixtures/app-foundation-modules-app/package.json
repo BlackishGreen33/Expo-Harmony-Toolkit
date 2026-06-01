@@ -1,0 +1,23 @@
+{
+  "name": "app-foundation-modules-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-oh/react-native-harmony": "0.82.29",
+    "@react-native-oh/react-native-harmony-cli": "0.82.29",
+    "expo": "^55.0.8",
+    "expo-asset": "55.0.10",
+    "expo-clipboard": "7.1.5",
+    "expo-device": "55.0.10",
+    "expo-haptics": "14.1.4",
+    "expo-secure-store": "15.0.7",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.1.1",
+    "react-native": "0.82.1"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^20.1.2",
+    "metro": "^0.83.1"
+  }
+}

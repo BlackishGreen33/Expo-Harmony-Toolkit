@@ -56,6 +56,12 @@ const DEFAULT_RECORD: CompatibilityRecord = {
 
 const BARE_WORKFLOW_DIRECTORY_NAMES = ['android', 'ios'] as const;
 const BARE_WORKFLOW_DEPENDENCIES = new Set(['expo-build-properties', 'expo-dev-client']);
+const FORMAL_EXPERIMENTAL_ADAPTER_PAIRS = [
+  {
+    canonicalPackageName: 'react-native-gesture-handler',
+    adapterPackageName: '@react-native-oh-tpl/react-native-gesture-handler',
+  },
+] as const;
 
 export async function buildDoctorReport(
   projectRoot: string,
@@ -483,6 +489,27 @@ async function collectBlockingIssues(
     }
   }
 
+  for (const pairing of FORMAL_EXPERIMENTAL_ADAPTER_PAIRS) {
+    const hasCanonical = dependencyMap.has(pairing.canonicalPackageName);
+    const hasAdapter = dependencyMap.has(pairing.adapterPackageName);
+
+    if (hasCanonical && !hasAdapter) {
+      issues.push({
+        code: 'dependency.required_missing',
+        message: `Using ${pairing.canonicalPackageName} in its formal experimental Harmony slice also requires ${pairing.adapterPackageName}.`,
+        subject: pairing.adapterPackageName,
+      });
+    }
+
+    if (hasAdapter && !hasCanonical) {
+      issues.push({
+        code: 'dependency.required_missing',
+        message: `Using ${pairing.adapterPackageName} in its formal experimental Harmony slice also requires ${pairing.canonicalPackageName}.`,
+        subject: pairing.canonicalPackageName,
+      });
+    }
+  }
+
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {
     issues.push({
       code: 'config.native_identifier.missing',
@@ -573,14 +600,14 @@ function resolveDependencyGapCategory(
     return 'bare-workflow-gap';
   }
 
+  if (isThirdPartyNativeGapDependency(dependency)) {
+    return 'third-party-native-gap';
+  }
+
   if (isOfficialExpoDependencyName(dependency.name) || CAPABILITY_BY_PACKAGE[dependency.name]) {
     return dependency.supportTier === 'verified' && dependency.status === 'supported'
       ? 'matrix-drift'
       : 'official-module-gap';
-  }
-
-  if (isThirdPartyNativeGapDependency(dependency)) {
-    return 'third-party-native-gap';
   }
 
   if (coverageProfile === 'bare') {
@@ -693,7 +720,7 @@ function buildNextActions(input: {
     )
   ) {
     actions.push(
-      'Keep `react-native-gesture-handler` out of the verified lane until its Harmony adapter path has stable doctor, sample, and build coverage.',
+      'Keep `react-native-gesture-handler` on the formal experimental slice until its Harmony adapter path closes device and release evidence.',
     );
   }
 

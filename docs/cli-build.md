@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.8.0` 延续 `verified + preview + experimental` 支持分层，并把四项 preview capability 的现有 `🟠` 缺口收口到明确 `🟡` 子集，其中 `expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.9.0` 延续 `verified + preview + experimental` 支持分层，把 bare workflow 放进 intake baseline，并把五个 app foundation modules 纳入 preview shim baseline；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
@@ -39,6 +39,15 @@ expo-harmony build-hap --mode debug
 - `expo-image-picker`
 - `expo-location`
 - `expo-camera`
+- `expo-secure-store`
+- `expo-asset`
+- `expo-device`
+- `expo-clipboard`
+- `expo-haptics`
+
+当前 experimental formal slice：
+
+- `react-native-gesture-handler`
 
 ## UI stack 依赖安装注意事项
 
@@ -81,8 +90,9 @@ pnpm install --ignore-scripts
 
 额外说明：
 
-- `react-native-gesture-handler` 当前仍保留为矩阵外的手动探索项
-- `doctor --strict` 不再把它视为公开承诺的一部分
+- `react-native-gesture-handler` 已进入 formal experimental slice，但仍不属于 verified 公开承诺
+- bare workflow 当前只有 intake / debug baseline，不代表 release-ready
+- `doctor --strict` 仍只代表完整验收的 verified 能力
 
 toolkit 不会改动用户业务路由、动画逻辑或页面源码；它只负责受管 sidecar、构建链和 metadata。
 

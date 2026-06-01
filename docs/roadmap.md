@@ -66,7 +66,7 @@
 
 ## 当前主线
 
-`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
+`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。`v1.9.0` 先落 bare workflow baseline、app foundation modules 与 `react-native-gesture-handler` formal slice；剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
 
 ### v1.8.0 Intake Hardening + Parallel Promotion
 
@@ -122,6 +122,8 @@
 
 目标日期：`2026-08-31`
 
+状态：implementation baseline complete；device / release evidence carryover。
+
 目标：把 bare workflow 拉进主线，补齐最容易卡死真实项目的官方基础模块，并先建立第三方 blocker 的正式接入切片。
 
 - bare workflow 正式进入主线里程碑
@@ -149,6 +151,7 @@
   - bundle
   - debug build
   - acceptance 记录
+- 本阶段不改变 `verified` 边界；foundation modules 以 `preview` + `runtimeMode=shim` 记录，`react-native-gesture-handler` 以 `experimental` + formal adapter slice 记录
 
 ### v1.9.1 Third-party Native Wave A
 

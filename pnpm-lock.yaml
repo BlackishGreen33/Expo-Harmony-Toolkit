@@ -151,15 +151,27 @@ importers:
       expo:
         specifier: ^55.0.8
         version: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
+      expo-asset:
+        specifier: 55.0.10
+        version: 55.0.10(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
       expo-camera:
         specifier: ~55.0.11
         version: 55.0.11(@types/emscripten@1.41.5)(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
+      expo-clipboard:
+        specifier: 7.1.5
+        version: 7.1.5(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
       expo-constants:
         specifier: ~55.0.9
         version: 55.0.9(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(typescript@5.9.3)
+      expo-device:
+        specifier: 55.0.10
+        version: 55.0.10(expo@55.0.8)
       expo-file-system:
         specifier: ~19.0.10
         version: 19.0.21(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))
+      expo-haptics:
+        specifier: 14.1.4
+        version: 14.1.4(expo@55.0.8)
       expo-image-picker:
         specifier: ~17.0.8
         version: 17.0.10(expo@55.0.8)
@@ -172,6 +184,9 @@ importers:
       expo-router:
         specifier: 55.0.7
         version: 55.0.7(5812cbbb09d0f8b512537fe7a4cc32a0)
+      expo-secure-store:
+        specifier: 15.0.7
+        version: 15.0.7(expo@55.0.8)
       expo-status-bar:
         specifier: ~3.0.8
         version: 3.0.9(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)
@@ -2950,11 +2965,23 @@ packages:
       react-native-web:
         optional: true
 
+  expo-clipboard@7.1.5:
+    resolution: {integrity: sha512-TCANUGOxouoJXxKBW5ASJl2WlmQLGpuZGemDCL2fO5ZMl57DGTypUmagb0CVUFxDl0yAtFIcESd78UsF9o64aw==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+
   expo-constants@55.0.9:
     resolution: {integrity: sha512-iBiXjZeuU5S/8docQeNzsVvtDy4w0zlmXBpFEi1ypwugceEpdQQab65TVRbusXAcwpNVxCPMpNlDssYp0Pli2g==}
     peerDependencies:
       expo: '*'
       react-native: '*'
+
+  expo-device@55.0.10:
+    resolution: {integrity: sha512-jvPImQg5LN7LNL57sGY6WaJxrWrPKXueUiDctZ7brLyiZfioS6wUieLwOTTkHUdtSSBtHkTvUg675w0sOzwlTg==}
+    peerDependencies:
+      expo: '*'
 
   expo-file-system@19.0.21:
     resolution: {integrity: sha512-s3DlrDdiscBHtab/6W1osrjGL+C2bvoInPJD7sOwmxfJ5Woynv2oc+Fz1/xVXaE/V7HE/+xrHC/H45tu6lZzzg==}
@@ -2981,6 +3008,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-haptics@14.1.4:
+    resolution: {integrity: sha512-QZdE3NMX74rTuIl82I+n12XGwpDWKb8zfs5EpwsnGi/D/n7O2Jd4tO5ivH+muEG/OCJOMq5aeaVDqqaQOhTkcA==}
+    peerDependencies:
+      expo: '*'
 
   expo-image-loader@6.0.0:
     resolution: {integrity: sha512-nKs/xnOGw6ACb4g26xceBD57FKLFkSwEUTDXEDF3Gtcu3MqF3ZIYd3YM+sSb1/z9AKV1dYT7rMSGVNgsveXLIQ==}
@@ -3099,6 +3131,11 @@ packages:
         optional: true
       react-server-dom-webpack:
         optional: true
+
+  expo-secure-store@15.0.7:
+    resolution: {integrity: sha512-9q7+G1Zxr5P6J5NRIlm86KulvmYwc6UnQlYPjQLDu1drDnerz6AT6l884dPu29HgtDTn4rR0heYeeGFhMKM7/Q==}
+    peerDependencies:
+      expo: '*'
 
   expo-server@55.0.6:
     resolution: {integrity: sha512-xI72FTm469FfuuBL2R5aNtthgH+GR7ygOpsx/KcPS0K8AZaZd7VjtEExbzn9/qyyYkWW3T+3dAmCDKOMX8gdmQ==}
@@ -5156,6 +5193,10 @@ packages:
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
+    hasBin: true
+
+  ua-parser-js@0.7.41:
+    resolution: {integrity: sha512-O3oYyCMPYgNNHuO7Jjk3uacJWZF8loBgwrfd/5LE/HyZ3lUIOdniQ7DNXJcIgZbwioZxk0fLfI4EVnetdiX5jg==}
     hasBin: true
 
   uglify-js@3.19.3:
@@ -9384,6 +9425,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/emscripten'
 
+  expo-clipboard@7.1.5(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1):
+    dependencies:
+      expo: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
+      react: 19.1.1
+      react-native: 0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1)
+
   expo-constants@55.0.9(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(typescript@5.9.3):
     dependencies:
       '@expo/config': 55.0.10(typescript@5.9.3)
@@ -9403,6 +9450,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  expo-device@55.0.10(expo@55.0.8):
+    dependencies:
+      expo: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
+      ua-parser-js: 0.7.41
 
   expo-file-system@19.0.21(expo@55.0.8)(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1)):
     dependencies:
@@ -9445,6 +9497,10 @@ snapshots:
       react: 19.2.0
       react-native: 0.83.2(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.2.0)
     optional: true
+
+  expo-haptics@14.1.4(expo@55.0.8):
+    dependencies:
+      expo: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
 
   expo-image-loader@6.0.0(expo@55.0.8):
     dependencies:
@@ -9672,6 +9728,10 @@ snapshots:
       - '@types/react-dom'
       - expo-font
       - supports-color
+
+  expo-secure-store@15.0.7(expo@55.0.8):
+    dependencies:
+      expo: 55.0.8(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.7)(react-dom@19.1.1(react@19.1.1))(react-native@0.82.1(@babel/core@7.29.0)(@react-native-community/cli@20.1.2(typescript@5.9.3))(react@19.1.1))(react@19.1.1)(typescript@5.9.3)
 
   expo-server@55.0.6: {}
 
@@ -12276,6 +12336,8 @@ snapshots:
       mime-types: 3.0.2
 
   typescript@5.9.3: {}
+
+  ua-parser-js@0.7.41: {}
 
   uglify-js@3.19.3:
     optional: true

@@ -7,6 +7,7 @@ import { readManifest, readToolkitConfig } from '../src/core/metadata';
 
 const fixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 const nativePreviewFixtureRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
+const appFoundationFixtureRoot = path.join(__dirname, '..', 'fixtures', 'app-foundation-modules-app');
 const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 
 async function createTempFixture(): Promise<string> {
@@ -18,6 +19,12 @@ async function createTempFixture(): Promise<string> {
 async function createTempPreviewFixture(): Promise<string> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-preview-toolkit-'));
   await fs.copy(nativePreviewFixtureRoot, tempRoot);
+  return tempRoot;
+}
+
+async function createTempAppFoundationFixture(): Promise<string> {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-foundation-toolkit-'));
+  await fs.copy(appFoundationFixtureRoot, tempRoot);
   return tempRoot;
 }
 
@@ -248,6 +255,63 @@ describe('init project', () => {
     expect(toolkitConfig?.nextActions).toContain(
       'Keep combined sample smoke for regression coverage, but track bundle/debug/device/release evidence separately for each preview capability before promotion.',
     );
+  });
+
+  it('injects v1.9 app foundation shims and telemetry into managed outputs', async () => {
+    const projectRoot = await createTempAppFoundationFixture();
+
+    await syncProjectTemplate(projectRoot, true);
+
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+    const secureStoreShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-secure-store', 'index.js'),
+      'utf8',
+    );
+    const assetShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-asset', 'index.js'),
+      'utf8',
+    );
+    const deviceShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-device', 'index.js'),
+      'utf8',
+    );
+    const clipboardShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-clipboard', 'index.js'),
+      'utf8',
+    );
+    const hapticsShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-haptics', 'index.js'),
+      'utf8',
+    );
+    const toolkitConfig = await readToolkitConfig(projectRoot);
+
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-secure-store");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-asset");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-device");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-clipboard");
+    expect(metroConfig).toContain(".expo-harmony/shims/expo-haptics");
+    expect(secureStoreShim).toContain('setItemAsync');
+    expect(secureStoreShim).toContain('getItemAsync');
+    expect(assetShim).toContain('class Asset');
+    expect(assetShim).toContain('loadAsync(moduleIds)');
+    expect(deviceShim).toContain('Harmony preview device');
+    expect(clipboardShim).toContain('setStringAsync');
+    expect(clipboardShim).toContain('getUrlAsync');
+    expect(hapticsShim).toContain('selectionAsync');
+    expect(hapticsShim).toContain('NotificationFeedbackType');
+    expect(toolkitConfig?.capabilities.map((capability) => capability.id)).toEqual([
+      'expo-asset',
+      'expo-clipboard',
+      'expo-device',
+      'expo-haptics',
+      'expo-secure-store',
+    ]);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.supportTier === 'preview')).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.runtimeMode === 'shim')).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.device === false)).toBe(true);
+    expect(toolkitConfig?.requestedHarmonyPermissions).toEqual([]);
   });
 
   it('persists doctor overrides into toolkit metadata for ccnubox-like sidecar intake fixtures', async () => {

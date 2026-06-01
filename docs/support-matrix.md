@@ -1,6 +1,6 @@
-# v1.8 支持矩阵
+# v1.9 支持矩阵
 
-`v1.8` 继续采用 tiered support model，但从现在开始把“层级”与“晋升距离”拆开表达：
+`v1.9` 继续采用 tiered support model，并把“层级”与“晋升距离”拆开表达：
 
 - `supportTier` 表示公开承诺层级
 - `runtimeMode` 表示当前运行时接入形态：`shim`、`adapter`、`verified`
@@ -9,11 +9,12 @@
 - `coverageProfile` 表示当前项目属于哪条主线输入形态
 - `nextActions` 表示 toolkit 为当前项目生成的有序下一步
 
-同时，`v1.8.x` 的 roadmap 已经改成单一 `mainline capability catalog` 方向：
+同时，roadmap 已经改成单一 `mainline capability catalog` 方向：
 
 - bare workflow 与第三方 native package 不再被描述成“收官后才考虑的另一条 extension 终局”
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
+- `v1.9.0` 新增的是 bare intake baseline、app foundation preview shim baseline 与 `react-native-gesture-handler` formal experimental slice，不是 verified 扩容
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -106,13 +107,19 @@
 | `expo-image-picker` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-image-picker, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE、ohos.permission.READ_IMAGEVIDEO | `/image-picker` |
 | `expo-location` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | @react-native-community/geolocation, react-native-permissions | ohos.permission.LOCATION、ohos.permission.APPROXIMATELY_LOCATION、ohos.permission.LOCATION_IN_BACKGROUND、ohos.permission.ACCELEROMETER | `/location` |
 | `expo-camera` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-camera-kit, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/camera` |
+| `expo-secure-store` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/secure-store` |
+| `expo-asset` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/asset` |
+| `expo-device` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/device` |
+| `expo-clipboard` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | @react-native-oh-tpl/clipboard | 无新增必需权限 | `/clipboard` |
+| `expo-haptics` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/haptics` |
 <!-- GENERATED:support-matrix-preview-capabilities:end -->
 
 说明：
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
-- 当前 preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
+- 当前原生 adapter preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
+- `v1.9.0` 新增的 app foundation modules 当前是 `runtimeMode=shim`，`bundle/debugBuild=automated`，`device/release=none`
 - `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录只证明 app-shell release 构建链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
 - `v1.8.x` repo 内可完成的 closeout 已完成；剩余 carryover 只包括单 capability 真机 device record 与 release HAP runtime acceptance
@@ -130,7 +137,7 @@
 | Expo 能力 / 依赖 | 当前层级 | runtimeMode | evidence | 说明 |
 | --- | --- | --- | --- | --- |
 | `expo-notifications` | `experimental` | `shim` | `bundle=no, debugBuild=no, device=no, release=no` | 服务链路与交付故事未打通 |
-| `react-native-gesture-handler` | `experimental` | matrix 外本地探索 | matrix 外 | 继续保留本地探索 shim，但不在公开 verified 矩阵内 |
+| `react-native-gesture-handler` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.0 formal acceptance slice；必须与 `@react-native-oh-tpl/react-native-gesture-handler` 成对接入，仍不在公开 verified 矩阵内 |
 
 ## UI Stack 配对规则
 
@@ -230,7 +237,7 @@ toolkit 受管的核心产物仍包括：
 
 ## Release Tracks
 
-从 `v1.8` 开始，发布节奏按双轨设计：
+从 `v1.8` 开始，发布节奏按双轨设计；`v1.9.0` 继续沿用同一规则：
 
 <!-- GENERATED:support-matrix-release-tracks:start -->
 - `latest`
@@ -260,7 +267,8 @@ toolkit 受管的核心产物仍包括：
 
 ## 当前仍未进入正式公开承诺
 
-- bare Expo
+- bare Expo；当前只进入 intake / debug baseline
+- `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 当前仍只是 preview shim baseline
 - 多 Expo / RNOH 并行 verified 矩阵
 - 任意第三方 native package 的即时正式承诺
 

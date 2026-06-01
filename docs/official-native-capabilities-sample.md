@@ -2,7 +2,7 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 是 `v1.8.0` 的官方 preview native-capability walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把四项能力当前真实可承诺的 `🟡` 子集集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
+这个 sample 是官方 preview native-capability 与 `v1.9.0` app-foundation walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把当前真实可承诺的 `🟡` 子集和 foundation shim baseline 集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
 
 从 `v1.8.x` 开始，这个 sample 的角色会固定成两层：
 
@@ -19,6 +19,11 @@
 - `expo-image-picker`
 - `expo-location`
 - `expo-camera`
+- `expo-secure-store`
+- `expo-asset`
+- `expo-device`
+- `expo-clipboard`
+- `expo-haptics`
 
 当前 route：
 
@@ -26,6 +31,11 @@
 - `/image-picker`
 - `/location`
 - `/camera`
+- `/secure-store`
+- `/asset`
+- `/device`
+- `/clipboard`
+- `/haptics`
 
 对应的逐 capability 追踪板见：
 
@@ -88,6 +98,51 @@
 - microphone permission snapshot
 - denied / canceled / successful result 展示
 
+### `/secure-store`
+
+`🟡 v1.9 app-foundation baseline`：
+
+- `isAvailableAsync`
+- session-scoped `setItemAsync`
+- session-scoped `getItemAsync`
+- `deleteItemAsync`
+- encrypted persistence、keychain / keystore 等真实 native 后端仍待 device / release evidence
+
+### `/asset`
+
+`🟡 v1.9 app-foundation baseline`：
+
+- `Asset.fromURI`
+- `Asset.loadAsync`
+- deterministic metadata display
+- native resource resolution、asset cache parity 仍待 device / release evidence
+
+### `/device`
+
+`🟡 v1.9 app-foundation baseline`：
+
+- stable Harmony placeholder metadata
+- `getDeviceTypeAsync`
+- real device model/build/hardware metadata 仍待 device / release evidence
+
+### `/clipboard`
+
+`🟡 v1.9 app-foundation baseline`：
+
+- session-scoped string write/read
+- `hasStringAsync`
+- URL helper roundtrip
+- real system pasteboard behavior 仍待 Harmony adapter evidence
+
+### `/haptics`
+
+`🟡 v1.9 app-foundation baseline`：
+
+- `selectionAsync`
+- `impactAsync`
+- `notificationAsync`
+- 当前为 no-op-safe shim；真实物理反馈仍待 device evidence
+
 ## 推荐命令
 
 ```bash
@@ -134,5 +189,5 @@ pnpm run harmony:build:release
 
 - 这个 sample 属于 `preview` 主线，不等于已经进入 `verified`
 - `doctor-report.json` 与 `toolkit-config.json` 中的 `runtimeMode` / `evidence.*` 会如实反映这些能力距离 verified 还缺哪些证据
-- 当前重点是“模拟器下真正可用、核心流清楚、文档一致”
+- 当前重点是“bundle/debug baseline 可重复、核心流清楚、文档一致”
 - 等未来补齐真机 gate 后，才讨论 capability promotion

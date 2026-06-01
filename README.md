@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Expo Harmony Toolkit</h1>
-  <p><strong>面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链。</strong></p>
+  <p><strong>面向 Managed/CNG Expo 项目，并开始纳入 bare intake baseline 的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链。</strong></p>
   <p>One verified UI-stack matrix, additive preview/experimental capability tiers, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
   <p>
     <a href="./README.md">简体中文</a> ·
@@ -9,9 +9,9 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.9.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
-    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
+    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
   <p>
     <a href="./docs/support-matrix.md">支持矩阵</a> ·
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.8` 延续 `verified + preview + experimental` 三层支持模型，并把 `expo-location`、`expo-camera` 继续保持在 `preview`。当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，`next` 用于 preview fast track。最新 roadmap 已把 `v2.0.0` 直接定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”，因此中间版本会继续拆小，但这不等于当前 `verified` 边界已经放宽。
+> `v1.9.0` 延续 `verified + preview + experimental` 三层支持模型，并把 bare workflow intake、五个 app foundation modules 与 `react-native-gesture-handler` formal slice 纳入主线追踪。当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，`next` 用于 preview fast track。目标扩大不等于当前 `verified` 边界已经放宽。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,12 +48,12 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.8.3` |
+| 当前版本 | `v1.9.0` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
-| 输入范围 | Managed/CNG Expo 项目 |
+| 输入范围 | Managed/CNG Expo 项目；bare workflow intake baseline |
 | `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
-| `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` |
+| `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`、`expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler` |
 | 发布轨 | `latest` = fully accepted verified only；`next` = preview fast track |
 | capability 遥测 | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
@@ -66,10 +66,11 @@
 <details>
 <summary><strong>当前仍不在 verified 正式承诺范围</strong></summary>
 
-- bare Expo
+- bare Expo 仍只到 intake baseline
 - `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 仍只属于 `preview`
+- `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 仍只属于 `preview` shim baseline
 - `expo-notifications`
-- `react-native-gesture-handler`
+- `react-native-gesture-handler` 仍只属于 formal experimental slice
 - 多矩阵并行支持
 
 </details>
@@ -174,7 +175,7 @@ pnpm exec expo-harmony build-hap --mode release
 
 <!-- GENERATED:readme-support-matrix:start -->
 - `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
-- `preview`：`expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
+- `preview`：`expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics`
 - `experimental`：`expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
@@ -204,7 +205,7 @@ pnpm exec expo-harmony build-hap --mode release
 - `examples/official-ui-stack-sample`
   当前唯一对外主 sample，同时覆盖 router、linking、constants、SVG、reanimated 和 Harmony sidecar 构建链。
 - `examples/official-native-capabilities-sample`
-  `v1.8.x` 的 preview walkthrough sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 的核心支持子集、permission、bundle、debug build 与逐 capability 验收追踪。
+  preview walkthrough sample，用来承接 `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera` 与 v1.9 app foundation modules 的核心支持子集、permission、bundle、debug build 与逐 capability 验收追踪。
 - `examples/official-app-shell-sample`
   最小可理解的 App Shell onboarding sample，用来展示 router、linking、constants、pathname、observed URL 与 generated deep link。
 - `examples/official-minimal-sample`

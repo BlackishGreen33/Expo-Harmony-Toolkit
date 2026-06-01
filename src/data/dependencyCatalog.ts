@@ -126,8 +126,8 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-asset': {
     status: 'manual',
-    supportTier: 'experimental',
-    note: 'Asset handling often needs Harmony-specific verification after bundling.',
+    supportTier: 'preview',
+    note: 'v1.9.0 app-foundation baseline keeps Asset API imports and load paths bundle-safe through the toolkit shim; native asset cache parity still needs device and release evidence.',
   },
   'expo-build-properties': {
     status: 'manual',
@@ -256,9 +256,14 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-clipboard': {
     status: 'manual',
-    supportTier: 'experimental',
-    note: 'Clipboard support should be routed through the Harmony clipboard adapter where the app needs real pasteboard access.',
+    supportTier: 'preview',
+    note: 'v1.9.0 app-foundation baseline provides a session clipboard shim and keeps the Harmony clipboard adapter as the native promotion path.',
     replacement: '@react-native-oh-tpl/clipboard',
+  },
+  'expo-device': {
+    status: 'manual',
+    supportTier: 'preview',
+    note: 'v1.9.0 app-foundation baseline exposes stable Harmony placeholder device metadata while real hardware metadata remains promotion evidence.',
   },
   'expo-dev-client': {
     status: 'manual',
@@ -272,8 +277,8 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-haptics': {
     status: 'manual',
-    supportTier: 'experimental',
-    note: 'Haptics require a Harmony runtime implementation before the app can claim device parity.',
+    supportTier: 'preview',
+    note: 'v1.9.0 app-foundation baseline turns haptics calls into safe no-ops until a real Harmony device feedback path is validated.',
   },
   'expo-image': {
     status: 'manual',
@@ -303,8 +308,8 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   'expo-secure-store': {
     status: 'manual',
-    supportTier: 'experimental',
-    note: 'Secure storage must use a real Harmony secure backend or equivalent encrypted wrapper before release parity is claimed.',
+    supportTier: 'preview',
+    note: 'v1.9.0 app-foundation baseline provides a session secure-store shim; encrypted persistence still needs native device and release evidence.',
   },
   'expo-splash-screen': {
     status: 'manual',

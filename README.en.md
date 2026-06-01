@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Expo Harmony Toolkit</h1>
-  <p><strong>A HarmonyOS migration, admission, and UI-stack build toolkit for Managed/CNG Expo projects.</strong></p>
+  <p><strong>A HarmonyOS migration, admission, and UI-stack build toolkit for Managed/CNG Expo projects, now with a bare intake baseline.</strong></p>
   <p>One verified UI-stack matrix, additive preview/experimental capability tiers, managed Harmony sidecar scaffolding, and a toolkit-driven <code>doctor → init → bundle → build-hap</code> path.</p>
   <p>
     <a href="./README.md">简体中文</a> ·
@@ -9,9 +9,9 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.8.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.9.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
-    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG-059669?style=flat-square">
+    <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
   <p>
     <a href="./docs/support-matrix.md">Support Matrix</a> ·
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.8` keeps the `verified + preview + experimental` model and continues to keep `expo-location` and `expo-camera` in `preview`. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, while `next` is reserved for preview fast-track work. The roadmap now defines `v2.0.0` itself as “reliable Harmony packaging for any Expo project”, so the intermediate versions will keep getting split smaller, but that still does not widen the current `verified` boundary yet.
+> `v1.9.0` keeps the `verified + preview + experimental` model and brings bare workflow intake, five app foundation modules, and the `react-native-gesture-handler` formal slice onto the mainline tracker. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, while `next` is reserved for preview fast-track work. The expanded goal still does not widen the current `verified` boundary yet.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,12 +48,12 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.8.3` |
+| Current version | `v1.9.0` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
-| Supported input | Managed/CNG Expo projects |
+| Supported input | Managed/CNG Expo projects; bare workflow intake baseline |
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
-| `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera` |
+| `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler` |
 | Release tracks | `latest` = fully accepted `verified` only; `next` = preview fast track |
 | Capability telemetry | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
@@ -66,10 +66,11 @@
 <details>
 <summary><strong>Still outside the verified public promise</strong></summary>
 
-- bare Expo
+- bare Expo still only reaches the intake baseline
 - `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` remain `preview`
+- `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, and `expo-haptics` remain the `preview` shim baseline
 - `expo-notifications`
-- `react-native-gesture-handler`
+- `react-native-gesture-handler` remains a formal experimental slice
 - multiple public matrices
 
 </details>
@@ -174,7 +175,7 @@ Common decision points:
 
 <!-- GENERATED:readme-support-matrix:start -->
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
-- `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`
+- `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics`
 - `experimental`: `expo-notifications`, `react-native-gesture-handler`
 
 `doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
@@ -198,7 +199,7 @@ If you want the `v1.8.x` promotion board directly, use [acceptance/v1.8.x-capabi
 - `examples/official-ui-stack-sample`
   The current public main sample, covering router, linking, constants, SVG, reanimated, and the Harmony sidecar build flow.
 - `examples/official-native-capabilities-sample`
-  The `v1.8.x` preview walkthrough sample, covering the supported core subsets for `expo-file-system`, `expo-image-picker`, `expo-location`, and `expo-camera` plus permission, bundle, debug-build validation, and per-capability acceptance tracking.
+  Preview walkthrough sample for `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, and the v1.9 app foundation modules, keeping core subsets, permissions, bundle/debug evidence, and per-capability acceptance tracking explicit.
 - `examples/official-app-shell-sample`
   The minimal App Shell onboarding sample that demonstrates router, linking, constants, pathname, observed URL, and a generated deep-link flow.
 - `examples/official-minimal-sample`

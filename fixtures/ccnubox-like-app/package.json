@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@react-native-community/cli": "^20.1.2",
-    "expo-harmony-toolkit": "1.8.3",
+    "expo-harmony-toolkit": "1.9.0",
     "metro": "^0.83.1"
   }
 }

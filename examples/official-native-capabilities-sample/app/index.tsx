@@ -4,6 +4,21 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const ROUTES = [
   {
+    href: '/asset' as const,
+    title: 'expo-asset',
+    body: 'Validate the v1.9 app-foundation Asset shim, fromURI metadata, and loadAsync bundle path.',
+  },
+  {
+    href: '/clipboard' as const,
+    title: 'expo-clipboard',
+    body: 'Validate session clipboard string, URL helpers, and hasStringAsync without native pasteboard promotion.',
+  },
+  {
+    href: '/device' as const,
+    title: 'expo-device',
+    body: 'Validate stable Harmony placeholder device metadata and getDeviceTypeAsync startup behavior.',
+  },
+  {
     href: '/file-system' as const,
     title: 'expo-file-system',
     body: 'Validate UTF-8/base64 sandbox I/O, append and partial reads, md5 info, and one remote download.',
@@ -23,6 +38,16 @@ const ROUTES = [
     title: 'expo-camera',
     body: 'Validate embedded preview, pause/resume, still capture, video recording controls, and microphone permission snapshots.',
   },
+  {
+    href: '/haptics' as const,
+    title: 'expo-haptics',
+    body: 'Validate no-op-safe selection, impact, and notification haptic calls for v1.9 bundle/debug coverage.',
+  },
+  {
+    href: '/secure-store' as const,
+    title: 'expo-secure-store',
+    body: 'Validate session secure-store writes, reads, deletes, and availability without claiming encrypted persistence.',
+  },
 ];
 
 export default function HomeScreen() {
@@ -35,13 +60,13 @@ export default function HomeScreen() {
           <Text style={styles.title}>Official Native Capabilities Sample</Text>
           <Text style={styles.body}>
             This is the canonical simulator-friendly walkthrough for the current preview native
-            capabilities. Each route demonstrates the currently documented yellow subset and keeps
-            the preview boundary focused on device and release evidence instead of placeholder gaps.
+            capabilities and v1.9 app-foundation modules. Each route demonstrates the documented
+            baseline and keeps the preview boundary focused on device and release evidence.
           </Text>
           <View style={styles.boundaryCard}>
             <Text style={styles.boundaryTitle}>Current boundary</Text>
-            <Text style={styles.boundaryLine}>All four routes stay in `preview` for v1.7.2.</Text>
-            <Text style={styles.boundaryLine}>The goal here is credible simulator acceptance without promoting any capability to `verified` early.</Text>
+            <Text style={styles.boundaryLine}>All native capability and foundation routes stay in `preview` for v1.9.0.</Text>
+            <Text style={styles.boundaryLine}>The goal here is credible bundle/debug acceptance without promoting any capability to `verified` early.</Text>
           </View>
           {ROUTES.map((route) => (
             <View key={route.href} style={styles.routeCard}>

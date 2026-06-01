@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Expo Harmony App Foundation Fixture",
+    "slug": "expo-harmony-app-foundation-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.expoharmonyfoundationfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyfoundationfixture"
+    }
+  }
+}

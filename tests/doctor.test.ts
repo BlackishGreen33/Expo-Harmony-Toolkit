@@ -17,6 +17,7 @@ const nativeCapabilitiesSampleRoot = path.join(
 );
 const missingIdentifiersRoot = path.join(__dirname, '..', 'fixtures', 'missing-identifiers-app');
 const nativePreviewRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
+const appFoundationFixtureRoot = path.join(__dirname, '..', 'fixtures', 'app-foundation-modules-app');
 const verifiedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'verified-app');
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
@@ -288,6 +289,49 @@ describe('doctor report', () => {
     );
   });
 
+  it('classifies v1.9 app foundation modules as preview shims with bundle/debug evidence', async () => {
+    const strictReport = await buildDoctorReport(appFoundationFixtureRoot);
+    const report = await buildDoctorReport(appFoundationFixtureRoot, {
+      targetTier: 'preview',
+    });
+    const capabilityById = new Map(report.capabilities.map((capability) => [capability.id, capability]));
+    const expectedCapabilityIds = [
+      'expo-asset',
+      'expo-clipboard',
+      'expo-device',
+      'expo-haptics',
+      'expo-secure-store',
+    ];
+
+    expect(strictReport.eligibility).toBe('ineligible');
+    expect(strictReport.blockingIssues.some((issue) => issue.subject === 'expo-secure-store')).toBe(true);
+    expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-native-heavy');
+    expect(report.capabilities.map((capability) => capability.id)).toEqual(expectedCapabilityIds);
+
+    for (const capabilityId of expectedCapabilityIds) {
+      const capability = capabilityById.get(capabilityId);
+      expect(capability?.supportTier).toBe('preview');
+      expect(capability?.runtimeMode).toBe('shim');
+      expect(capability?.evidence.bundle).toBe(true);
+      expect(capability?.evidence.debugBuild).toBe(true);
+      expect(capability?.evidence.device).toBe(false);
+      expect(capability?.evidence.release).toBe(false);
+      expect(capability?.evidenceSource.bundle).toBe('automated');
+      expect(capability?.evidenceSource.debugBuild).toBe('automated');
+      expect(capability?.evidenceSource.device).toBe('none');
+      expect(capability?.evidenceSource.release).toBe('none');
+    }
+
+    expect(capabilityById.get('expo-secure-store')?.sampleRoute).toBe('/secure-store');
+    expect(capabilityById.get('expo-asset')?.sampleRoute).toBe('/asset');
+    expect(capabilityById.get('expo-device')?.sampleRoute).toBe('/device');
+    expect(capabilityById.get('expo-clipboard')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/clipboard',
+    ]);
+    expect(capabilityById.get('expo-haptics')?.sampleRoute).toBe('/haptics');
+  });
+
   it('keeps the official ui-stack sample adapter specs aligned with the validated source of truth', async () => {
     const packageJson = await fs.readJson(path.join(uiStackSampleRoot, 'package.json'));
     const dependencies = packageJson.dependencies ?? {};
@@ -438,6 +482,9 @@ describe('doctor report', () => {
 
   it('classifies the dedicated gesture-handler fixture as a third-party-native-heavy unblocker', async () => {
     const report = await buildDoctorReport(gestureHandlerFixtureRoot);
+    const experimentalReport = await buildDoctorReport(gestureHandlerFixtureRoot, {
+      targetTier: 'experimental',
+    });
 
     expect(report.eligibility).toBe('ineligible');
     expect(report.coverageProfile).toBe('third-party-native-heavy');
@@ -454,14 +501,28 @@ describe('doctor report', () => {
       'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
     );
     expect(report.nextActions).toContain(
-      'Keep `react-native-gesture-handler` out of the verified lane until its Harmony adapter path has stable doctor, sample, and build coverage.',
+      'Keep `react-native-gesture-handler` on the formal experimental slice until its Harmony adapter path closes device and release evidence.',
     );
+    expect(experimentalReport.eligibility).toBe('eligible');
+    expect(experimentalReport.capabilities.find((capability) => capability.id === 'react-native-gesture-handler')?.runtimeMode).toBe(
+      'adapter',
+    );
+    expect(
+      experimentalReport.capabilities.find((capability) => capability.id === 'react-native-gesture-handler')?.evidence.device,
+    ).toBe(false);
   });
 
   it('still flags the matrix regression fixture when the gesture-handler adapter is missing', async () => {
     const report = await buildDoctorReport(missingGestureAdapterRoot);
 
     expect(report.eligibility).toBe('ineligible');
+    expect(
+      report.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/react-native-gesture-handler',
+      ),
+    ).toBe(true);
     expect(
       report.blockingIssues.some(
         (issue) =>

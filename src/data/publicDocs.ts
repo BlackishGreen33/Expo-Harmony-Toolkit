@@ -26,10 +26,11 @@ export const PREVIEW_CAPABILITY_DEFINITIONS = CAPABILITY_DEFINITIONS.filter(
 );
 
 export const EXPERIMENTAL_CAPABILITY_NAMES = [
-  ...CAPABILITY_DEFINITIONS.filter((definition) => definition.supportTier === 'experimental').map(
-    (definition) => definition.packageName,
+  ...new Set(
+    CAPABILITY_DEFINITIONS.filter((definition) => definition.supportTier === 'experimental').map(
+      (definition) => definition.packageName,
+    ),
   ),
-  'react-native-gesture-handler',
 ] as const;
 
 export const PUBLIC_CURRENT_VERSION = TOOLKIT_VERSION;

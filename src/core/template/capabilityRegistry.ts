@@ -1,5 +1,12 @@
 import { CapabilityDefinition } from '../../types';
 import {
+  renderExpoAssetPreviewShim,
+  renderExpoClipboardPreviewShim,
+  renderExpoDevicePreviewShim,
+  renderExpoHapticsPreviewShim,
+  renderExpoSecureStorePreviewShim,
+} from './renderers/appFoundation';
+import {
   renderExpoHarmonyCameraTurboModule,
   renderExpoCameraHarmonyAdapterShim,
   renderExpoCameraPreviewShim,
@@ -46,6 +53,26 @@ const CAPABILITY_SHIM_RENDERERS: Record<string, CapabilityShimRenderers> = {
   'expo-camera': {
     adapter: renderExpoCameraHarmonyAdapterShim,
     preview: renderExpoCameraPreviewShim,
+  },
+  'expo-secure-store': {
+    adapter: renderExpoSecureStorePreviewShim,
+    preview: renderExpoSecureStorePreviewShim,
+  },
+  'expo-asset': {
+    adapter: renderExpoAssetPreviewShim,
+    preview: renderExpoAssetPreviewShim,
+  },
+  'expo-device': {
+    adapter: renderExpoDevicePreviewShim,
+    preview: renderExpoDevicePreviewShim,
+  },
+  'expo-clipboard': {
+    adapter: renderExpoClipboardPreviewShim,
+    preview: renderExpoClipboardPreviewShim,
+  },
+  'expo-haptics': {
+    adapter: renderExpoHapticsPreviewShim,
+    preview: renderExpoHapticsPreviewShim,
   },
 };
 

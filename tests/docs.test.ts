@@ -82,6 +82,10 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('`coverageProfile`');
     expect(readmeZh).toContain('`nextActions`');
     expect(readmeEn).toContain('`nextActions`');
+    expect(readmeZh).toContain('bare workflow intake baseline');
+    expect(readmeEn).toContain('bare workflow intake baseline');
+    expect(readmeZh).toContain('`expo-secure-store`');
+    expect(readmeEn).toContain('`expo-secure-store`');
     expect(readmeZh).toContain('./acceptance/');
     expect(readmeEn).toContain('./acceptance/');
     expect(readmeZh).toContain('./acceptance/v1.8.x-capability-board.md');
@@ -167,6 +171,7 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('mainline capability catalog');
     expect(roadmap).toContain('Intake Hardening + Parallel Promotion');
     expect(roadmap).toContain('Bare Workflow Baseline + App Foundation Modules');
+    expect(roadmap).toContain('implementation baseline complete');
     expect(roadmap).toContain('Third-party Native Wave A');
     expect(roadmap).toContain('Third-party Native Wave B + Regression Farm');
     expect(roadmap).toContain('Any-project Intake Freeze');
@@ -196,6 +201,7 @@ describe('documentation metadata', () => {
         'v1.8.x-expo-location-release.md',
         'v1.8.x-expo-camera-device.md',
         'v1.8.x-expo-camera-release.md',
+        'v1.9.0-acceptance.md',
       ]),
     );
   });
