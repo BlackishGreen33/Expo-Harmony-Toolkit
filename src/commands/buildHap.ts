@@ -5,6 +5,7 @@ import { writeBuildReport } from '../core/metadata';
 export interface BuildHapCommandOptions {
   projectRoot?: string;
   mode?: 'debug' | 'release';
+  harNormalize?: boolean;
 }
 
 export async function runBuildHapCommand(options: BuildHapCommandOptions): Promise<void> {
@@ -19,6 +20,7 @@ export async function runBuildHapCommand(options: BuildHapCommandOptions): Promi
 
   const report = await buildHapProject(projectRoot, {
     mode,
+    skipHarNormalize: options.harNormalize === false,
   });
   await writeBuildReport(projectRoot, report);
 
