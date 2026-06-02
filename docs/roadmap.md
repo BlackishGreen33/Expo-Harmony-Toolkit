@@ -66,7 +66,7 @@
 
 ## 当前主线
 
-`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。`v1.9.0` 先落 bare workflow baseline、app foundation modules 与 `react-native-gesture-handler` formal slice；剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
+`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。`v1.9.0` 先落 bare workflow baseline、app foundation modules 与 `react-native-gesture-handler` formal slice；`v1.9.1` 作为 build-hap patch release，补上 HAR normalize opt-out，让已确认 ohpm 可直接消费纯 HAR 的项目可以绕过 `expo-harmony-local-deps`。剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
 
 ### v1.8.0 Intake Hardening + Parallel Promotion
 
@@ -153,7 +153,28 @@
   - acceptance 记录
 - 本阶段不改变 `verified` 边界；foundation modules 以 `preview` + `runtimeMode=shim` 记录，`react-native-gesture-handler` 以 `experimental` + formal adapter slice 记录
 
-### v1.9.1 Third-party Native Wave A
+### v1.9.1 Build HAP HAR Normalize Opt-out
+
+目标日期：`2026-06-02`
+
+目标：把 issue #1 中的本地 HAR 解压 opt-out 做成正式 patch release，同时不改变默认 verified build path。
+
+- `build-hap` 新增显式 opt-out：
+  - `EXPO_HARMONY_SKIP_HAR_NORMALIZE=1`
+  - `expo-harmony build-hap --no-har-normalize`
+- 默认继续执行现有 `normalizeLocalHarDependencies` 路径：
+  - 解压 `file:*.har` 到 `expo-harmony-local-deps`
+  - 临时改写 root / entry `oh-package.json5`
+  - 注册 normalized local HAR modules
+  - 执行依赖 normalized local package 的 RNOH codegen / path 兜底
+- opt-out 开启后：
+  - 保留 `file:../node_modules/.../*.har`
+  - 让 `ohpm install --all` 直接消费纯 HAR
+  - 在 build report / CLI 文档里明确提示跳过的自动兜底
+- 本阶段只改变 build-hap escape hatch，不扩大 `verified` 能力边界
+- `v1.9.0` 已经存在于 npm `next`，本阶段发布为 `v1.9.1` 并进入 `latest`
+
+### v1.9.2 Third-party Native Wave A
 
 目标日期：`2026-09-30`
 
@@ -172,7 +193,7 @@
   - debug + release evidence
 - 任何进入 Wave A 的 blocker，都不允许继续停留在“矩阵外模糊探索”
 
-### v1.9.2 Third-party Native Wave B + Regression Farm
+### v1.9.3 Third-party Native Wave B + Regression Farm
 
 目标日期：`2026-10-31`
 

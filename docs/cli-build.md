@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.9.0` 延续 `verified + preview + experimental` 支持分层，把 bare workflow 放进 intake baseline，并把五个 app foundation modules 纳入 preview shim baseline；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.9.1` 延续 `verified + preview + experimental` 支持分层，把 bare workflow 放进 intake baseline，并补上 `build-hap` 的本地 HAR normalize opt-out；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
@@ -104,6 +104,27 @@ toolkit 不会改动用户业务路由、动画逻辑或页面源码；它只负
 expo-harmony env --strict
 expo-harmony build-hap --mode debug
 ```
+
+### HAR normalize opt-out
+
+默认情况下，`build-hap` 会把 root / entry `oh-package.json5` 里的 `file:*.har` 本地依赖解压到 `harmony/expo-harmony-local-deps`，再让 `ohpm` 消费解压后的目录。这条路径仍是默认 verified build path。
+
+如果项目已经确认当前 DevEco / ohpm 能直接消费纯 HAR，可以显式跳过这一步：
+
+```bash
+EXPO_HARMONY_SKIP_HAR_NORMALIZE=1 expo-harmony build-hap --mode debug
+expo-harmony build-hap --mode debug --no-har-normalize
+```
+
+开启后：
+
+- `file:../node_modules/.../*.har` specifier 会保持原样
+- 不生成 `expo-harmony-local-deps`
+- 不临时注册 normalized local HAR modules 到 `build-profile.json5`
+- 不执行依赖 normalized local RNOH 目录的 codegen / path 兜底
+- `ohpm install --all` 与 `hvigor assembleHap` 继续执行
+
+该开关是 escape hatch，不代表 opt-out 路径和默认路径具备完全相同的兼容兜底。
 
 ### Release
 
