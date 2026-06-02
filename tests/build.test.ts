@@ -4,7 +4,12 @@ import JSON5 from 'json5';
 import os from 'os';
 import path from 'path';
 import { promisify } from 'node:util';
-import { buildHapProject, bundleProject, CommandRunner } from '../src/core/build';
+import {
+  buildHapProject,
+  bundleProject,
+  CommandRunner,
+  SKIP_HAR_NORMALIZE_WARNING,
+} from '../src/core/build';
 import { initProject, syncProjectTemplate } from '../src/core/template';
 
 const minimalSampleRoot = path.join(__dirname, '..', 'examples', 'official-minimal-sample');
@@ -805,6 +810,177 @@ describe('bundle and HAP build reports', () => {
     expect(normalizedEntrySpecifier.endsWith('.har')).toBe(false);
     expect(await fs.readFile(harmonyRootPackagePath, 'utf8')).toBe(originalRootPackage);
     expect(await fs.readFile(harmonyEntryPackagePath, 'utf8')).toBe(originalEntryPackage);
+  }, 120000);
+
+  it('lets ohpm consume local HAR dependencies directly when HAR normalization is disabled through env', async () => {
+    const projectRoot = await createTempFixture(appShellSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await initProject(projectRoot, true);
+
+    const harmonyRootPackagePath = path.join(projectRoot, 'harmony', 'oh-package.json5');
+    const harmonyEntryPackagePath = path.join(projectRoot, 'harmony', 'entry', 'oh-package.json5');
+    const originalRootPackage = await fs.readFile(harmonyRootPackagePath, 'utf8');
+    const originalEntryPackage = await fs.readFile(harmonyEntryPackagePath, 'utf8');
+    let rootSpecifierDuringOhpm = '';
+    let entrySpecifierDuringOhpm = '';
+
+    const runner: CommandRunner = async (_file, args, options) => {
+      if (args.includes('bundle-harmony')) {
+        const bundleOutput = args[args.indexOf('--bundle-output') + 1];
+        const assetsDest = args[args.indexOf('--assets-dest') + 1];
+        await fs.outputFile(bundleOutput, '__d(function(){})\n');
+        await fs.ensureDir(assetsDest);
+        return {
+          exitCode: 0,
+          stdout: 'bundled',
+          stderr: '',
+        };
+      }
+
+      if (args[0] === 'install' && args[1] === '--all') {
+        const rootPackage = JSON5.parse(await fs.readFile(harmonyRootPackagePath, 'utf8')) as {
+          overrides: Record<string, string>;
+        };
+        const entryPackage = JSON5.parse(await fs.readFile(harmonyEntryPackagePath, 'utf8')) as {
+          dependencies: Record<string, string>;
+        };
+        rootSpecifierDuringOhpm = rootPackage.overrides['@rnoh/react-native-openharmony'];
+        entrySpecifierDuringOhpm = entryPackage.dependencies['@rnoh/react-native-openharmony'];
+
+        return {
+          exitCode: 0,
+          stdout: 'installed',
+          stderr: '',
+        };
+      }
+
+      if (args.includes('assembleHap')) {
+        const hapPath = path.join(
+          options.cwd,
+          'entry',
+          'build',
+          'default',
+          'outputs',
+          'default',
+          'entry-default-unsigned.hap',
+        );
+        await fs.outputFile(hapPath, 'hap');
+        return {
+          exitCode: 0,
+          stdout: 'built',
+          stderr: '',
+        };
+      }
+
+      return {
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      };
+    };
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        EXPO_HARMONY_SKIP_HAR_NORMALIZE: '1',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(report.warnings).toContain(SKIP_HAR_NORMALIZE_WARNING);
+    expect(rootSpecifierDuringOhpm).toBe(
+      'file:../node_modules/@react-native-oh/react-native-harmony/react_native_openharmony.har',
+    );
+    expect(entrySpecifierDuringOhpm).toBe(
+      'file:../node_modules/@react-native-oh/react-native-harmony/react_native_openharmony.har',
+    );
+    expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'expo-harmony-local-deps'))).toBe(false);
+    expect(await fs.readFile(harmonyRootPackagePath, 'utf8')).toBe(originalRootPackage);
+    expect(await fs.readFile(harmonyEntryPackagePath, 'utf8')).toBe(originalEntryPackage);
+  }, 120000);
+
+  it('lets callers disable HAR normalization through build options', async () => {
+    const projectRoot = await createTempFixture(appShellSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await initProject(projectRoot, true);
+
+    let sawOriginalHarSpecifier = false;
+
+    const runner: CommandRunner = async (_file, args, options) => {
+      if (args.includes('bundle-harmony')) {
+        const bundleOutput = args[args.indexOf('--bundle-output') + 1];
+        const assetsDest = args[args.indexOf('--assets-dest') + 1];
+        await fs.outputFile(bundleOutput, '__d(function(){})\n');
+        await fs.ensureDir(assetsDest);
+        return {
+          exitCode: 0,
+          stdout: 'bundled',
+          stderr: '',
+        };
+      }
+
+      if (args[0] === 'install' && args[1] === '--all') {
+        const rootPackage = JSON5.parse(
+          await fs.readFile(path.join(projectRoot, 'harmony', 'oh-package.json5'), 'utf8'),
+        ) as {
+          overrides: Record<string, string>;
+        };
+        sawOriginalHarSpecifier = rootPackage.overrides['@rnoh/react-native-openharmony'].endsWith('.har');
+        return {
+          exitCode: 0,
+          stdout: 'installed',
+          stderr: '',
+        };
+      }
+
+      if (args.includes('assembleHap')) {
+        const hapPath = path.join(
+          options.cwd,
+          'entry',
+          'build',
+          'default',
+          'outputs',
+          'default',
+          'entry-default-unsigned.hap',
+        );
+        await fs.outputFile(hapPath, 'hap');
+        return {
+          exitCode: 0,
+          stdout: 'built',
+          stderr: '',
+        };
+      }
+
+      return {
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      };
+    };
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      skipHarNormalize: true,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(sawOriginalHarSpecifier).toBe(true);
+    expect(report.warnings).toContain(SKIP_HAR_NORMALIZE_WARNING);
+    expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'expo-harmony-local-deps'))).toBe(false);
   }, 120000);
 
   it('temporarily aligns codegen with the normalized local RNOH package when ohpm removes the shim', async () => {

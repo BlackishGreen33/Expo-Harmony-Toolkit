@@ -39,6 +39,9 @@ import { normalizeProjectRnohCliAutolinkingTemplates } from './build/rnohCompati
 export type { CommandRunner, CommandRunnerResult } from './build/commands';
 export { renderBuildReport } from './build/reporting';
 
+export const SKIP_HAR_NORMALIZE_WARNING =
+  'Local HAR normalization is disabled; ohpm will consume file:*.har dependencies directly and normalized build-profile/RNOH compatibility steps will be skipped.';
+
 interface BundleProjectOptions {
   env?: NodeJS.ProcessEnv;
   runner?: CommandRunner;
@@ -49,6 +52,7 @@ interface BuildHapProjectOptions {
   mode: 'debug' | 'release';
   env?: NodeJS.ProcessEnv;
   runner?: CommandRunner;
+  skipHarNormalize?: boolean;
 }
 
 export async function bundleProject(
@@ -245,6 +249,8 @@ export async function buildHapProject(
 ): Promise<BuildReport> {
   const runtimeEnv = options.env ?? process.env;
   const runCommand = options.runner ?? defaultCommandRunner;
+  const skipHarNormalize =
+    options.skipHarNormalize === true || runtimeEnv.EXPO_HARMONY_SKIP_HAR_NORMALIZE === '1';
   const loadedProject = await loadProject(projectRoot);
   const envReport = await buildEnvReport(loadedProject.projectRoot, {
     env: runtimeEnv,
@@ -258,6 +264,9 @@ export async function buildHapProject(
     ),
     ...relevantEnvAdvisories.map((issue) => `${issue.code}: ${issue.message}`),
   ];
+  if (skipHarNormalize) {
+    warnings.push(SKIP_HAR_NORMALIZE_WARNING);
+  }
   const blockingIssues: BlockingIssue[] = [];
 
   if (!envReport.hvigorPath) {
@@ -356,45 +365,47 @@ export async function buildHapProject(
   let restoreNormalizedRnohCodegenAlignment = async () => {};
   let restoreNormalizedHarmonyPackageJsons = async () => {};
 
-  try {
-    const normalizedLocalHarDependencies = await normalizeLocalHarDependencies(harmonyProjectRoot);
-    normalizedLocalHarPackages = normalizedLocalHarDependencies.packages;
-    restoreNormalizedDependencies = normalizedLocalHarDependencies.restore;
-    restoreNormalizedLocalHarModules = await ensureHarmonyBuildProfileSupportsNormalizedLocalDeps(
-      harmonyProjectRoot,
-      normalizedLocalHarDependencies.packages,
-    );
-    restoreNormalizedRnohCliAutolinkingTemplates =
-      await normalizeProjectRnohCliAutolinkingTemplates(loadedProject.projectRoot);
-    restoreNormalizedHarmonyPackageJsons =
-      await normalizeKnownHarmonyPackageJsons(loadedProject.projectRoot);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return createBuildReport({
-      projectRoot: loadedProject.projectRoot,
-      command: 'build-hap',
-      mode: options.mode,
-      status: 'failed',
-      harmonyProjectRoot,
-      entryFile: bundleReport.entryFile,
-      bundleOutputPath: bundleReport.bundleOutputPath,
-      assetsDestPath: bundleReport.assetsDestPath,
-      artifactPaths: [],
-      blockingIssues: [
-        {
-          code: 'build.hap.failed',
-          message,
-        },
-      ],
-      warnings: [...warnings, ...bundleReport.warnings],
-      steps,
-    });
-  }
+  if (!skipHarNormalize) {
+    try {
+      const normalizedLocalHarDependencies = await normalizeLocalHarDependencies(harmonyProjectRoot);
+      normalizedLocalHarPackages = normalizedLocalHarDependencies.packages;
+      restoreNormalizedDependencies = normalizedLocalHarDependencies.restore;
+      restoreNormalizedLocalHarModules = await ensureHarmonyBuildProfileSupportsNormalizedLocalDeps(
+        harmonyProjectRoot,
+        normalizedLocalHarDependencies.packages,
+      );
+      restoreNormalizedRnohCliAutolinkingTemplates =
+        await normalizeProjectRnohCliAutolinkingTemplates(loadedProject.projectRoot);
+      restoreNormalizedHarmonyPackageJsons =
+        await normalizeKnownHarmonyPackageJsons(loadedProject.projectRoot);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return createBuildReport({
+        projectRoot: loadedProject.projectRoot,
+        command: 'build-hap',
+        mode: options.mode,
+        status: 'failed',
+        harmonyProjectRoot,
+        entryFile: bundleReport.entryFile,
+        bundleOutputPath: bundleReport.bundleOutputPath,
+        assetsDestPath: bundleReport.assetsDestPath,
+        artifactPaths: [],
+        blockingIssues: [
+          {
+            code: 'build.hap.failed',
+            message,
+          },
+        ],
+        warnings: [...warnings, ...bundleReport.warnings],
+        steps,
+      });
+    }
 
-  restoreNormalizedRnohCodegenAlignment = await alignRnohCodegenWithNormalizedLocalPackage(
-    harmonyProjectRoot,
-    normalizedLocalHarPackages,
-  );
+    restoreNormalizedRnohCodegenAlignment = await alignRnohCodegenWithNormalizedLocalPackage(
+      harmonyProjectRoot,
+      normalizedLocalHarPackages,
+    );
+  }
 
   const ohpmCommand = buildInvocation(envReport.ohpmPath as string, ['install', '--all']);
   try {
@@ -431,10 +442,12 @@ export async function buildHapProject(
       });
     }
 
-    if (!normalizedLocalHarPackages.some((localPackage) => localPackage.packageName === '@rnoh/react-native-openharmony')) {
-      await ensureRnohGeneratedTsShim(harmonyProjectRoot);
+    if (!skipHarNormalize) {
+      if (!normalizedLocalHarPackages.some((localPackage) => localPackage.packageName === '@rnoh/react-native-openharmony')) {
+        await ensureRnohGeneratedTsShim(harmonyProjectRoot);
+      }
+      await patchRnohGeneratedCodegenForNormalizedLocalPackage(harmonyProjectRoot);
     }
-    await patchRnohGeneratedCodegenForNormalizedLocalPackage(harmonyProjectRoot);
     await patchKnownHarmonyAdapterCodegenOutputs(harmonyProjectRoot);
 
     const hvigorCommand = buildInvocation(envReport.hvigorPath as string, [

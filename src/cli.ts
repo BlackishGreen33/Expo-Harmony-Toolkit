@@ -43,6 +43,7 @@ export async function run(argv = process.argv): Promise<void> {
     .description('Build a Harmony HAP from the validated sidecar and bundle outputs')
     .option('-p, --project-root <path>', 'path to the Expo project')
     .option('--mode <mode>', 'build mode: debug or release', 'debug')
+    .option('--no-har-normalize', 'let ohpm consume file:*.har dependencies without extracting local HARs')
     .action(runBuildHapCommand);
 
   program
