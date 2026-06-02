@@ -1,6 +1,6 @@
 export const TOOLKIT_PACKAGE_NAME = 'expo-harmony-toolkit';
 export const CLI_NAME = 'expo-harmony';
-export const TOOLKIT_VERSION = '1.9.0';
+export const TOOLKIT_VERSION = '1.9.1';
 export const TEMPLATE_VERSION = 'rnoh-0.82.29';
 export const RNOH_VERSION = '0.82.29';
 export const RNOH_CLI_VERSION = '0.82.29';
