@@ -103,6 +103,9 @@ async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
           type: 'HarmonyOS',
           material: {
             storeFile: './signing/release.p12',
+            storePassword: 'release-store-password',
+            keyAlias: 'release-key',
+            keyPassword: 'release-key-password',
           },
         },
       ],
@@ -154,6 +157,41 @@ async function createFakeHarArchive(
   for (const [relativePath, contents] of Object.entries(extraFiles)) {
     await fs.outputFile(path.join(packageRoot, relativePath), contents);
   }
+  await fs.ensureDir(path.dirname(targetPath));
+  await execFileAsync('tar', ['-czf', targetPath, '-C', stagingRoot, 'package']);
+  await fs.remove(stagingRoot);
+}
+
+async function createFakeHarArchiveWithSymlink(
+  targetPath: string,
+  packageName: string,
+  symlinkRelativePath: string,
+  symlinkTarget: string,
+): Promise<void> {
+  const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-har-fixture-'));
+  const packageRoot = path.join(stagingRoot, 'package');
+  const moduleName = path
+    .basename(packageName)
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  await fs.outputFile(
+    path.join(packageRoot, 'oh-package.json5'),
+    JSON.stringify({ name: packageName, version: '1.0.0' }),
+  );
+  await fs.outputFile(
+    path.join(packageRoot, 'src', 'main', 'module.json'),
+    JSON.stringify({
+      module: {
+        name: moduleName,
+        type: 'har',
+        packageName,
+      },
+    }),
+  );
+  await fs.ensureDir(path.dirname(path.join(packageRoot, symlinkRelativePath)));
+  await fs.ensureDir(symlinkTarget);
+  await fs.symlink(symlinkTarget, path.join(packageRoot, symlinkRelativePath), 'dir');
   await fs.ensureDir(path.dirname(targetPath));
   await execFileAsync('tar', ['-czf', targetPath, '-C', stagingRoot, 'package']);
   await fs.remove(stagingRoot);
@@ -231,7 +269,11 @@ describe('bundle and HAP build reports', () => {
       },
     });
 
-    expect(report.status).toBe('succeeded');
+    expect({
+      status: report.status,
+      blockingIssues: report.blockingIssues,
+      warnings: report.warnings,
+    }).toMatchObject({ status: 'succeeded' });
     expect(report.mode).toBe('debug');
     expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
     expect(report.steps.map((step) => step.label)).toEqual([
@@ -581,7 +623,25 @@ describe('bundle and HAP build reports', () => {
   it('builds debug and release HAPs when local signing is configured through signing.local.json', async () => {
     const projectRoot = await createTempFixture(appShellSampleRoot);
     const devecoRoot = await createFakeDevEcoStudio(projectRoot);
-    const runner = createSuccessfulRunner();
+    const baseRunner = createSuccessfulRunner();
+    let assembleCount = 0;
+    const runner: CommandRunner = async (file, args, options) => {
+      if (args.includes('assembleHap')) {
+        assembleCount += 1;
+        const buildProfileContents = await fs.readFile(
+          path.join(options.cwd, 'build-profile.json5'),
+          'utf8',
+        );
+        if (assembleCount === 1) {
+          expect(buildProfileContents).not.toContain('release-store-password');
+          expect(buildProfileContents).not.toContain('release-key-password');
+        } else {
+          expect(buildProfileContents).toContain('release-store-password');
+          expect(buildProfileContents).toContain('release-key-password');
+        }
+      }
+      return baseRunner(file, args, options);
+    };
 
     await initProject(projectRoot, true);
     await writeLocalSigningConfig(projectRoot);
@@ -616,6 +676,12 @@ describe('bundle and HAP build reports', () => {
     expect(releaseReport.status).toBe('succeeded');
     expect(releaseReport.blockingIssues).toHaveLength(0);
     expect(releaseReport.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
+    const restoredBuildProfileContents = await fs.readFile(
+      path.join(projectRoot, 'harmony', 'build-profile.json5'),
+      'utf8',
+    );
+    expect(restoredBuildProfileContents).not.toContain('release-store-password');
+    expect(restoredBuildProfileContents).not.toContain('release-key-password');
   }, 120000);
 
   it('bootstraps the Harmony sidecar during build-hap when the project has not been initialized yet', async () => {
@@ -1022,7 +1088,7 @@ describe('bundle and HAP build reports', () => {
       if (args.includes('assembleHap')) {
         expect(await fs.pathExists(rnohGeneratedTsShimPath)).toBe(false);
         expect(await fs.readFile(path.join(options.cwd, 'entry', 'hvigorfile.ts'), 'utf8')).toContain(
-          "rnohModulePath: './expo-harmony-local-deps/rnoh-react-native-openharmony-react_native_openharmony'",
+          'rnohModulePath: "./expo-harmony-local-deps/rnoh-react-native-openharmony-react_native_openharmony"',
         );
         const hapPath = path.join(
           options.cwd,
@@ -1062,6 +1128,132 @@ describe('bundle and HAP build reports', () => {
 
     expect(report.status).toBe('succeeded');
     expect(await fs.pathExists(rnohGeneratedTsShimPath)).toBe(true);
+  }, 120000);
+
+  it('escapes normalized RNOH HAR paths before rewriting hvigorfile.ts', async () => {
+    const projectRoot = await createTempFixture(appShellSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await initProject(projectRoot, true);
+
+    const maliciousHarName =
+      "react_native_openharmony', injected: require('node:fs').writeFileSync('owned','x'), x:'.har";
+    const maliciousHarPath = path.join(
+      projectRoot,
+      'node_modules',
+      '@react-native-oh',
+      'react-native-harmony',
+      maliciousHarName,
+    );
+    await createFakeHarArchive(maliciousHarPath, '@rnoh/react-native-openharmony');
+
+    const writeMaliciousRnohHarSpecifiers = async () => {
+      for (const relativePackagePath of [
+        path.join('harmony', 'oh-package.json5'),
+        path.join('harmony', 'entry', 'oh-package.json5'),
+      ]) {
+        const packagePath = path.join(projectRoot, relativePackagePath);
+        const packageContents = JSON5.parse(await fs.readFile(packagePath, 'utf8')) as {
+          dependencies?: Record<string, string>;
+          overrides?: Record<string, string>;
+        };
+        const relativeHarPath = path
+          .relative(path.join(projectRoot, 'harmony'), maliciousHarPath)
+          .split(path.sep)
+          .join('/');
+        if (packageContents.dependencies?.['@rnoh/react-native-openharmony']) {
+          packageContents.dependencies['@rnoh/react-native-openharmony'] = `file:${relativeHarPath}`;
+        }
+        if (packageContents.overrides?.['@rnoh/react-native-openharmony']) {
+          packageContents.overrides['@rnoh/react-native-openharmony'] = `file:${relativeHarPath}`;
+        }
+        await fs.writeFile(packagePath, JSON.stringify(packageContents, null, 2) + '\n');
+      }
+    };
+
+    let sawEscapedHvigorPath = false;
+    const baseRunner = createSuccessfulRunner();
+    const runner: CommandRunner = async (file, args, options) => {
+      if (args.includes('bundle-harmony')) {
+        const result = await baseRunner(file, args, options);
+        await writeMaliciousRnohHarSpecifiers();
+        return result;
+      }
+      if (args.includes('assembleHap')) {
+        const hvigorContents = await fs.readFile(path.join(options.cwd, 'entry', 'hvigorfile.ts'), 'utf8');
+        expect(hvigorContents).not.toContain('injected:');
+        expect(hvigorContents).toContain(
+          'rnohModulePath: "./expo-harmony-local-deps/rnoh-react-native-openharmony-react_native_openharmony-injected',
+        );
+        sawEscapedHvigorPath = true;
+      }
+      return baseRunner(file, args, options);
+    };
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(sawEscapedHvigorPath).toBe(true);
+  }, 120000);
+
+  it('rejects normalized HAR archives that contain symlinks before compatibility writes', async () => {
+    const projectRoot = await createTempFixture(appShellSampleRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await initProject(projectRoot, true);
+
+    const gestureHandlerHarPath = path.join(
+      projectRoot,
+      'node_modules',
+      '@react-native-oh-tpl',
+      'react-native-gesture-handler',
+      'harmony',
+      'gesture_handler.har',
+    );
+    const outsideTarget = path.join(projectRoot, '..', 'outside-har-target');
+    await createFakeHarArchiveWithSymlink(
+      gestureHandlerHarPath,
+      '@react-native-oh-tpl/react-native-gesture-handler',
+      path.join('src', 'main', 'cpp', 'generated'),
+      outsideTarget,
+    );
+
+    const harmonyRootPackagePath = path.join(projectRoot, 'harmony', 'oh-package.json5');
+    const harmonyRootPackage = JSON5.parse(await fs.readFile(harmonyRootPackagePath, 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+    harmonyRootPackage.dependencies['@react-native-oh-tpl/react-native-gesture-handler'] =
+      'file:../node_modules/@react-native-oh-tpl/react-native-gesture-handler/harmony/gesture_handler.har';
+    await fs.writeFile(harmonyRootPackagePath, JSON.stringify(harmonyRootPackage, null, 2) + '\n');
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner: createSuccessfulRunner(),
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('failed');
+    expect(report.blockingIssues[0]?.message).toContain('Symbolic links are not allowed');
+    expect(
+      await fs.pathExists(path.join(outsideTarget, 'RNGestureHandlerButtonComponentDescriptor.h')),
+    ).toBe(false);
+    expect(
+      await fs.pathExists(path.join(outsideTarget, 'RNGestureHandlerRootViewComponentDescriptor.h')),
+    ).toBe(false);
   }, 120000);
 
   it('temporarily normalizes the project-local RNOH CLI autolinking template for hvigor builds', async () => {

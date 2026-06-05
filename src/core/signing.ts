@@ -21,6 +21,10 @@ type SigningLocalAppFragment = {
   products?: JsonRecord[];
 };
 
+interface MergeSigningOptions {
+  includeSecrets?: boolean;
+}
+
 export function getSigningLocalPath(projectRoot: string): string {
   return path.join(projectRoot, GENERATED_DIR, SIGNING_LOCAL_FILENAME);
 }
@@ -43,13 +47,14 @@ export async function readSigningLocalConfig(projectRoot: string): Promise<Signi
 export function mergeSigningLocalConfigIntoBuildProfile(
   rawBuildProfileContents: string,
   signingLocalConfig: SigningLocalAppFragment | null,
+  options: MergeSigningOptions = {},
 ): string {
   if (!signingLocalConfig) {
     return rawBuildProfileContents;
   }
 
   const parsed = JSON5.parse(rawBuildProfileContents) as BuildProfile;
-  const merged = mergeSigningLocalConfig(parsed, signingLocalConfig);
+  const merged = mergeSigningLocalConfig(parsed, signingLocalConfig, options);
 
   return JSON.stringify(merged, null, 2) + '\n';
 }
@@ -139,6 +144,7 @@ function normalizeSigningLocalConfig(rawConfig: unknown): SigningLocalAppFragmen
 function mergeSigningLocalConfig(
   buildProfile: BuildProfile,
   signingLocalConfig: SigningLocalAppFragment,
+  options: MergeSigningOptions,
 ): BuildProfile {
   const nextBuildProfile: BuildProfile = {
     ...buildProfile,
@@ -150,7 +156,9 @@ function mergeSigningLocalConfig(
   };
 
   if (Array.isArray(signingLocalConfig.signingConfigs)) {
-    nextBuildProfile.app!.signingConfigs = signingLocalConfig.signingConfigs.map((entry) => ({ ...entry }));
+    nextBuildProfile.app!.signingConfigs = signingLocalConfig.signingConfigs.map((entry) =>
+      cloneSigningConfigForBuildProfile(entry, options),
+    );
   }
 
   if (Array.isArray(signingLocalConfig.products)) {
@@ -183,6 +191,29 @@ function mergeSigningLocalConfig(
   }
 
   return nextBuildProfile;
+}
+
+function cloneSigningConfigForBuildProfile(
+  entry: JsonRecord,
+  options: MergeSigningOptions,
+): JsonRecord {
+  const nextEntry = { ...entry };
+
+  if (options.includeSecrets) {
+    return nextEntry;
+  }
+
+  delete nextEntry.storePassword;
+  delete nextEntry.keyPassword;
+
+  if (isJsonRecord(nextEntry.material)) {
+    const material = { ...nextEntry.material };
+    delete material.storePassword;
+    delete material.keyPassword;
+    nextEntry.material = material;
+  }
+
+  return nextEntry;
 }
 
 function hasNonEmptySigningConfigList(signingConfigs: unknown): boolean {

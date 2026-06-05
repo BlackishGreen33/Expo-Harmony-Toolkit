@@ -44,6 +44,9 @@ async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
           type: 'HarmonyOS',
           material: {
             storeFile: './signing/release.p12',
+            storePassword: 'release-store-password',
+            keyAlias: 'release-key',
+            keyPassword: 'release-key-password',
           },
         },
       ],
@@ -123,7 +126,7 @@ describe('init project', () => {
     ).toBe(true);
   });
 
-  it('merges local signing input into the managed Harmony build profile', async () => {
+  it('merges non-secret local signing input into the managed Harmony build profile', async () => {
     const projectRoot = await createTempFixture();
     await writeLocalSigningConfig(projectRoot);
 
@@ -140,6 +143,11 @@ describe('init project', () => {
 
     expect(buildProfileContents).toContain('"signingConfigs"');
     expect(buildProfileContents).toContain('"storeFile": "./signing/release.p12"');
+    expect(buildProfileContents).toContain('"keyAlias": "release-key"');
+    expect(buildProfileContents).not.toContain('release-store-password');
+    expect(buildProfileContents).not.toContain('release-key-password');
+    expect(buildProfileContents).not.toContain('"storePassword"');
+    expect(buildProfileContents).not.toContain('"keyPassword"');
     expect(buildProfileContents).toContain('"signingConfig": "default"');
     expect(signingExampleContents).toContain('<replace-with-store-password>');
   });

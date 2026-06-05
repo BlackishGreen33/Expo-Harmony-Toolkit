@@ -8,7 +8,7 @@
 
 - DevEco Studio / Harmony SDK 已正确安装
 - 项目已生成 `harmony/`
-- `harmony/build-profile.json5` 中存在可用的 `signingConfigs`
+- `.expo-harmony/signing.local.json` 中存在可用的 `signingConfigs`
 - AppGallery Connect / 本地签名材料与工程配置一致
 
 `.expo-harmony/signing.local.json` 的最小结构与 `.expo-harmony/signing.local.example.json` 一致：
@@ -58,6 +58,8 @@ expo-harmony env
 - `debug` 构建仍可继续做本地验证
 - `release` 构建不应视为 ready
 - 可以直接从 `.expo-harmony/signing.local.example.json` 复制出 `.expo-harmony/signing.local.json` 再填入真实材料
+
+`expo-harmony init` / `sync-template` 只会把非密钥 signing 引用写入可版本化的 `harmony/build-profile.json5`。`storePassword` 与 `keyPassword` 只应保留在 `.expo-harmony/signing.local.json`；`build-hap --mode release` 会在本地构建期间临时注入这些 secret，并在 Hvigor 结束后恢复 `build-profile.json5`。
 
 ## 推荐流程
 

@@ -117,11 +117,12 @@ async function extractHarArchiveToDirectory(
 
   const destinationPath = path.join(
     extractionRoot,
-    `${sanitizePackageName(packageName)}-${path.basename(archivePath, path.extname(archivePath))}`,
+    `${sanitizePackageName(packageName)}-${sanitizePathComponent(path.basename(archivePath, path.extname(archivePath)))}`,
   );
   const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-har-'));
 
   try {
+    await validateHarArchiveMemberNames(archivePath);
     await execFileAsync('tar', ['-xzf', archivePath, '-C', stagingRoot], {
       maxBuffer: 20 * 1024 * 1024,
     });
@@ -130,6 +131,7 @@ async function extractHarArchiveToDirectory(
     const sourceRoot = (await fs.pathExists(path.join(packagedRoot, 'oh-package.json5')))
       ? packagedRoot
       : stagingRoot;
+    await validateExtractedHarTree(sourceRoot, stagingRoot);
 
     if (!(await fs.pathExists(path.join(sourceRoot, 'oh-package.json5')))) {
       throw new Error(`oh-package.json5 not found after extracting ${archivePath}`);
@@ -156,7 +158,74 @@ async function extractHarArchiveToDirectory(
 }
 
 function sanitizePackageName(packageName: string): string {
-  return packageName.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  return sanitizePathComponent(packageName);
+}
+
+function sanitizePathComponent(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'archive';
+}
+
+async function validateHarArchiveMemberNames(archivePath: string): Promise<void> {
+  const { stdout } = await execFileAsync('tar', ['-tzf', archivePath], {
+    maxBuffer: 20 * 1024 * 1024,
+  });
+
+  for (const rawMemberName of stdout.split('\n')) {
+    const memberName = rawMemberName.trim();
+    if (!memberName) {
+      continue;
+    }
+
+    const segments = memberName.split('/').filter(Boolean);
+    if (
+      path.isAbsolute(memberName) ||
+      memberName.includes('\\') ||
+      segments.some((segment) => segment === '..')
+    ) {
+      throw new Error(`Unsafe path in local Harmony archive: ${memberName}`);
+    }
+  }
+}
+
+async function validateExtractedHarTree(rootPath: string, stagingRoot: string): Promise<void> {
+  const stagingRealPath = await fs.realpath(stagingRoot);
+  const rootRealPath = await fs.realpath(rootPath);
+  if (!isPathInside(rootRealPath, stagingRealPath)) {
+    throw new Error(`Extracted local Harmony archive root escaped the staging directory: ${rootPath}`);
+  }
+
+  await walkExtractedHarTree(rootPath, rootRealPath);
+}
+
+async function walkExtractedHarTree(currentPath: string, rootRealPath: string): Promise<void> {
+  const currentStats = await fs.lstat(currentPath);
+  if (currentStats.isSymbolicLink()) {
+    throw new Error(`Symbolic links are not allowed in local Harmony archives: ${currentPath}`);
+  }
+  if (currentStats.isFile() && currentStats.nlink > 1) {
+    throw new Error(`Hard links are not allowed in local Harmony archives: ${currentPath}`);
+  }
+  if (!currentStats.isDirectory() && !currentStats.isFile()) {
+    throw new Error(`Unsupported file type in local Harmony archive: ${currentPath}`);
+  }
+
+  const currentRealPath = await fs.realpath(currentPath);
+  if (!isPathInside(currentRealPath, rootRealPath)) {
+    throw new Error(`Extracted local Harmony archive entry escaped the package directory: ${currentPath}`);
+  }
+
+  if (!currentStats.isDirectory()) {
+    return;
+  }
+
+  for (const entryName of await fs.readdir(currentPath)) {
+    await walkExtractedHarTree(path.join(currentPath, entryName), rootRealPath);
+  }
+}
+
+function isPathInside(candidatePath: string, parentPath: string): boolean {
+  const relativePath = path.relative(parentPath, candidatePath);
+  return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
 }
 
 async function readNormalizedLocalHarPackageMetadata(
@@ -499,7 +568,7 @@ export async function alignRnohCodegenWithNormalizedLocalPackage(
 
   const updatedHvigorFile = originalHvigorFile.replace(
     /rnohModulePath:\s*['"][^'"]+['"]/,
-    `rnohModulePath: '${relativeRnohModulePath}'`,
+    `rnohModulePath: ${JSON.stringify(relativeRnohModulePath)}`,
   );
   if (updatedHvigorFile !== originalHvigorFile) {
     await fs.writeFile(hvigorFilePath, updatedHvigorFile);

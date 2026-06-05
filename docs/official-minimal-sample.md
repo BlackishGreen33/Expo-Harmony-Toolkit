@@ -45,7 +45,7 @@ pnpm run harmony:build:release
 
 - `.expo-harmony/signing.local.example.json` 是可直接复制的本地 signing 範本
 - `.expo-harmony/signing.local.json` 是本地 signing 入口
-- toolkit 会把本地 signing 合并进 `harmony/build-profile.json5`
+- toolkit 只会把非密钥 signing 引用写进 `harmony/build-profile.json5`；`storePassword` 与 `keyPassword` 会留在本地 signing 文件，并在 release build 期间临时注入
 - 如果 signing 没配置，`harmony:env` 会明确报缺失；这属于预期阻断
 
 ## 不覆盖的内容

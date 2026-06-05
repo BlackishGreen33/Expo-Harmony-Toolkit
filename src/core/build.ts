@@ -35,6 +35,10 @@ import {
   renderBuildReport,
 } from './build/reporting';
 import { normalizeProjectRnohCliAutolinkingTemplates } from './build/rnohCompatibility';
+import {
+  mergeSigningLocalConfigIntoBuildProfile,
+  readSigningLocalConfig,
+} from './signing';
 
 export type { CommandRunner, CommandRunnerResult } from './build/commands';
 export { renderBuildReport } from './build/reporting';
@@ -364,6 +368,7 @@ export async function buildHapProject(
   let restoreNormalizedRnohCliAutolinkingTemplates = async () => {};
   let restoreNormalizedRnohCodegenAlignment = async () => {};
   let restoreNormalizedHarmonyPackageJsons = async () => {};
+  let restoreLocalSigningBuildProfile = async () => {};
 
   if (!skipHarNormalize) {
     try {
@@ -449,6 +454,12 @@ export async function buildHapProject(
       await patchRnohGeneratedCodegenForNormalizedLocalPackage(harmonyProjectRoot);
     }
     await patchKnownHarmonyAdapterCodegenOutputs(harmonyProjectRoot);
+    if (options.mode === 'release') {
+      restoreLocalSigningBuildProfile = await temporarilyMergeLocalSigningIntoBuildProfile(
+        loadedProject.projectRoot,
+        harmonyProjectRoot,
+      );
+    }
 
     const hvigorCommand = buildInvocation(envReport.hvigorPath as string, [
       'assembleHap',
@@ -508,12 +519,45 @@ export async function buildHapProject(
       steps,
     });
   } finally {
+    await restoreLocalSigningBuildProfile();
     await restoreNormalizedHarmonyPackageJsons();
     await restoreNormalizedRnohCodegenAlignment();
     await restoreNormalizedRnohCliAutolinkingTemplates();
     await restoreNormalizedLocalHarModules();
     await restoreNormalizedDependencies();
   }
+}
+
+async function temporarilyMergeLocalSigningIntoBuildProfile(
+  projectRoot: string,
+  harmonyProjectRoot: string,
+): Promise<() => Promise<void>> {
+  const signingLocalConfig = await readSigningLocalConfig(projectRoot);
+  if (!signingLocalConfig) {
+    return async () => {};
+  }
+
+  const buildProfilePath = path.join(harmonyProjectRoot, 'build-profile.json5');
+  if (!(await fs.pathExists(buildProfilePath))) {
+    return async () => {};
+  }
+
+  const originalContents = await fs.readFile(buildProfilePath, 'utf8');
+  const nextContents = mergeSigningLocalConfigIntoBuildProfile(
+    originalContents,
+    signingLocalConfig,
+    { includeSecrets: true },
+  );
+
+  if (nextContents === originalContents) {
+    return async () => {};
+  }
+
+  await fs.writeFile(buildProfilePath, nextContents);
+
+  return async () => {
+    await fs.writeFile(buildProfilePath, originalContents);
+  };
 }
 
 export function getDesiredHarmonyScripts(projectRoot: string): Promise<Record<string, string>> {
