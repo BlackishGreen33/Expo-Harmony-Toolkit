@@ -152,19 +152,19 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   '@react-native-async-storage/async-storage': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'Async storage is a high-frequency startup dependency. Treat it as an experimental Harmony intake dependency until the managed adapter path has stable doctor, sample, and build coverage.',
+    note: 'v1.9.2 Wave A tracks Async Storage through its Harmony adapter, but persistence behavior still needs device and release evidence before verified promotion.',
     docsUrl: 'https://github.com/react-native-oh-library',
   },
   'react-native-safe-area-context': {
-    status: 'supported',
+    status: 'manual',
     supportTier: 'experimental',
-    note: 'Safe-area handling is shimmed by the toolkit for Harmony so App Shell layouts can keep rendering while the native path remains outside the verified matrix.',
+    note: 'v1.9.2 Wave A formalizes the toolkit-managed safe-area shim while real native inset measurement remains outside the verified matrix.',
     docsUrl: 'https://github.com/react-native-oh-library',
   },
   'react-native-screens': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'Navigation stacks frequently depend on react-native-screens. Keep it on the experimental lane until the Harmony adapter path has repeatable sample and device coverage.',
+    note: 'v1.9.2 Wave A tracks Screens through its Harmony adapter metadata; navigation-stack runtime behavior still needs device and release evidence.',
     docsUrl: 'https://github.com/react-native-oh-library',
   },
   'react-native-webview': {

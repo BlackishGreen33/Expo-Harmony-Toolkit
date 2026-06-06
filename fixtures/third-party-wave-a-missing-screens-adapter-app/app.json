@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Missing Screens Adapter Fixture",
+    "slug": "missing-screens-adapter-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.missingscreensadapter"
+    }
+  }
+}

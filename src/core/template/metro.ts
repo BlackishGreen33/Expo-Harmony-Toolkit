@@ -6,8 +6,10 @@ export function renderMetroConfig(
   const previewCapabilityAliases = enabledCapabilities
     .filter(
       (capability) =>
-        capability.supportTier === 'preview' ||
-        capability.supportTier === 'experimental',
+        capability.packageName !== 'react-native-safe-area-context' &&
+        (capability.packageName.startsWith('expo-') || capability.runtimeMode === 'shim') &&
+        (capability.supportTier === 'preview' ||
+          capability.supportTier === 'experimental'),
     )
     .map(
       (capability) =>

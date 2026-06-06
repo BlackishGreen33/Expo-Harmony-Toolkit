@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Missing Async Storage Adapter Fixture",
+    "slug": "missing-async-storage-adapter-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.missingasyncstorageadapter"
+    }
+  }
+}

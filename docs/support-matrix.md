@@ -14,7 +14,7 @@
 - bare workflow 与第三方 native package 不再被描述成“收官后才考虑的另一条 extension 终局”
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
-- `v1.9.0` 新增的是 bare intake baseline、app foundation preview shim baseline 与 `react-native-gesture-handler` formal experimental slice，不是 verified 扩容
+- `v1.9.2` 新增的是 Third-party Native Wave A formal experimental onboarding，不是 verified 扩容
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -138,6 +138,9 @@
 | --- | --- | --- | --- | --- |
 | `expo-notifications` | `experimental` | `shim` | `bundle=no, debugBuild=no, device=no, release=no` | 服务链路与交付故事未打通 |
 | `react-native-gesture-handler` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.0 formal acceptance slice；必须与 `@react-native-oh-tpl/react-native-gesture-handler` 成对接入，仍不在公开 verified 矩阵内 |
+| `@react-native-async-storage/async-storage` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；必须与 `@react-native-oh-tpl/async-storage` 成对接入，持久化行为仍需 device / release evidence |
+| `react-native-screens` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；必须与 `@react-native-oh-tpl/react-native-screens` 成对接入，navigation-stack runtime 仍需 evidence |
+| `react-native-safe-area-context` | `experimental` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；当前仍走 toolkit-managed safe-area shim，不切换到 native adapter |
 
 ## UI Stack 配对规则
 
@@ -269,6 +272,7 @@ toolkit 受管的核心产物仍包括：
 
 - bare Expo；当前只进入 intake / debug baseline
 - `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 当前仍只是 preview shim baseline
+- `@react-native-async-storage/async-storage`、`react-native-screens`、`react-native-safe-area-context` 当前仍只是 Wave A experimental onboarding
 - 多 Expo / RNOH 并行 verified 矩阵
 - 任意第三方 native package 的即时正式承诺
 

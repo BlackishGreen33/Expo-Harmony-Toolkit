@@ -22,6 +22,7 @@ const nativeCapabilitiesSampleRoot = path.join(
   'official-native-capabilities-sample',
 );
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
+const thirdPartyWaveAFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-a-app');
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const execFileAsync = promisify(execFile);
 const FAKE_NOOP_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
@@ -255,6 +256,75 @@ describe('bundle and HAP build reports', () => {
 
     expect(report.status).toBe('succeeded');
     expect(metroConfig).toContain("'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')");
+  }, 120000);
+
+  it('keeps third-party Wave A adapter packages on node resolution while safe-area stays shimmed', async () => {
+    const projectRoot = await createTempFixture(thirdPartyWaveAFixtureRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    const runner = createSuccessfulRunner();
+
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'async-storage',
+        'harmony',
+        'async_storage.har',
+      ),
+      '@react-native-oh-tpl/async-storage',
+    );
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'react-native-screens',
+        'harmony',
+        'screens.har',
+      ),
+      '@react-native-oh-tpl/react-native-screens',
+    );
+
+    const bundleReport = await bundleProject(projectRoot, {
+      runner,
+    });
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+    const safeAreaShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'react-native-safe-area-context', 'index.js'),
+      'utf8',
+    );
+    const harmonyRootPackage = JSON5.parse(
+      await fs.readFile(path.join(projectRoot, 'harmony', 'oh-package.json5'), 'utf8'),
+    ) as {
+      dependencies: Record<string, string>;
+    };
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(bundleReport.status).toBe('succeeded');
+    expect(metroConfig).toContain("'react-native-safe-area-context'");
+    expect(metroConfig).not.toContain("'.expo-harmony/shims/@react-native-async-storage/async-storage'");
+    expect(metroConfig).not.toContain("'.expo-harmony/shims/react-native-screens'");
+    expect(safeAreaShim).toContain('SafeAreaProvider');
+    expect(safeAreaShim).toContain('withSafeAreaInsets');
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/async-storage']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/async-storage/harmony/async_storage.har',
+    );
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/react-native-screens']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/react-native-screens/harmony/screens.har',
+    );
+    expect(report.status).toBe('succeeded');
+    expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
   }, 120000);
 
   it('records a debug HAP baseline for the dedicated bare workflow fixture with the fake runner', async () => {

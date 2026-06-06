@@ -26,6 +26,7 @@ import {
   renderExpoLocationHarmonyAdapterShim,
   renderExpoLocationPreviewShim,
 } from './renderers/location';
+import { renderReactNativeSafeAreaContextHarmonyShim } from './runtimeShims';
 
 type CapabilityShimRenderers = {
   adapter: (capability: CapabilityDefinition) => string;
@@ -73,6 +74,10 @@ const CAPABILITY_SHIM_RENDERERS: Record<string, CapabilityShimRenderers> = {
   'expo-haptics': {
     adapter: renderExpoHapticsPreviewShim,
     preview: renderExpoHapticsPreviewShim,
+  },
+  'react-native-safe-area-context': {
+    adapter: renderReactNativeSafeAreaContextHarmonyShim,
+    preview: renderReactNativeSafeAreaContextHarmonyShim,
   },
 };
 

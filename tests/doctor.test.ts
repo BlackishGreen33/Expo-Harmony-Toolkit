@@ -22,6 +22,19 @@ const verifiedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'verified-app
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
+const thirdPartyWaveAFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-a-app');
+const missingAsyncStorageAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-a-missing-async-storage-adapter-app',
+);
+const missingScreensAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-a-missing-screens-adapter-app',
+);
 const thirdPartyNativeGapRoot = path.join(__dirname, '..', 'fixtures', 'third-party-native-gap-app');
 const minimalRouterRoot = path.join(__dirname, '..', 'fixtures', 'minimal-router-app');
 const routerMissingPluginRoot = path.join(__dirname, '..', 'fixtures', 'router-missing-plugin-app');
@@ -527,6 +540,131 @@ describe('doctor report', () => {
       report.blockingIssues.some(
         (issue) =>
           issue.code === 'dependency.not_allowed' && issue.subject === 'react-native-gesture-handler',
+      ),
+    ).toBe(true);
+  });
+
+  it('classifies third-party Wave A as formal experimental capabilities without widening preview', async () => {
+    const strictReport = await buildDoctorReport(thirdPartyWaveAFixtureRoot);
+    const previewReport = await buildDoctorReport(thirdPartyWaveAFixtureRoot, {
+      targetTier: 'preview',
+    });
+    const experimentalReport = await buildDoctorReport(thirdPartyWaveAFixtureRoot, {
+      targetTier: 'experimental',
+    });
+    const capabilityById = new Map(
+      experimentalReport.capabilities.map((capability) => [capability.id, capability]),
+    );
+
+    expect(strictReport.eligibility).toBe('ineligible');
+    expect(previewReport.eligibility).toBe('ineligible');
+    expect(experimentalReport.eligibility).toBe('eligible');
+    expect(experimentalReport.coverageProfile).toBe('third-party-native-heavy');
+    expect(experimentalReport.capabilities.map((capability) => capability.id)).toEqual([
+      'async-storage',
+      'react-native-safe-area-context',
+      'react-native-screens',
+    ]);
+
+    expect(capabilityById.get('async-storage')?.runtimeMode).toBe('adapter');
+    expect(capabilityById.get('async-storage')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/async-storage',
+    ]);
+    expect(capabilityById.get('react-native-screens')?.runtimeMode).toBe('adapter');
+    expect(capabilityById.get('react-native-screens')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/react-native-screens',
+    ]);
+    expect(capabilityById.get('react-native-safe-area-context')?.runtimeMode).toBe('shim');
+    expect(capabilityById.get('react-native-safe-area-context')?.nativePackageNames).toEqual([]);
+
+    for (const capability of experimentalReport.capabilities) {
+      expect(capability.supportTier).toBe('experimental');
+      expect(capability.evidence.bundle).toBe(true);
+      expect(capability.evidence.debugBuild).toBe(true);
+      expect(capability.evidence.device).toBe(false);
+      expect(capability.evidence.release).toBe(false);
+      expect(capability.evidenceSource.bundle).toBe('automated');
+      expect(capability.evidenceSource.debugBuild).toBe('automated');
+      expect(capability.evidenceSource.device).toBe('none');
+      expect(capability.evidenceSource.release).toBe('none');
+    }
+
+    expect(
+      strictReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.not_allowed' &&
+          issue.subject === '@react-native-async-storage/async-storage',
+      ),
+    ).toBe(true);
+    expect(
+      previewReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.not_allowed' &&
+          issue.subject === 'react-native-screens',
+      ),
+    ).toBe(true);
+    expect(
+      experimentalReport.blockingIssues.some((issue) => issue.code === 'dependency.not_allowed'),
+    ).toBe(false);
+    expect(experimentalReport.nextActions).toContain(
+      'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
+    );
+  });
+
+  it('requires formal Wave A adapters for async-storage and screens in both directions', async () => {
+    const missingAsyncStorageReport = await buildDoctorReport(missingAsyncStorageAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const missingScreensReport = await buildDoctorReport(missingScreensAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const asyncStorageAdapterOnlyRoot = await createDoctorFixtureFromSample();
+    const screensAdapterOnlyRoot = await createDoctorFixtureFromSample();
+
+    await addFakeDependency(
+      asyncStorageAdapterOnlyRoot,
+      '@react-native-oh-tpl/async-storage',
+      '1.21.0-0.2.2',
+    );
+    await addFakeDependency(
+      screensAdapterOnlyRoot,
+      '@react-native-oh-tpl/react-native-screens',
+      '4.8.1-rc.3',
+    );
+
+    const asyncStorageAdapterOnlyReport = await buildDoctorReport(asyncStorageAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+    const screensAdapterOnlyReport = await buildDoctorReport(screensAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+
+    expect(
+      missingAsyncStorageReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/async-storage',
+      ),
+    ).toBe(true);
+    expect(
+      missingScreensReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/react-native-screens',
+      ),
+    ).toBe(true);
+    expect(
+      asyncStorageAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-async-storage/async-storage',
+      ),
+    ).toBe(true);
+    expect(
+      screensAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === 'react-native-screens',
       ),
     ).toBe(true);
   });

@@ -1,0 +1,20 @@
+{
+  "name": "third-party-wave-a-missing-screens-adapter-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "harmony:bundle": "expo-harmony bundle"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-community/cli": "^20.1.2",
+    "@react-native-oh/react-native-harmony": "0.82.29",
+    "@react-native-oh/react-native-harmony-cli": "0.82.29",
+    "expo": "^55.0.8",
+    "expo-status-bar": "~3.0.8",
+    "metro": "^0.83.1",
+    "react": "19.1.1",
+    "react-native": "0.82.1",
+    "react-native-screens": "~4.16.0"
+  }
+}

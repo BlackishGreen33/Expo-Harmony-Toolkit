@@ -86,6 +86,12 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('bare workflow intake baseline');
     expect(readmeZh).toContain('`expo-secure-store`');
     expect(readmeEn).toContain('`expo-secure-store`');
+    expect(readmeZh).toContain('`@react-native-async-storage/async-storage`');
+    expect(readmeEn).toContain('`@react-native-async-storage/async-storage`');
+    expect(readmeZh).toContain('`react-native-screens`');
+    expect(readmeEn).toContain('`react-native-screens`');
+    expect(readmeZh).toContain('`react-native-safe-area-context`');
+    expect(readmeEn).toContain('`react-native-safe-area-context`');
     expect(readmeZh).toContain('./acceptance/');
     expect(readmeEn).toContain('./acceptance/');
     expect(readmeZh).toContain('./acceptance/v1.8.x-capability-board.md');
@@ -173,6 +179,7 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('Bare Workflow Baseline + App Foundation Modules');
     expect(roadmap).toContain('implementation baseline complete');
     expect(roadmap).toContain('Third-party Native Wave A');
+    expect(roadmap).toContain('formal experimental onboarding');
     expect(roadmap).toContain('Third-party Native Wave B + Regression Farm');
     expect(roadmap).toContain('Any-project Intake Freeze');
     expect(roadmap).toContain('Final Blocker Burn-down');
@@ -202,6 +209,7 @@ describe('documentation metadata', () => {
         'v1.8.x-expo-camera-device.md',
         'v1.8.x-expo-camera-release.md',
         'v1.9.0-acceptance.md',
+        'v1.9.2-acceptance.md',
       ]),
     );
   });

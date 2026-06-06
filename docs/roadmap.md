@@ -66,7 +66,7 @@
 
 ## 当前主线
 
-`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。`v1.9.0` 先落 bare workflow baseline、app foundation modules 与 `react-native-gesture-handler` formal slice；`v1.9.1` 作为 build-hap patch release，补上 HAR normalize opt-out，让已确认 ohpm 可直接消费纯 HAR 的项目可以绕过 `expo-harmony-local-deps`。剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
+`v1.8.x` 已完成 repo 内可收口项，当前主线切到 `v1.9.x`。`v1.9.0` 先落 bare workflow baseline、app foundation modules 与 `react-native-gesture-handler` formal slice；`v1.9.1` 作为 build-hap patch release，补上 HAR normalize opt-out；`v1.9.2` 推进 Third-party Native Wave A，把 async-storage、screens 与 safe-area 拉进 formal experimental onboarding。剩余需要真机或 release HAP 的证据继续保留在 v1.8.x capability board，不阻塞 v1.9.x 的 bare / foundation / third-party onboarding 工作。
 
 ### v1.8.0 Intake Hardening + Parallel Promotion
 
@@ -178,6 +178,8 @@
 
 目标日期：`2026-09-30`
 
+状态：implementation baseline complete；device / release evidence carryover。
+
 目标：优先清掉最容易挡住“任何 Expo 项目”的高频第三方 native blocker。
 
 - 第一批高频第三方 native blocker 进入正式 onboarding：
@@ -192,6 +194,11 @@
   - sample / fixture
   - debug + release evidence
 - 任何进入 Wave A 的 blocker，都不允许继续停留在“矩阵外模糊探索”
+- 本阶段发布为 `v1.9.2` 并进入 `latest`，但不改变 `verified` 边界：
+  - `@react-native-async-storage/async-storage` 以 `experimental` + `runtimeMode=adapter` 记录
+  - `react-native-screens` 以 `experimental` + `runtimeMode=adapter` 记录
+  - `react-native-safe-area-context` 以 `experimental` + `runtimeMode=shim` 记录
+  - `doctor --strict` 与 `doctor --target-tier preview` 仍阻断 Wave A
 
 ### v1.9.3 Third-party Native Wave B + Regression Farm
 

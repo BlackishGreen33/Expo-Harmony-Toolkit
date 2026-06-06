@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Third Party Wave A Fixture",
+    "slug": "third-party-wave-a-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.thirdpartywavea"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.thirdpartywavea"
+    }
+  }
+}

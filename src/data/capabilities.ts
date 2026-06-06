@@ -43,6 +43,20 @@ const APP_FOUNDATION_BASELINE_EVIDENCE_SOURCE = {
   release: 'none',
 } as const;
 
+const THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE = {
+  bundle: true,
+  debugBuild: true,
+  device: false,
+  release: false,
+} as const;
+
+const THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE_SOURCE = {
+  bundle: 'automated',
+  debugBuild: 'automated',
+  device: 'none',
+  release: 'none',
+} as const;
+
 export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
   {
     id: 'expo-file-system',
@@ -260,6 +274,63 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
       'Install the canonical package with the matching Harmony adapter.',
       'Bundle a minimal GestureHandlerRootView and tap handler surface.',
       'Record debug HAP evidence before any promotion decision; device and release remain separate gates.',
+    ],
+  },
+  {
+    id: 'async-storage',
+    packageName: '@react-native-async-storage/async-storage',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.2 Wave A tracks Async Storage through its Harmony adapter, but persistence behavior remains experimental until device and release evidence are closed.',
+    docsUrl: 'https://github.com/react-native-oh-library/usage-docs',
+    nativePackageNames: ['@react-native-oh-tpl/async-storage'],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-a/async-storage',
+    acceptanceChecklist: [
+      'Install the canonical package with the matching Harmony adapter.',
+      'Bundle a minimal Async Storage read/write/remove surface.',
+      'Keep real persistence, migration, and release HAP runtime behavior pending device evidence.',
+    ],
+  },
+  {
+    id: 'react-native-screens',
+    packageName: 'react-native-screens',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.2 Wave A tracks Screens through its Harmony adapter metadata, while managed autolinking and navigation-stack runtime behavior remain promotion gaps.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+    nativePackageNames: ['@react-native-oh-tpl/react-native-screens'],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-a/screens',
+    acceptanceChecklist: [
+      'Install the canonical package with the matching Harmony adapter.',
+      'Bundle a minimal navigation stack that imports react-native-screens.',
+      'Do not claim verified support until adapter autolinking, device, and release evidence are recorded.',
+    ],
+  },
+  {
+    id: 'react-native-safe-area-context',
+    packageName: 'react-native-safe-area-context',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'shim',
+    evidence: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.2 Wave A formalizes the existing toolkit safe-area shim so app-shell layouts keep bundling while native safe-area measurements stay outside verified.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+    nativePackageNames: [],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-a/safe-area',
+    acceptanceChecklist: [
+      'Render SafeAreaProvider, SafeAreaView, and safe-area hooks through the toolkit shim.',
+      'Keep the Metro alias on .expo-harmony/shims/react-native-safe-area-context.',
+      'Validate real native inset measurement separately before any adapter promotion.',
     ],
   },
 ] as const;

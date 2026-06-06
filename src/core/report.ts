@@ -58,10 +58,25 @@ const BARE_WORKFLOW_DIRECTORY_NAMES = ['android', 'ios'] as const;
 const BARE_WORKFLOW_DEPENDENCIES = new Set(['expo-build-properties', 'expo-dev-client']);
 const FORMAL_EXPERIMENTAL_ADAPTER_PAIRS = [
   {
+    canonicalPackageName: '@react-native-async-storage/async-storage',
+    adapterPackageName: '@react-native-oh-tpl/async-storage',
+  },
+  {
+    canonicalPackageName: 'react-native-screens',
+    adapterPackageName: '@react-native-oh-tpl/react-native-screens',
+  },
+  {
     canonicalPackageName: 'react-native-gesture-handler',
     adapterPackageName: '@react-native-oh-tpl/react-native-gesture-handler',
   },
 ] as const;
+const THIRD_PARTY_WAVE_A_PACKAGE_NAMES = new Set([
+  '@react-native-async-storage/async-storage',
+  '@react-native-oh-tpl/async-storage',
+  'react-native-screens',
+  '@react-native-oh-tpl/react-native-screens',
+  'react-native-safe-area-context',
+]);
 
 export async function buildDoctorReport(
   projectRoot: string,
@@ -699,9 +714,15 @@ function buildNextActions(input: {
       );
       break;
     case 'third-party-native-heavy':
-      actions.push(
-        'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
-      );
+      if (dependencies.some((dependency) => THIRD_PARTY_WAVE_A_PACKAGE_NAMES.has(dependency.name))) {
+        actions.push(
+          'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
+        );
+      } else {
+        actions.push(
+          'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
+        );
+      }
       break;
   }
 
