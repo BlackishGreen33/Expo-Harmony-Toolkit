@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Third Party Wave B Fixture",
+    "slug": "third-party-wave-b-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.thirdpartywaveb"
+    }
+  }
+}

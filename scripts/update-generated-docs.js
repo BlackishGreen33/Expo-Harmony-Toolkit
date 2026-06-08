@@ -78,6 +78,10 @@ function main() {
       content: render.renderSupportMatrixPreviewCapabilities('zh'),
     },
     {
+      marker: 'support-matrix-experimental-capabilities',
+      content: render.renderSupportMatrixExperimentalCapabilities('zh'),
+    },
+    {
       marker: 'support-matrix-ui-stack',
       content: render.renderSupportMatrixUiStackRules('zh'),
     },

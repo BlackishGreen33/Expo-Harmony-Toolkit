@@ -335,10 +335,29 @@ describe('init project', () => {
       './plugins/config-android-url-scheme.js',
       '@bacons/apple-targets',
       'mx-jpush-expo',
+      'react-native-edge-to-edge',
     ]);
     expect(toolkitConfig?.doctorConfig.excludeDependencies).toEqual(['@bacons/apple-targets']);
     expect(toolkitConfig?.nextActions).toContain(
       'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
+    );
+    expect(toolkitConfig?.capabilities.map((capability) => capability.id)).toEqual(
+      expect.arrayContaining([
+        'async-storage',
+        'expo-media-library',
+        'expo-notifications',
+        'jpush-react-native',
+        'lottie-react-native',
+        'react-native-skia',
+        'react-native-webview',
+      ]),
+    );
+    expect(toolkitConfig?.requestedHarmonyPermissions).toEqual(
+      expect.arrayContaining([
+        'ohos.permission.NOTIFICATION_CONTROLLER',
+        'ohos.permission.READ_IMAGEVIDEO',
+        'ohos.permission.WRITE_IMAGEVIDEO',
+      ]),
     );
   });
 });

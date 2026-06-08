@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.9.2` 延续 `verified + preview + experimental` 支持分层，把 Third-party Native Wave A 纳入 formal experimental onboarding；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.9.3` 延续 `verified + preview + experimental` 支持分层，把 ccnubox-first Third-party Native Wave B 纳入 formal experimental onboarding；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
@@ -51,6 +51,11 @@ expo-harmony build-hap --mode debug
 - `@react-native-async-storage/async-storage`
 - `react-native-screens`
 - `react-native-safe-area-context`
+- `react-native-webview`
+- `jpush-react-native`
+- `expo-media-library`
+- `lottie-react-native`
+- `@shopify/react-native-skia`
 
 ## UI stack 依赖安装注意事项
 
@@ -93,7 +98,7 @@ pnpm install --ignore-scripts
 
 额外说明：
 
-- `react-native-gesture-handler` 与 Wave A 第三方 native packages 已进入 formal experimental onboarding，但仍不属于 verified 公开承诺
+- `react-native-gesture-handler` 与 Wave A / Wave B 第三方 native packages 已进入 formal experimental onboarding，但仍不属于 verified 公开承诺
 - bare workflow 当前只有 intake / debug baseline，不代表 release-ready
 - `doctor --strict` 仍只代表完整验收的 verified 能力
 

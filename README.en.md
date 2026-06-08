@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.9.2-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.9.3-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.9.2` keeps the `v1.9.1` build-hap security baseline and brings `@react-native-async-storage/async-storage`, `react-native-screens`, and `react-native-safe-area-context` into Third-party Native Wave A formal experimental onboarding. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, and Wave A does not widen the current `verified` boundary.
+> `v1.9.3` keeps the `v1.9.2` Wave A baseline and brings ccnubox-first `react-native-webview`, JPush runtime, `expo-media-library`, `lottie-react-native`, and `@shopify/react-native-skia` into Third-party Native Wave B formal experimental onboarding. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, and Wave B does not widen the current `verified` boundary.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,13 +48,13 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.9.2` |
+| Current version | `v1.9.3` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects; bare workflow intake baseline |
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics` |
-| `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context` |
+| `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia` |
 | Release tracks | `latest` = fully accepted `verified` only; `next` = preview fast track |
 | Capability telemetry | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
 | Build path | `doctor -> init -> bundle -> build-hap` |
@@ -72,6 +72,7 @@
 - `expo-notifications`
 - `react-native-gesture-handler` remains a formal experimental slice
 - `@react-native-async-storage/async-storage`, `react-native-screens`, and `react-native-safe-area-context` remain Wave A experimental onboarding
+- `react-native-webview`, JPush runtime, `expo-media-library`, `lottie-react-native`, and `@shopify/react-native-skia` remain Wave B experimental onboarding
 - multiple public matrices
 
 </details>
@@ -177,7 +178,7 @@ Common decision points:
 <!-- GENERATED:readme-support-matrix:start -->
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
 - `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics`
-- `experimental`: `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`
+- `experimental`: `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia`
 
 `doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
 

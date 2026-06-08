@@ -23,6 +23,7 @@ const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
 const thirdPartyWaveAFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-a-app');
+const thirdPartyWaveBFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-b-app');
 const missingAsyncStorageAdapterRoot = path.join(
   __dirname,
   '..',
@@ -34,6 +35,30 @@ const missingScreensAdapterRoot = path.join(
   '..',
   'fixtures',
   'third-party-wave-a-missing-screens-adapter-app',
+);
+const missingWebViewAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-b-missing-webview-adapter-app',
+);
+const missingMediaLibraryAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-b-missing-media-library-adapter-app',
+);
+const missingLottieAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-b-missing-lottie-adapter-app',
+);
+const missingSkiaAdapterRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'third-party-wave-b-missing-skia-adapter-app',
 );
 const thirdPartyNativeGapRoot = path.join(__dirname, '..', 'fixtures', 'third-party-native-gap-app');
 const minimalRouterRoot = path.join(__dirname, '..', 'fixtures', 'minimal-router-app');
@@ -669,6 +694,189 @@ describe('doctor report', () => {
     ).toBe(true);
   });
 
+  it('classifies third-party Wave B as ccnubox-first formal experimental capabilities without widening preview', async () => {
+    const strictReport = await buildDoctorReport(thirdPartyWaveBFixtureRoot);
+    const previewReport = await buildDoctorReport(thirdPartyWaveBFixtureRoot, {
+      targetTier: 'preview',
+    });
+    const experimentalReport = await buildDoctorReport(thirdPartyWaveBFixtureRoot, {
+      targetTier: 'experimental',
+    });
+    const capabilityById = new Map(
+      experimentalReport.capabilities.map((capability) => [capability.id, capability]),
+    );
+
+    expect(strictReport.eligibility).toBe('ineligible');
+    expect(previewReport.eligibility).toBe('ineligible');
+    expect(experimentalReport.eligibility).toBe('eligible');
+    expect(experimentalReport.coverageProfile).toBe('third-party-native-heavy');
+    expect(experimentalReport.capabilities.map((capability) => capability.id)).toEqual([
+      'react-native-skia',
+      'expo-media-library',
+      'expo-notifications',
+      'jpush-react-native',
+      'lottie-react-native',
+      'react-native-webview',
+    ]);
+
+    expect(capabilityById.get('react-native-webview')?.runtimeMode).toBe('adapter');
+    expect(capabilityById.get('react-native-webview')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/react-native-webview',
+    ]);
+    expect(capabilityById.get('expo-media-library')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/camera-roll',
+    ]);
+    expect(capabilityById.get('expo-notifications')?.runtimeMode).toBe('shim');
+    expect(capabilityById.get('jpush-react-native')?.nativePackageNames).toEqual([
+      'jcore-react-native',
+    ]);
+    expect(capabilityById.get('lottie-react-native')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/lottie-react-native',
+    ]);
+    expect(capabilityById.get('react-native-skia')?.nativePackageNames).toEqual([
+      '@react-native-oh-tpl/react-native-skia',
+    ]);
+
+    for (const capability of experimentalReport.capabilities) {
+      expect(capability.supportTier).toBe('experimental');
+      expect(capability.evidence.bundle).toBe(true);
+      expect(capability.evidence.debugBuild).toBe(true);
+      expect(capability.evidence.device).toBe(false);
+      expect(capability.evidence.release).toBe(false);
+      expect(capability.evidenceSource.bundle).toBe('automated');
+      expect(capability.evidenceSource.debugBuild).toBe('automated');
+      expect(capability.evidenceSource.device).toBe('none');
+      expect(capability.evidenceSource.release).toBe('none');
+    }
+
+    expect(
+      strictReport.blockingIssues.some(
+        (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'react-native-webview',
+      ),
+    ).toBe(true);
+    expect(
+      previewReport.blockingIssues.some(
+        (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-media-library',
+      ),
+    ).toBe(true);
+    expect(
+      experimentalReport.blockingIssues.some((issue) => issue.code === 'dependency.not_allowed'),
+    ).toBe(false);
+    expect(experimentalReport.nextActions).toContain(
+      'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and require debug/release simulator delivery gates before shipping.',
+    );
+  });
+
+  it('requires formal Wave B adapters for ccnubox native surfaces in both directions', async () => {
+    const missingWebViewReport = await buildDoctorReport(missingWebViewAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const missingMediaLibraryReport = await buildDoctorReport(missingMediaLibraryAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const missingLottieReport = await buildDoctorReport(missingLottieAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const missingSkiaReport = await buildDoctorReport(missingSkiaAdapterRoot, {
+      targetTier: 'experimental',
+    });
+    const webViewAdapterOnlyRoot = await createDoctorFixtureFromSample();
+    const mediaLibraryAdapterOnlyRoot = await createDoctorFixtureFromSample();
+    const lottieAdapterOnlyRoot = await createDoctorFixtureFromSample();
+    const skiaAdapterOnlyRoot = await createDoctorFixtureFromSample();
+
+    await addFakeDependency(
+      webViewAdapterOnlyRoot,
+      '@react-native-oh-tpl/react-native-webview',
+      '13.10.3',
+    );
+    await addFakeDependency(
+      mediaLibraryAdapterOnlyRoot,
+      '@react-native-oh-tpl/camera-roll',
+      '7.8.4-rc.2',
+    );
+    await addFakeDependency(
+      lottieAdapterOnlyRoot,
+      '@react-native-oh-tpl/lottie-react-native',
+      '6.4.1-0.1.9-1',
+    );
+    await addFakeDependency(
+      skiaAdapterOnlyRoot,
+      '@react-native-oh-tpl/react-native-skia',
+      '1.3.8-rc.1',
+    );
+
+    const webViewAdapterOnlyReport = await buildDoctorReport(webViewAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+    const mediaLibraryAdapterOnlyReport = await buildDoctorReport(mediaLibraryAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+    const lottieAdapterOnlyReport = await buildDoctorReport(lottieAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+    const skiaAdapterOnlyReport = await buildDoctorReport(skiaAdapterOnlyRoot, {
+      targetTier: 'experimental',
+    });
+
+    expect(
+      missingWebViewReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/react-native-webview',
+      ),
+    ).toBe(true);
+    expect(
+      missingMediaLibraryReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/camera-roll',
+      ),
+    ).toBe(true);
+    expect(
+      missingLottieReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/lottie-react-native',
+      ),
+    ).toBe(true);
+    expect(
+      missingSkiaReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@react-native-oh-tpl/react-native-skia',
+      ),
+    ).toBe(true);
+    expect(
+      webViewAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === 'react-native-webview',
+      ),
+    ).toBe(true);
+    expect(
+      mediaLibraryAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === 'expo-media-library',
+      ),
+    ).toBe(true);
+    expect(
+      lottieAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === 'lottie-react-native',
+      ),
+    ).toBe(true);
+    expect(
+      skiaAdapterOnlyReport.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.required_missing' &&
+          issue.subject === '@shopify/react-native-skia',
+      ),
+    ).toBe(true);
+  });
+
   it('flags adapter Git spec drift as a blocking issue', async () => {
     const report = await buildDoctorReport(specifierMismatchRoot);
 
@@ -785,7 +993,14 @@ describe('doctor report', () => {
       true,
     );
     expect(report.dependencies.some((dependency) => dependency.name === '@shopify/react-native-skia')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === '@react-native-oh-tpl/react-native-skia')).toBe(true);
     expect(report.dependencies.some((dependency) => dependency.name === 'react-native-webview')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === '@react-native-oh-tpl/react-native-webview')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'lottie-react-native')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === '@react-native-oh-tpl/lottie-react-native')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'expo-media-library')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === '@react-native-oh-tpl/camera-roll')).toBe(true);
+    expect(report.dependencies.some((dependency) => dependency.name === 'expo-notifications')).toBe(true);
     expect(report.blockingIssues).toHaveLength(0);
     expect(report.nextActions).toContain(
       'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',

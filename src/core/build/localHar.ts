@@ -402,6 +402,10 @@ export async function ensureHarmonyBuildProfileSupportsNormalizedLocalDeps(
     });
 
     if (existingModule) {
+      if (existingModule.name !== localHarPackage.moduleName) {
+        existingModule.name = localHarPackage.moduleName;
+        didChange = true;
+      }
       if (existingModule.srcPath !== relativeDirectory) {
         existingModule.srcPath = relativeDirectory;
         didChange = true;

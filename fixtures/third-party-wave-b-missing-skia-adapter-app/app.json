@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Missing Skia Adapter Fixture",
+    "slug": "missing-skia-adapter-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.missingskiaadapter"
+    }
+  }
+}

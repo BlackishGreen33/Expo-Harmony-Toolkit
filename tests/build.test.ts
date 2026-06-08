@@ -23,6 +23,7 @@ const nativeCapabilitiesSampleRoot = path.join(
 );
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
 const thirdPartyWaveAFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-a-app');
+const thirdPartyWaveBFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-b-app');
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const execFileAsync = promisify(execFile);
 const FAKE_NOOP_LINK_HARMONY_MODULE = `exports.commandLinkHarmony = {
@@ -322,6 +323,97 @@ describe('bundle and HAP build reports', () => {
     );
     expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/react-native-screens']).toBe(
       'file:../node_modules/@react-native-oh-tpl/react-native-screens/harmony/screens.har',
+    );
+    expect(report.status).toBe('succeeded');
+    expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
+  }, 120000);
+
+  it('links third-party Wave B adapter HARs for the ccnubox-first regression fixture', async () => {
+    const projectRoot = await createTempFixture(thirdPartyWaveBFixtureRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    const runner = createSuccessfulRunner();
+
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'react-native-webview',
+        'harmony',
+        'rn_webview.har',
+      ),
+      '@react-native-oh-tpl/react-native-webview',
+    );
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'camera-roll',
+        'harmony',
+        'camera_roll.har',
+      ),
+      '@react-native-oh-tpl/camera-roll',
+    );
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'lottie-react-native',
+        'harmony',
+        'lottie.har',
+      ),
+      '@react-native-oh-tpl/lottie-react-native',
+    );
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'react-native-skia',
+        'harmony',
+        'skia.har',
+      ),
+      '@react-native-oh-tpl/react-native-skia',
+    );
+
+    const bundleReport = await bundleProject(projectRoot, {
+      runner,
+    });
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+    const harmonyRootPackage = JSON5.parse(
+      await fs.readFile(path.join(projectRoot, 'harmony', 'oh-package.json5'), 'utf8'),
+    ) as {
+      dependencies: Record<string, string>;
+    };
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(bundleReport.status).toBe('succeeded');
+    expect(metroConfig).not.toContain("'.expo-harmony/shims/react-native-webview'");
+    expect(metroConfig).not.toContain("'.expo-harmony/shims/lottie-react-native'");
+    expect(metroConfig).not.toContain("'.expo-harmony/shims/@shopify/react-native-skia'");
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/react-native-webview']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/react-native-webview/harmony/rn_webview.har',
+    );
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/camera-roll']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/camera-roll/harmony/camera_roll.har',
+    );
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/lottie-react-native']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/lottie-react-native/harmony/lottie.har',
+    );
+    expect(harmonyRootPackage.dependencies['@react-native-oh-tpl/react-native-skia']).toBe(
+      'file:../node_modules/@react-native-oh-tpl/react-native-skia/harmony/skia.har',
     );
     expect(report.status).toBe('succeeded');
     expect(report.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
@@ -702,13 +794,8 @@ describe('bundle and HAP build reports', () => {
           path.join(options.cwd, 'build-profile.json5'),
           'utf8',
         );
-        if (assembleCount === 1) {
-          expect(buildProfileContents).not.toContain('release-store-password');
-          expect(buildProfileContents).not.toContain('release-key-password');
-        } else {
-          expect(buildProfileContents).toContain('release-store-password');
-          expect(buildProfileContents).toContain('release-key-password');
-        }
+        expect(buildProfileContents).toContain('release-store-password');
+        expect(buildProfileContents).toContain('release-key-password');
       }
       return baseRunner(file, args, options);
     };
@@ -730,6 +817,12 @@ describe('bundle and HAP build reports', () => {
 
     expect(debugReport.status).toBe('succeeded');
     expect(debugReport.artifactPaths.some((artifactPath) => artifactPath.endsWith('.hap'))).toBe(true);
+    const restoredAfterDebugBuildProfileContents = await fs.readFile(
+      path.join(projectRoot, 'harmony', 'build-profile.json5'),
+      'utf8',
+    );
+    expect(restoredAfterDebugBuildProfileContents).not.toContain('release-store-password');
+    expect(restoredAfterDebugBuildProfileContents).not.toContain('release-key-password');
 
     const releaseReport = await buildHapProject(projectRoot, {
       mode: 'release',
@@ -1440,6 +1533,29 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
     const devecoRoot = await createFakeDevEcoStudio(projectRoot);
     await initProject(projectRoot, true);
 
+    const asyncStorageHarPath = path.join(
+      projectRoot,
+      'node_modules',
+      '@react-native-oh-tpl',
+      'async-storage',
+      'harmony',
+      'async_storage.har',
+    );
+    await createFakeHarArchive(asyncStorageHarPath, '@react-native-oh-tpl/async-storage');
+
+    const harmonyRootPackagePath = path.join(projectRoot, 'harmony', 'oh-package.json5');
+    const harmonyRootPackage = JSON5.parse(
+      await fs.readFile(harmonyRootPackagePath, 'utf8'),
+    ) as {
+      dependencies?: Record<string, string>;
+    };
+    harmonyRootPackage.dependencies = {
+      ...(harmonyRootPackage.dependencies ?? {}),
+      '@react-native-oh-tpl/async-storage':
+        'file:../node_modules/@react-native-oh-tpl/async-storage/harmony/async_storage.har',
+    };
+    await fs.writeFile(harmonyRootPackagePath, JSON.stringify(harmonyRootPackage, null, 2) + '\n');
+
     const buildProfilePath = path.join(projectRoot, 'harmony', 'build-profile.json5');
     const originalBuildProfile = await fs.readFile(buildProfilePath, 'utf8');
     let sawNormalizedModuleRegistration = false;
@@ -1512,6 +1628,104 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
     expect(report.status).toBe('succeeded');
     expect(sawNormalizedModuleRegistration).toBe(true);
     expect(await fs.readFile(buildProfilePath, 'utf8')).toBe(originalBuildProfile);
+  }, 120000);
+
+  it('repairs stale normalized local HAR module names in the Harmony build profile', async () => {
+    const projectRoot = await createTempFixture(thirdPartyWaveAFixtureRoot);
+    const devecoRoot = await createFakeDevEcoStudio(projectRoot);
+    await initProject(projectRoot, true);
+
+    await createFakeHarArchive(
+      path.join(
+        projectRoot,
+        'node_modules',
+        '@react-native-oh-tpl',
+        'async-storage',
+        'harmony',
+        'async_storage.har',
+      ),
+      '@react-native-oh-tpl/async-storage',
+    );
+
+    const buildProfilePath = path.join(projectRoot, 'harmony', 'build-profile.json5');
+    const originalBuildProfile = await fs.readFile(buildProfilePath, 'utf8');
+    const staleBuildProfile = JSON5.parse(originalBuildProfile) as {
+      modules: Array<Record<string, unknown>>;
+    };
+    staleBuildProfile.modules.push({
+      name: 'react-native-oh-tpl-async-storage',
+      srcPath: './expo-harmony-local-deps/react-native-oh-tpl-async-storage-async_storage',
+    });
+    await fs.writeFile(buildProfilePath, JSON.stringify(staleBuildProfile, null, 2) + '\n');
+    const staleBuildProfileContents = await fs.readFile(buildProfilePath, 'utf8');
+
+    let sawRepairedModuleName = false;
+
+    const runner: CommandRunner = async (_file, args, options) => {
+      if (args.includes('bundle-harmony')) {
+        const bundleOutput = args[args.indexOf('--bundle-output') + 1];
+        const assetsDest = args[args.indexOf('--assets-dest') + 1];
+        await fs.outputFile(bundleOutput, '__d(function(){})\n');
+        await fs.ensureDir(assetsDest);
+        return {
+          exitCode: 0,
+          stdout: 'bundled',
+          stderr: '',
+        };
+      }
+
+      if (args[0] === 'install' && args[1] === '--all') {
+        const buildProfileContents = await fs.readFile(buildProfilePath, 'utf8');
+        expect(buildProfileContents).toContain('"name": "async_storage"');
+        expect(buildProfileContents).not.toContain('"name": "react-native-oh-tpl-async-storage"');
+        sawRepairedModuleName = true;
+        return {
+          exitCode: 0,
+          stdout: 'installed',
+          stderr: '',
+        };
+      }
+
+      if (args.includes('assembleHap')) {
+        const hapPath = path.join(
+          options.cwd,
+          'entry',
+          'build',
+          'default',
+          'outputs',
+          'default',
+          'entry-default-unsigned.hap',
+        );
+        await fs.outputFile(hapPath, 'hap');
+        return {
+          exitCode: 0,
+          stdout: 'built',
+          stderr: '',
+        };
+      }
+
+      return {
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      };
+    };
+
+    const report = await buildHapProject(projectRoot, {
+      mode: 'debug',
+      runner,
+      env: {
+        ...process.env,
+        EXPO_HARMONY_DISABLE_DEFAULT_PATHS: '1',
+        EXPO_HARMONY_DEVECO_STUDIO_PATH: devecoRoot,
+        EXPO_HARMONY_JAVA_PATH: '/usr/bin/java',
+        PATH: '',
+      },
+    });
+
+    expect(report.status).toBe('succeeded');
+    expect(sawRepairedModuleName).toBe(true);
+    expect(await fs.readFile(buildProfilePath, 'utf8')).toBe(staleBuildProfileContents);
   }, 120000);
 
   it('adds a Systrace compatibility shim for normalized no-codegen gesture-handler HARs', async () => {

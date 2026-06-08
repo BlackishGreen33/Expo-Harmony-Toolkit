@@ -213,6 +213,30 @@ export function renderSupportMatrixPreviewCapabilities(locale: DocsLocale): stri
   ].join('\n');
 }
 
+export function renderSupportMatrixExperimentalCapabilities(locale: DocsLocale): string {
+  const headers =
+    locale === 'zh'
+      ? ['Expo 能力 / 依赖', '当前层级', 'runtimeMode', 'evidence', '说明']
+      : ['Expo capability / dependency', 'Support tier', 'runtimeMode', 'evidence', 'Notes'];
+  const experimentalCapabilities = CAPABILITY_DEFINITIONS.filter(
+    (definition) => definition.supportTier === 'experimental',
+  );
+
+  return [
+    `| ${headers.join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...experimentalCapabilities.map((definition) =>
+      [
+        `\`${definition.packageName}\``,
+        `\`${definition.supportTier}\``,
+        `\`${definition.runtimeMode}\``,
+        `\`${renderEvidence(definition)}\``,
+        renderExperimentalCapabilityNote(definition, locale),
+      ].join(' | '),
+    ).map((row) => `| ${row} |`),
+  ].join('\n');
+}
+
 export function renderSupportMatrixUiStackRules(locale: DocsLocale): string {
   const intro =
     locale === 'zh'
@@ -289,4 +313,19 @@ function renderEvidence(definition: (typeof CAPABILITY_DEFINITIONS)[number]): st
     `device=${definition.evidence.device ? 'yes' : 'no'}[${definition.evidenceSource.device}]`,
     `release=${definition.evidence.release ? 'yes' : 'no'}[${definition.evidenceSource.release}]`,
   ].join(', ');
+}
+
+function renderExperimentalCapabilityNote(
+  definition: (typeof CAPABILITY_DEFINITIONS)[number],
+  locale: DocsLocale,
+): string {
+  const dependencyDirection = definition.nativePackageNames.length > 0
+    ? definition.nativePackageNames.join(', ')
+    : 'toolkit-managed bridge';
+
+  if (locale === 'en') {
+    return `${definition.note} Direction: ${dependencyDirection}.`;
+  }
+
+  return `${definition.note} 依赖方向：${dependencyDirection}。`;
 }

@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Missing Lottie Adapter Fixture",
+    "slug": "missing-lottie-adapter-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.missinglottieadapter"
+    }
+  }
+}

@@ -19,7 +19,8 @@
           "excludePlugins": [
             "@bacons/apple-targets",
             "./plugins/config-android-url-scheme.js",
-            "mx-jpush-expo"
+            "mx-jpush-expo",
+            "react-native-edge-to-edge"
           ],
           "coverageProfile": "managed-native-heavy"
         }

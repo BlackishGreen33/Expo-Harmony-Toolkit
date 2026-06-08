@@ -15,20 +15,6 @@ const PREVIEW_BASELINE_EVIDENCE_SOURCE = {
   release: 'none',
 } as const;
 
-const EXPLORATORY_EVIDENCE = {
-  bundle: false,
-  debugBuild: false,
-  device: false,
-  release: false,
-} as const;
-
-const EXPLORATORY_EVIDENCE_SOURCE = {
-  bundle: 'none',
-  debugBuild: 'none',
-  device: 'none',
-  release: 'none',
-} as const;
-
 const APP_FOUNDATION_BASELINE_EVIDENCE = {
   bundle: true,
   debugBuild: true,
@@ -51,6 +37,20 @@ const THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE = {
 } as const;
 
 const THIRD_PARTY_WAVE_A_BASELINE_EVIDENCE_SOURCE = {
+  bundle: 'automated',
+  debugBuild: 'automated',
+  device: 'none',
+  release: 'none',
+} as const;
+
+const THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE = {
+  bundle: true,
+  debugBuild: true,
+  device: false,
+  release: false,
+} as const;
+
+const THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE = {
   bundle: 'automated',
   debugBuild: 'automated',
   device: 'none',
@@ -244,17 +244,17 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     status: 'manual',
     supportTier: 'experimental',
     runtimeMode: 'shim',
-    evidence: EXPLORATORY_EVIDENCE,
-    evidenceSource: EXPLORATORY_EVIDENCE_SOURCE,
-    note: 'Notifications stay below the public promise until a complete Harmony delivery story is validated end to end.',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B keeps Expo Notifications on a safe experimental shim for ccnubox push flows while JPush delivery and signed-runtime behavior remain separate evidence gates.',
     docsUrl: 'https://github.com/react-native-oh-library',
     nativePackageNames: [],
     harmonyPermissions: ['ohos.permission.NOTIFICATION_CONTROLLER'],
-    sampleRoute: '/notifications',
+    sampleRoute: '/third-party-wave-b/notifications',
     acceptanceChecklist: [
-      'Register for notifications on a signed build.',
-      'Receive a foreground notification.',
-      'Validate open-from-notification lifecycle.',
+      'Bundle notification permission and channel setup paths without crashing.',
+      'Keep foreground receipt, click, and cold-start delivery pending signed simulator and device evidence.',
+      'Do not treat simulator app-shell launch as notification delivery acceptance.',
     ],
   },
   {
@@ -331,6 +331,101 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
       'Render SafeAreaProvider, SafeAreaView, and safe-area hooks through the toolkit shim.',
       'Keep the Metro alias on .expo-harmony/shims/react-native-safe-area-context.',
       'Validate real native inset measurement separately before any adapter promotion.',
+    ],
+  },
+  {
+    id: 'react-native-webview',
+    packageName: 'react-native-webview',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B tracks ccnubox WebView surfaces through the Harmony adapter, but navigation, injected scripts, and release runtime stability remain promotion evidence.',
+    docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-webview.md',
+    nativePackageNames: ['@react-native-oh-tpl/react-native-webview'],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-b/webview',
+    acceptanceChecklist: [
+      'Install react-native-webview with the matching Harmony adapter.',
+      'Bundle a minimal WebView surface with message passing and navigation callbacks.',
+      'Validate signed simulator startup and real WebView runtime behavior before any promotion.',
+    ],
+  },
+  {
+    id: 'jpush-react-native',
+    packageName: 'jpush-react-native',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B keeps ccnubox JPush runtime dependencies in formal telemetry; registrationId, arrival, click, and cold-start payloads still require signed runtime evidence.',
+    docsUrl: 'https://docs.jiguang.cn/jpush/client/HarmonyOS/hmos_guide',
+    nativePackageNames: ['jcore-react-native'],
+    harmonyPermissions: ['ohos.permission.NOTIFICATION_CONTROLLER'],
+    sampleRoute: '/third-party-wave-b/jpush',
+    acceptanceChecklist: [
+      'Keep jpush-react-native, jcore-react-native, and mx-jpush-expo visible in doctor reports.',
+      'Bundle guarded JPush init and registrationId lookup paths without native-module crashes.',
+      'Record signed simulator and device push delivery evidence before any promotion.',
+    ],
+  },
+  {
+    id: 'expo-media-library',
+    packageName: 'expo-media-library',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B tracks ccnubox media-library save flows through the camera-roll Harmony adapter while gallery write/read behavior remains runtime evidence.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+    nativePackageNames: ['@react-native-oh-tpl/camera-roll'],
+    harmonyPermissions: ['ohos.permission.READ_IMAGEVIDEO', 'ohos.permission.WRITE_IMAGEVIDEO'],
+    sampleRoute: '/third-party-wave-b/media-library',
+    acceptanceChecklist: [
+      'Install expo-media-library with the camera-roll Harmony adapter available.',
+      'Bundle permission and create-asset code paths used by ccnubox screenshots.',
+      'Validate gallery write/read behavior on signed simulator and device before promotion.',
+    ],
+  },
+  {
+    id: 'lottie-react-native',
+    packageName: 'lottie-react-native',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B tracks ccnubox Lottie animation surfaces through the Harmony adapter, but animation playback remains simulator and device smoke evidence.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+    nativePackageNames: ['@react-native-oh-tpl/lottie-react-native'],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-b/lottie',
+    acceptanceChecklist: [
+      'Install lottie-react-native with the matching Harmony adapter.',
+      'Bundle a minimal LottieView surface and local animation asset path.',
+      'Validate playback on signed simulator and device before promotion.',
+    ],
+  },
+  {
+    id: 'react-native-skia',
+    packageName: '@shopify/react-native-skia',
+    status: 'manual',
+    supportTier: 'experimental',
+    runtimeMode: 'adapter',
+    evidence: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE,
+    evidenceSource: THIRD_PARTY_WAVE_B_BASELINE_EVIDENCE_SOURCE,
+    note: 'v1.9.3 Wave B tracks ccnubox Skia timetable rendering through the Harmony adapter direction while canvas rendering remains runtime evidence.',
+    docsUrl: 'https://github.com/react-native-oh-library',
+    nativePackageNames: ['@react-native-oh-tpl/react-native-skia'],
+    harmonyPermissions: [],
+    sampleRoute: '/third-party-wave-b/skia',
+    acceptanceChecklist: [
+      'Install @shopify/react-native-skia with the Harmony Skia adapter available.',
+      'Bundle a minimal Canvas/Skia import surface used by timetable rendering.',
+      'Validate actual canvas rendering on signed simulator and device before promotion.',
     ],
   },
 ] as const;

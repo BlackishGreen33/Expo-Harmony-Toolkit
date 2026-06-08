@@ -4,6 +4,7 @@ import {
   renderReadmeCurrentStatus,
   renderReadmeSupportMatrixSection,
   renderSupportMatrixCapabilityTelemetry,
+  renderSupportMatrixExperimentalCapabilities,
   renderSupportMatrixPreviewCapabilities,
   renderSupportMatrixReleaseTracks,
   renderSupportMatrixUiStackRules,
@@ -134,6 +135,9 @@ describe('documentation metadata', () => {
     expect(extractGeneratedBlock(supportMatrix, 'support-matrix-preview-capabilities')).toBe(
       renderSupportMatrixPreviewCapabilities('zh'),
     );
+    expect(extractGeneratedBlock(supportMatrix, 'support-matrix-experimental-capabilities')).toBe(
+      renderSupportMatrixExperimentalCapabilities('zh'),
+    );
     expect(extractGeneratedBlock(supportMatrix, 'support-matrix-ui-stack')).toBe(
       renderSupportMatrixUiStackRules('zh'),
     );
@@ -210,6 +214,7 @@ describe('documentation metadata', () => {
         'v1.8.x-expo-camera-release.md',
         'v1.9.0-acceptance.md',
         'v1.9.2-acceptance.md',
+        'v1.9.3-acceptance.md',
       ]),
     );
   });

@@ -62,12 +62,28 @@ const FORMAL_EXPERIMENTAL_ADAPTER_PAIRS = [
     adapterPackageName: '@react-native-oh-tpl/async-storage',
   },
   {
+    canonicalPackageName: 'react-native-webview',
+    adapterPackageName: '@react-native-oh-tpl/react-native-webview',
+  },
+  {
     canonicalPackageName: 'react-native-screens',
     adapterPackageName: '@react-native-oh-tpl/react-native-screens',
   },
   {
     canonicalPackageName: 'react-native-gesture-handler',
     adapterPackageName: '@react-native-oh-tpl/react-native-gesture-handler',
+  },
+  {
+    canonicalPackageName: 'lottie-react-native',
+    adapterPackageName: '@react-native-oh-tpl/lottie-react-native',
+  },
+  {
+    canonicalPackageName: 'expo-media-library',
+    adapterPackageName: '@react-native-oh-tpl/camera-roll',
+  },
+  {
+    canonicalPackageName: '@shopify/react-native-skia',
+    adapterPackageName: '@react-native-oh-tpl/react-native-skia',
   },
 ] as const;
 const THIRD_PARTY_WAVE_A_PACKAGE_NAMES = new Set([
@@ -76,6 +92,20 @@ const THIRD_PARTY_WAVE_A_PACKAGE_NAMES = new Set([
   'react-native-screens',
   '@react-native-oh-tpl/react-native-screens',
   'react-native-safe-area-context',
+]);
+const THIRD_PARTY_WAVE_B_PACKAGE_NAMES = new Set([
+  'react-native-webview',
+  '@react-native-oh-tpl/react-native-webview',
+  'jpush-react-native',
+  'jcore-react-native',
+  'mx-jpush-expo',
+  'expo-notifications',
+  'expo-media-library',
+  '@react-native-oh-tpl/camera-roll',
+  'lottie-react-native',
+  '@react-native-oh-tpl/lottie-react-native',
+  '@shopify/react-native-skia',
+  '@react-native-oh-tpl/react-native-skia',
 ]);
 
 export async function buildDoctorReport(
@@ -718,7 +748,16 @@ function buildNextActions(input: {
         actions.push(
           'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
         );
-      } else {
+      }
+      if (dependencies.some((dependency) => THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name))) {
+        actions.push(
+          'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and require debug/release simulator delivery gates before shipping.',
+        );
+      }
+      if (
+        !dependencies.some((dependency) => THIRD_PARTY_WAVE_A_PACKAGE_NAMES.has(dependency.name)) &&
+        !dependencies.some((dependency) => THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name))
+      ) {
         actions.push(
           'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
         );

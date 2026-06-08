@@ -59,7 +59,7 @@ expo-harmony env
 - `release` 构建不应视为 ready
 - 可以直接从 `.expo-harmony/signing.local.example.json` 复制出 `.expo-harmony/signing.local.json` 再填入真实材料
 
-`expo-harmony init` / `sync-template` 只会把非密钥 signing 引用写入可版本化的 `harmony/build-profile.json5`。`storePassword` 与 `keyPassword` 只应保留在 `.expo-harmony/signing.local.json`；`build-hap --mode release` 会在本地构建期间临时注入这些 secret，并在 Hvigor 结束后恢复 `build-profile.json5`。
+`expo-harmony init` / `sync-template` 只会把非密钥 signing 引用写入可版本化的 `harmony/build-profile.json5`。`storePassword` 与 `keyPassword` 只应保留在 `.expo-harmony/signing.local.json`；`build-hap` 会在本地 Hvigor 构建期间临时注入这些 secret，并在 Hvigor 结束后恢复 `build-profile.json5`。没有本地 signing config 的 debug 构建仍不需要 release signing。
 
 ## 推荐流程
 

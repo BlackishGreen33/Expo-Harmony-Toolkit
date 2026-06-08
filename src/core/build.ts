@@ -454,12 +454,10 @@ export async function buildHapProject(
       await patchRnohGeneratedCodegenForNormalizedLocalPackage(harmonyProjectRoot);
     }
     await patchKnownHarmonyAdapterCodegenOutputs(harmonyProjectRoot);
-    if (options.mode === 'release') {
-      restoreLocalSigningBuildProfile = await temporarilyMergeLocalSigningIntoBuildProfile(
-        loadedProject.projectRoot,
-        harmonyProjectRoot,
-      );
-    }
+    restoreLocalSigningBuildProfile = await temporarilyMergeLocalSigningIntoBuildProfile(
+      loadedProject.projectRoot,
+      harmonyProjectRoot,
+    );
 
     const hvigorCommand = buildInvocation(envReport.hvigorPath as string, [
       'assembleHap',

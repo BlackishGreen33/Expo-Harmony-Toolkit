@@ -14,7 +14,7 @@
 - bare workflow 与第三方 native package 不再被描述成“收官后才考虑的另一条 extension 终局”
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
-- `v1.9.2` 新增的是 Third-party Native Wave A formal experimental onboarding，不是 verified 扩容
+- `v1.9.3` 新增的是 ccnubox-first Third-party Native Wave B formal experimental onboarding，不是 verified 扩容
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -134,13 +134,20 @@
 
 ## Experimental 能力
 
+<!-- GENERATED:support-matrix-experimental-capabilities:start -->
 | Expo 能力 / 依赖 | 当前层级 | runtimeMode | evidence | 说明 |
 | --- | --- | --- | --- | --- |
-| `expo-notifications` | `experimental` | `shim` | `bundle=no, debugBuild=no, device=no, release=no` | 服务链路与交付故事未打通 |
-| `react-native-gesture-handler` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.0 formal acceptance slice；必须与 `@react-native-oh-tpl/react-native-gesture-handler` 成对接入，仍不在公开 verified 矩阵内 |
-| `@react-native-async-storage/async-storage` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；必须与 `@react-native-oh-tpl/async-storage` 成对接入，持久化行为仍需 device / release evidence |
-| `react-native-screens` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；必须与 `@react-native-oh-tpl/react-native-screens` 成对接入，navigation-stack runtime 仍需 evidence |
-| `react-native-safe-area-context` | `experimental` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formal onboarding；当前仍走 toolkit-managed safe-area shim，不切换到 native adapter |
+| `expo-notifications` | `experimental` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B keeps Expo Notifications on a safe experimental shim for ccnubox push flows while JPush delivery and signed-runtime behavior remain separate evidence gates. 依赖方向：toolkit-managed bridge。 |
+| `react-native-gesture-handler` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.0 formal acceptance slice tracks Gesture Handler through its Harmony adapter, but it remains experimental until device and release runtime evidence are closed. 依赖方向：@react-native-oh-tpl/react-native-gesture-handler。 |
+| `@react-native-async-storage/async-storage` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A tracks Async Storage through its Harmony adapter, but persistence behavior remains experimental until device and release evidence are closed. 依赖方向：@react-native-oh-tpl/async-storage。 |
+| `react-native-screens` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A tracks Screens through its Harmony adapter metadata, while managed autolinking and navigation-stack runtime behavior remain promotion gaps. 依赖方向：@react-native-oh-tpl/react-native-screens。 |
+| `react-native-safe-area-context` | `experimental` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formalizes the existing toolkit safe-area shim so app-shell layouts keep bundling while native safe-area measurements stay outside verified. 依赖方向：toolkit-managed bridge。 |
+| `react-native-webview` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox WebView surfaces through the Harmony adapter, but navigation, injected scripts, and release runtime stability remain promotion evidence. 依赖方向：@react-native-oh-tpl/react-native-webview。 |
+| `jpush-react-native` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B keeps ccnubox JPush runtime dependencies in formal telemetry; registrationId, arrival, click, and cold-start payloads still require signed runtime evidence. 依赖方向：jcore-react-native。 |
+| `expo-media-library` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox media-library save flows through the camera-roll Harmony adapter while gallery write/read behavior remains runtime evidence. 依赖方向：@react-native-oh-tpl/camera-roll。 |
+| `lottie-react-native` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox Lottie animation surfaces through the Harmony adapter, but animation playback remains simulator and device smoke evidence. 依赖方向：@react-native-oh-tpl/lottie-react-native。 |
+| `@shopify/react-native-skia` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox Skia timetable rendering through the Harmony adapter direction while canvas rendering remains runtime evidence. 依赖方向：@react-native-oh-tpl/react-native-skia。 |
+<!-- GENERATED:support-matrix-experimental-capabilities:end -->
 
 ## UI Stack 配对规则
 
@@ -273,6 +280,7 @@ toolkit 受管的核心产物仍包括：
 - bare Expo；当前只进入 intake / debug baseline
 - `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 当前仍只是 preview shim baseline
 - `@react-native-async-storage/async-storage`、`react-native-screens`、`react-native-safe-area-context` 当前仍只是 Wave A experimental onboarding
+- `react-native-webview`、JPush runtime、`expo-media-library`、`lottie-react-native`、`@shopify/react-native-skia` 当前仍只是 Wave B experimental onboarding
 - 多 Expo / RNOH 并行 verified 矩阵
 - 任意第三方 native package 的即时正式承诺
 

@@ -182,7 +182,7 @@ pnpm run harmony:build:release
 
 - `.expo-harmony/signing.local.example.json` 是可直接复制的本地 signing 範本
 - `.expo-harmony/signing.local.json` 是本地 signing 入口
-- toolkit 只会把非密钥 signing 引用写进 `harmony/build-profile.json5`；`storePassword` 与 `keyPassword` 会留在本地 signing 文件，并在 release build 期间临时注入
+- toolkit 只会把非密钥 signing 引用写进 `harmony/build-profile.json5`；`storePassword` 与 `keyPassword` 会留在本地 signing 文件，并在 Hvigor build 期间临时注入后恢复
 - 即使 release 构建可走通，在没有真机前，这四项能力也仍保持 `preview`
 
 ## 当前结论

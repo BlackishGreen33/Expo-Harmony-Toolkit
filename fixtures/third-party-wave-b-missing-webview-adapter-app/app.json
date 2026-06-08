@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Missing WebView Adapter Fixture",
+    "slug": "missing-webview-adapter-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.missingwebviewadapter"
+    }
+  }
+}

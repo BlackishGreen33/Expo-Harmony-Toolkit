@@ -170,7 +170,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'react-native-webview': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'WebView is a common app-shell blocker. Treat it as an experimental intake dependency until the Harmony runtime path is validated on device.',
+    note: 'v1.9.3 Wave B tracks ccnubox WebView usage through the Harmony adapter, but navigation, injected scripts, and release runtime behavior remain experimental evidence.',
     docsUrl: 'https://github.com/react-native-oh-library',
   },
   ...UI_STACK_COMPATIBILITY_RECORDS,
@@ -303,7 +303,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'expo-media-library': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'Media-library write/read flows should be backed by the Harmony camera-roll adapter for screenshot save acceptance.',
+    note: 'v1.9.3 Wave B tracks media-library screenshot save flows through the Harmony camera-roll adapter; gallery write/read behavior still needs signed runtime evidence.',
     replacement: '@react-native-oh-tpl/camera-roll',
   },
   'expo-secure-store': {
@@ -339,19 +339,19 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'jcore-react-native': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'JCore is accepted as part of the JPush Harmony intake path, but device-side SDK evidence is required.',
+    note: 'v1.9.3 Wave B keeps JCore visible as the JPush runtime foundation, but SDK registration and delivery still need signed runtime evidence.',
     docsUrl: 'https://docs.jiguang.cn/jpush/client/HarmonyOS/hmos_guide',
   },
   'jpush-react-native': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'JPush is a real runtime requirement for ccnubox. Keep it in the catalog and require a Harmony SDK bridge plus device evidence for registrationId, arrival, click, and cold-start payloads.',
+    note: 'v1.9.3 Wave B keeps JPush in formal telemetry for ccnubox; registrationId, arrival, click, and cold-start payloads require signed runtime evidence.',
     docsUrl: 'https://docs.jiguang.cn/jpush/client/HarmonyOS/hmos_guide',
   },
   'mx-jpush-expo': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'The Expo config plugin may be excluded from Harmony config processing, but the JPush runtime dependency must stay visible in doctor reports.',
+    note: 'v1.9.3 Wave B treats this config plugin as JPush intake metadata; it may be excluded from config processing while runtime JPush dependencies stay visible in doctor reports.',
     docsUrl: 'https://docs.jiguang.cn/jpush/client/HarmonyOS/hmos_guide',
   },
   'react-native-draggable-grid': {
