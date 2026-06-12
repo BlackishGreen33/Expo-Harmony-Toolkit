@@ -40,8 +40,8 @@ export function renderReadmeCurrentStatus(locale: DocsLocale): string {
       : `\`latest\` = fully accepted \`verified\` only; \`next\` = ${PUBLIC_RELEASE_TRACKS.next}`;
   const inputValue =
     locale === 'zh'
-      ? 'Managed/CNG Expo 项目；bare workflow intake baseline'
-      : 'Managed/CNG Expo projects; bare workflow intake baseline';
+      ? 'Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类'
+      : 'Managed/CNG Expo projects; bare and catalog-out intake classification';
   const listJoiner = locale === 'zh' ? '、' : ', ';
 
   return [

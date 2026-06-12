@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "v1.10 Bare Fixture",
+    "slug": "v110-bare-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.v110barefixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.v110barefixture"
+    }
+  }
+}

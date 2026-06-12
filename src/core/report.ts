@@ -703,6 +703,12 @@ function buildNextActions(input: {
       'config.bundle_script.mismatch',
     ].includes(issue.code),
   );
+  const hasThirdPartyWaveA = dependencies.some((dependency) =>
+    THIRD_PARTY_WAVE_A_PACKAGE_NAMES.has(dependency.name),
+  );
+  const hasThirdPartyWaveB = dependencies.some((dependency) =>
+    THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name),
+  );
 
   if (
     hasBlockingIssueCode(blockingIssues, 'matrix.expo_sdk.unsupported') ||
@@ -715,6 +721,24 @@ function buildNextActions(input: {
     );
   }
 
+  if (coverageProfile === 'bare') {
+    actions.push(
+      'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
+    );
+  }
+
+  if (hasRouterBlockingIssues) {
+    actions.push(
+      'Add the missing expo-router peers/plugin/scheme or update the Harmony bundle script to use `expo-harmony bundle`, then rerun doctor before trusting router builds.',
+    );
+  }
+
+  if (hasBlockingIssueCode(blockingIssues, 'config.native_identifier.missing')) {
+    actions.push(
+      'Set `android.package` or `ios.bundleIdentifier` in Expo config before expecting a strict Harmony build path.',
+    );
+  }
+
   if (targetTier === 'verified' && hasPreviewCapabilities) {
     actions.push(
       'Use `expo-harmony doctor --project-root . --target-tier preview` to measure the current preview-capability baseline while keeping `latest` pinned to verified-only releases.',
@@ -724,50 +748,6 @@ function buildNextActions(input: {
   if (hasPreviewCapabilities) {
     actions.push(
       'Keep combined sample smoke for regression coverage, but track bundle/debug/device/release evidence separately for each preview capability before promotion.',
-    );
-  }
-
-  switch (coverageProfile) {
-    case 'managed-core':
-      actions.push(
-        'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.',
-      );
-      break;
-    case 'managed-native-heavy':
-      actions.push(
-        'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
-      );
-      break;
-    case 'bare':
-      actions.push(
-        'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
-      );
-      break;
-    case 'third-party-native-heavy':
-      if (dependencies.some((dependency) => THIRD_PARTY_WAVE_A_PACKAGE_NAMES.has(dependency.name))) {
-        actions.push(
-          'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
-        );
-      }
-      if (dependencies.some((dependency) => THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name))) {
-        actions.push(
-          'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and require debug/release simulator delivery gates before shipping.',
-        );
-      }
-      if (
-        !dependencies.some((dependency) => THIRD_PARTY_WAVE_A_PACKAGE_NAMES.has(dependency.name)) &&
-        !dependencies.some((dependency) => THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name))
-      ) {
-        actions.push(
-          'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
-        );
-      }
-      break;
-  }
-
-  if (hasRouterBlockingIssues) {
-    actions.push(
-      'Add the missing expo-router peers/plugin/scheme or update the Harmony bundle script to use `expo-harmony bundle`, then rerun doctor before trusting router builds.',
     );
   }
 
@@ -784,10 +764,22 @@ function buildNextActions(input: {
     );
   }
 
-  if (hasBlockingIssueCode(blockingIssues, 'config.native_identifier.missing')) {
-    actions.push(
-      'Set `android.package` or `ios.bundleIdentifier` in Expo config before expecting a strict Harmony build path.',
-    );
+  if (coverageProfile === 'third-party-native-heavy') {
+    if (hasThirdPartyWaveA) {
+      actions.push(
+        'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
+      );
+    }
+    if (hasThirdPartyWaveB) {
+      actions.push(
+        'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and require debug/release simulator delivery gates before shipping.',
+      );
+    }
+    if (!hasThirdPartyWaveA && !hasThirdPartyWaveB) {
+      actions.push(
+        'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
+      );
+    }
   }
 
   if (dependencies.some((dependency) => dependency.buildabilityRisk === 'native-risk')) {
@@ -799,6 +791,18 @@ function buildNextActions(input: {
   if (dependencies.some((dependency) => dependency.buildabilityRisk === 'js-only-unknown')) {
     actions.push(
       'Unknown JavaScript-only packages still sit outside the public matrix; verify bundling manually, but prioritize native gaps first.',
+    );
+  }
+
+  if (coverageProfile === 'managed-core') {
+    actions.push(
+      'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.',
+    );
+  }
+
+  if (coverageProfile === 'managed-native-heavy') {
+    actions.push(
+      'After every native-capability change, rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` to keep the managed sidecar and preview evidence aligned.',
     );
   }
 

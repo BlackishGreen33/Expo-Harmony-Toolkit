@@ -1,0 +1,24 @@
+{
+  "name": "v110-mixed-intake-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "harmony:bundle": "expo-harmony bundle"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native-community/cli": "^20.1.2",
+    "@react-native-oh/react-native-harmony": "0.82.29",
+    "@react-native-oh/react-native-harmony-cli": "0.82.29",
+    "@react-native-oh-tpl/react-native-gesture-handler": "2.14.17-rc.0",
+    "expo": "^55.0.8",
+    "expo-secure-store": "15.0.7",
+    "expo-status-bar": "~3.0.8",
+    "left-pad": "file:./vendor/left-pad",
+    "metro": "^0.83.1",
+    "mystery-native-module": "file:./vendor/mystery-native-module",
+    "react": "19.1.1",
+    "react-native": "0.82.1",
+    "react-native-gesture-handler": "2.14.1"
+  }
+}

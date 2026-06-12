@@ -83,8 +83,8 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('`coverageProfile`');
     expect(readmeZh).toContain('`nextActions`');
     expect(readmeEn).toContain('`nextActions`');
-    expect(readmeZh).toContain('bare workflow intake baseline');
-    expect(readmeEn).toContain('bare workflow intake baseline');
+    expect(readmeZh).toContain('catalog 外项目 intake 分类');
+    expect(readmeEn).toContain('catalog-out intake classification');
     expect(readmeZh).toContain('`expo-secure-store`');
     expect(readmeEn).toContain('`expo-secure-store`');
     expect(readmeZh).toContain('`@react-native-async-storage/async-storage`');
@@ -186,6 +186,8 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('formal experimental onboarding');
     expect(roadmap).toContain('Third-party Native Wave B + Regression Farm');
     expect(roadmap).toContain('Any-project Intake Freeze');
+    expect(roadmap).toContain('implementation target');
+    expect(roadmap).toContain('v1.10.0-acceptance.md');
     expect(roadmap).toContain('Final Blocker Burn-down');
     expect(roadmap).toContain('Any Expo Project Reliable Packaging');
     expect(roadmap).toContain('任何 Expo 项目都能可靠打包成鸿蒙 App');
@@ -215,6 +217,7 @@ describe('documentation metadata', () => {
         'v1.9.0-acceptance.md',
         'v1.9.2-acceptance.md',
         'v1.9.3-acceptance.md',
+        'v1.10.0-acceptance.md',
       ]),
     );
   });

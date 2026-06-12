@@ -204,7 +204,7 @@
 
 目标日期：`2026-10-31`
 
-状态：implementation baseline complete；simulator delivery gate pending target；device / release evidence carryover。
+状态：implementation baseline complete；simulator delivery gate complete on ccnubox_rn；device / release evidence carryover。
 
 目标：扩大第三方 native 覆盖，并把 `v1.9.0` 建好的最小 regression farm 扩容成持续回归面。
 
@@ -229,6 +229,8 @@
 
 目标日期：`2026-11-15`
 
+状态：`implementation target`，本阶段首个正式发布版本直接使用 `1.10.0` / `v1.10.0`；发布动作另行执行。
+
 目标：先冻结“任何 Expo 项目”入口面的产品故事，确保不存在无法分类、无法给下一步、无法明确阻断原因的项目。
 
 - `doctor` 对任意 Expo 项目必须满足：
@@ -237,6 +239,14 @@
   - 能输出有顺序的 remediation actions
 - roadmap / support matrix / acceptance board 与实际 catalog 保持零漂移
 - 对外叙事从“更多项目开始进入主线”升级成“任何项目都有明确处理路径”
+
+Acceptance checklist：
+
+- 新增 `fixtures/v110-*` 覆盖 catalog managed、bare、unknown JS-only、unknown native-looking、mixed intake
+- `nextActions[]` 固定按版本矩阵问题 -> 项目形态问题 -> native blocker -> unknown JS/native 依赖 -> build gate 排序
+- `acceptance/v1.10.0-acceptance.md` 记录 repo-only gate 与边界
+- 不提升任何 capability 到 `verified`
+- 不要求真机 device evidence
 
 ### v1.11.0 Final Blocker Burn-down
 

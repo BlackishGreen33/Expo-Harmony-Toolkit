@@ -22,6 +22,16 @@ const verifiedFixtureRoot = path.join(__dirname, '..', 'fixtures', 'verified-app
 const bareFixtureRoot = path.join(__dirname, '..', 'fixtures', 'bare-app');
 const ccnuboxLikeFixtureRoot = path.join(__dirname, '..', 'fixtures', 'ccnubox-like-app');
 const gestureHandlerFixtureRoot = path.join(__dirname, '..', 'fixtures', 'gesture-handler-app');
+const v110CatalogManagedRoot = path.join(__dirname, '..', 'fixtures', 'v110-catalog-managed-app');
+const v110BareRoot = path.join(__dirname, '..', 'fixtures', 'v110-bare-app');
+const v110UnknownJsOnlyRoot = path.join(__dirname, '..', 'fixtures', 'v110-unknown-js-only-app');
+const v110UnknownNativeLookingRoot = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'v110-unknown-native-looking-app',
+);
+const v110MixedIntakeRoot = path.join(__dirname, '..', 'fixtures', 'v110-mixed-intake-app');
 const thirdPartyWaveAFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-a-app');
 const thirdPartyWaveBFixtureRoot = path.join(__dirname, '..', 'fixtures', 'third-party-wave-b-app');
 const missingAsyncStorageAdapterRoot = path.join(
@@ -148,6 +158,18 @@ async function addFakeDependency(
   }
 }
 
+function expectActionFragmentsInOrder(actions: string[], expectedFragments: string[]) {
+  const indexes = expectedFragments.map((fragment) =>
+    actions.findIndex((action) => action.includes(fragment)),
+  );
+
+  expect(indexes).not.toContain(-1);
+
+  for (let index = 1; index < indexes.length; index += 1) {
+    expect(indexes[index]).toBeGreaterThan(indexes[index - 1]);
+  }
+}
+
 describe('doctor report', () => {
   it('classifies known Expo and third-party dependencies and marks the legacy fixture as ineligible', async () => {
     const report = await buildDoctorReport(managedFixtureRoot);
@@ -168,6 +190,7 @@ describe('doctor report', () => {
     expect(issueCodes).toContain('matrix.expo_sdk.unsupported');
     expect(issueCodes).toContain('dependency.not_allowed');
     expect(issueCodes).toContain('dependency.required_missing');
+    expect(report.nextActions[0]).toContain('Align Expo SDK, React Native, RNOH');
     expect(report.warnings).toContain(
       'Preview-tier dependencies were detected. The toolkit can scaffold and bundle them, but runtime behavior is not part of the verified public promise yet.',
     );
@@ -931,6 +954,7 @@ describe('doctor report', () => {
 
     expect(dependency?.status).toBe('unknown');
     expect(dependency?.buildabilityRisk).toBe('js-only-unknown');
+    expect(dependency?.gapCategory).toBe('matrix-drift');
     expect(dependency?.blocking).toBe(false);
     expect(report.blockingIssues.some((issue) => issue.subject === 'left-pad')).toBe(false);
     expect(
@@ -954,6 +978,7 @@ describe('doctor report', () => {
 
     expect(dependency?.status).toBe('unknown');
     expect(dependency?.buildabilityRisk).toBe('native-risk');
+    expect(dependency?.gapCategory).toBe('third-party-native-gap');
     expect(
       report.warnings.includes(
         'Some unknown dependencies appear to carry native surfaces. Treat them as real Harmony portability risks until they are explicitly onboarded.',
@@ -1025,5 +1050,92 @@ describe('doctor report', () => {
     expect(report.nextActions).toContain(
       'Inspect unknown native-looking dependencies and either replace them, gate them behind preview work, or onboard them explicitly before promising Harmony portability.',
     );
+  });
+
+  it('keeps the v1.10 catalog-covered fixture on the managed-core build gate', async () => {
+    const report = await buildDoctorReport(v110CatalogManagedRoot);
+
+    expect(report.eligibility).toBe('eligible');
+    expect(report.coverageProfile).toBe('managed-core');
+    expect(report.blockingIssues).toHaveLength(0);
+    expect(report.nextActions).toEqual([
+      'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.',
+    ]);
+  });
+
+  it('classifies the v1.10 bare fixture as bare instead of managed-core', async () => {
+    const report = await buildDoctorReport(v110BareRoot);
+    const expoBuildProperties = report.dependencies.find(
+      (dependency) => dependency.name === 'expo-build-properties',
+    );
+
+    expect(report.coverageProfile).toBe('bare');
+    expect(report.coverageProfile).not.toBe('managed-core');
+    expect(expoBuildProperties?.gapCategory).toBe('bare-workflow-gap');
+    expect(report.nextActions[0]).toContain('Keep this project on the bare workflow track');
+  });
+
+  it('keeps v1.10 unknown JavaScript-only intake lower risk and leaves the build gate last', async () => {
+    const report = await buildDoctorReport(v110UnknownJsOnlyRoot);
+    const leftPad = report.dependencies.find((dependency) => dependency.name === 'left-pad');
+
+    expect(report.coverageProfile).toBe('managed-core');
+    expect(leftPad?.buildabilityRisk).toBe('js-only-unknown');
+    expect(leftPad?.gapCategory).toBe('matrix-drift');
+    expect(leftPad?.blocking).toBe(false);
+    expectActionFragmentsInOrder(report.nextActions, [
+      'Unknown JavaScript-only packages still sit outside the public matrix',
+      'Stay on the verified lane',
+    ]);
+  });
+
+  it('keeps v1.10 unknown native-looking intake on the third-party native blocker path', async () => {
+    const report = await buildDoctorReport(v110UnknownNativeLookingRoot);
+    const mysteryNative = report.dependencies.find(
+      (dependency) => dependency.name === 'mystery-native-module',
+    );
+
+    expect(report.coverageProfile).toBe('third-party-native-heavy');
+    expect(mysteryNative?.buildabilityRisk).toBe('native-risk');
+    expect(mysteryNative?.gapCategory).toBe('third-party-native-gap');
+    expect(mysteryNative?.blocking).toBe(true);
+    expectActionFragmentsInOrder(report.nextActions, [
+      'Isolate third-party native packages',
+      'Inspect unknown native-looking dependencies',
+    ]);
+  });
+
+  it('keeps v1.10 mixed intake gap categories and next-action ordering stable', async () => {
+    const report = await buildDoctorReport(v110MixedIntakeRoot);
+    const byName = new Map(report.dependencies.map((dependency) => [dependency.name, dependency]));
+
+    expect(report.coverageProfile).toBe('third-party-native-heavy');
+    expect(byName.get('expo-secure-store')?.gapCategory).toBe('official-module-gap');
+    expect(byName.get('react-native-gesture-handler')?.gapCategory).toBe('third-party-native-gap');
+    expect(byName.get('mystery-native-module')?.buildabilityRisk).toBe('native-risk');
+    expect(byName.get('mystery-native-module')?.gapCategory).toBe('third-party-native-gap');
+    expect(byName.get('left-pad')?.buildabilityRisk).toBe('js-only-unknown');
+    expect(byName.get('left-pad')?.gapCategory).toBe('matrix-drift');
+    expect(
+      report.blockingIssues.some(
+        (issue) => issue.code === 'dependency.not_allowed' && issue.subject === 'expo-secure-store',
+      ),
+    ).toBe(true);
+    expect(
+      report.blockingIssues.some(
+        (issue) =>
+          issue.code === 'dependency.not_allowed' && issue.subject === 'react-native-gesture-handler',
+      ),
+    ).toBe(true);
+    expect(report.nextActions).toContain(
+      'Isolate third-party native packages and onboard them through the mainline capability catalog one by one; start with `react-native-gesture-handler` if it is present, and treat unknown native surfaces as explicit unblockers rather than matrix drift.',
+    );
+    expectActionFragmentsInOrder(report.nextActions, [
+      'Use `expo-harmony doctor --project-root . --target-tier preview`',
+      'Keep combined sample smoke',
+      'Keep `react-native-gesture-handler` on the formal experimental slice',
+      'Inspect unknown native-looking dependencies',
+      'Unknown JavaScript-only packages still sit outside the public matrix',
+    ]);
   });
 });

@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.9.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.10.0-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.9.3` keeps the `v1.9.2` Wave A baseline and brings ccnubox-first `react-native-webview`, JPush runtime, `expo-media-library`, `lottie-react-native`, and `@shopify/react-native-skia` into Third-party Native Wave B formal experimental onboarding. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities, and Wave B does not widen the current `verified` boundary.
+> `v1.10.0` freezes Any-project Intake: any Expo project entering `doctor` should receive a `coverageProfile`, explicit `gapCategory`, and ordered `nextActions`. The public promise remains tighter: `latest` only carries fully accepted `verified` capabilities; v1.10.0 is not a verified expansion and does not promise reliable packaging for catalog-out projects.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,10 +48,10 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.9.3` |
+| Current version | `v1.10.0` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
-| Supported input | Managed/CNG Expo projects; bare workflow intake baseline |
+| Supported input | Managed/CNG Expo projects; bare and catalog-out intake classification |
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia` |

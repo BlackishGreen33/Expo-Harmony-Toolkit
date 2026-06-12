@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "v1.10 Unknown JS Fixture",
+    "slug": "v110-unknown-js-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.v110unknownjsfixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.v110unknownjsfixture"
+    }
+  }
+}

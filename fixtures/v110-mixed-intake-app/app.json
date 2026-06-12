@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "v1.10 Mixed Intake Fixture",
+    "slug": "v110-mixed-intake-fixture",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.v110mixedintakefixture"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.v110mixedintakefixture"
+    }
+  }
+}

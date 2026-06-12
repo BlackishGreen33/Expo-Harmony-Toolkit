@@ -1,4 +1,5 @@
 import path from 'path';
+import { TOOLKIT_VERSION } from '../src/core/constants';
 import { runBuildHapCommand } from '../src/commands/buildHap';
 import { buildHapProject } from '../src/core/build';
 import { writeBuildReport } from '../src/core/metadata';
@@ -24,7 +25,7 @@ describe('build-hap command', () => {
     mockedBuildHapProject.mockResolvedValue({
       generatedAt: '2026-06-02T00:00:00.000Z',
       projectRoot: path.resolve('.'),
-      toolkitVersion: '1.9.3',
+      toolkitVersion: TOOLKIT_VERSION,
       command: 'build-hap',
       mode: 'debug',
       status: 'succeeded',

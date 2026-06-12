@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.9.3` 延续 `verified + preview + experimental` 支持分层，把 ccnubox-first Third-party Native Wave B 纳入 formal experimental onboarding；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.10.0` 延续 `verified + preview + experimental` 支持分层，并冻结 Any-project Intake：`doctor` 必须能分类任意 Expo 项目、标出 blocker 类型并给出有序下一步；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 

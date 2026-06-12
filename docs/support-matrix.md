@@ -1,6 +1,6 @@
-# v1.9 支持矩阵
+# v1.10 支持矩阵
 
-`v1.9` 继续采用 tiered support model，并把“层级”与“晋升距离”拆开表达：
+`v1.10` 继续采用 tiered support model，并把“层级”“晋升距离”与“intake 分类”拆开表达：
 
 - `supportTier` 表示公开承诺层级
 - `runtimeMode` 表示当前运行时接入形态：`shim`、`adapter`、`verified`
@@ -14,7 +14,8 @@
 - bare workflow 与第三方 native package 不再被描述成“收官后才考虑的另一条 extension 终局”
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
-- `v1.9.3` 新增的是 ccnubox-first Third-party Native Wave B formal experimental onboarding，不是 verified 扩容
+- `v1.10.0` 新增的是 Any-project Intake Freeze：任何 Expo 项目进入 `doctor` 后都应有分类、明确 blocker 类型与有序 `nextActions`
+- 这不是 verified 扩容；`latest` 仍只承诺完整验收的 `verified` 能力，catalog 外项目只承诺可诊断路径
 
 `doctor --strict` 继续只代表 `verified`。
 
@@ -208,7 +209,7 @@ expo-harmony doctor --project-root /path/to/app --target-tier preview
 - `runtimeMode !== verified`，表示即使已有部分证据，也仍不属于正式承诺
 - `coverageProfile=bare`，表示当前项目已落入 bare workflow 主线规划，但不等于当前 matrix 已正式支持 bare
 - `gapCategory=third-party-native-gap`，表示问题不应再被模糊描述成普通 matrix drift，而是主线 blocker
-- `nextActions[]` 的顺序即 toolkit 当前建议的处理顺序
+- `nextActions[]` 的顺序即 toolkit 当前建议的处理顺序：版本矩阵问题 -> 项目形态问题 -> native blocker -> unknown JS/native 依赖 -> build gate
 
 当前公开阻断 issue code 继续包括：
 
@@ -247,7 +248,7 @@ toolkit 受管的核心产物仍包括：
 
 ## Release Tracks
 
-从 `v1.8` 开始，发布节奏按双轨设计；`v1.9.0` 继续沿用同一规则：
+从 `v1.8` 开始，发布节奏按双轨设计；`v1.10.0` 继续沿用同一规则：
 
 <!-- GENERATED:support-matrix-release-tracks:start -->
 - `latest`
