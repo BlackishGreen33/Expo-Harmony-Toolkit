@@ -122,6 +122,8 @@ const RNOH_GENERATED_TS_SHIM_RELATIVE_PATH = path.join(
   'react-native-openharmony',
   'ts.ts',
 );
+const SIDECAR_DRIFT_REQUIRES_FORCE_WARNING_CODE = 'sidecar.drift.requires-force';
+
 export const BUILD_REQUIRED_MANAGED_FILE_PATHS = [
   ...AUTOLINKED_FILE_PATHS,
   RNOH_GENERATED_TS_SHIM_RELATIVE_PATH,
@@ -200,9 +202,7 @@ export async function syncProjectTemplate(
 
       if (!shouldForce && !managedByToolkit) {
         result.skippedFiles.push(file.relativePath);
-        result.warnings.push(
-          `Skipped ${file.relativePath} because it drifted from the last generated version. Re-run with --force to overwrite it.`,
-        );
+        result.warnings.push(renderSidecarDriftRequiresForceWarning(file.relativePath));
         continue;
       }
     }
@@ -232,6 +232,10 @@ export async function syncProjectTemplate(
   await fs.writeJson(result.manifestPath, manifest, { spaces: 2 });
 
   return result;
+}
+
+function renderSidecarDriftRequiresForceWarning(relativePath: string): string {
+  return `[${SIDECAR_DRIFT_REQUIRES_FORCE_WARNING_CODE}] Skipped managed sidecar file ${relativePath} because it drifted from the last generated version. Re-run expo-harmony sync-template --force or expo-harmony init --force to overwrite it.`;
 }
 
 async function buildManagedFiles(

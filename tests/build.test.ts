@@ -577,7 +577,9 @@ describe('bundle and HAP build reports', () => {
     expect(report.status).toBe('succeeded');
     expect(await fs.readFile(cppFactoryPath, 'utf8')).toBe(originalCppFactory);
     expect(await fs.readFile(metroConfigPath, 'utf8')).toBe('// drifted metro config\n');
-    expect(report.warnings.some((warning) => warning.includes('metro.harmony.config.js'))).toBe(true);
+    expect(report.warnings).toContain(
+      '[sidecar.drift.requires-force] Skipped managed sidecar file metro.harmony.config.js because it drifted from the last generated version. Re-run expo-harmony sync-template --force or expo-harmony init --force to overwrite it.',
+    );
     expect(report.warnings.some((warning) => warning.includes('RNOHPackagesFactory.h'))).toBe(false);
   }, 120000);
 

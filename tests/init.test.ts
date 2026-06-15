@@ -119,11 +119,9 @@ describe('init project', () => {
     const result = await syncProjectTemplate(projectRoot, false);
 
     expect(result.skippedFiles).toContain('metro.harmony.config.js');
-    expect(
-      result.warnings.some((warning) =>
-        warning.includes('metro.harmony.config.js'),
-      ),
-    ).toBe(true);
+    expect(result.warnings).toContain(
+      '[sidecar.drift.requires-force] Skipped managed sidecar file metro.harmony.config.js because it drifted from the last generated version. Re-run expo-harmony sync-template --force or expo-harmony init --force to overwrite it.',
+    );
   });
 
   it('merges non-secret local signing input into the managed Harmony build profile', async () => {

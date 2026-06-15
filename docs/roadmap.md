@@ -229,7 +229,7 @@
 
 目标日期：`2026-11-15`
 
-状态：`implementation target`，本阶段首个正式发布版本直接使用 `1.10.0` / `v1.10.0`；发布动作另行执行。
+状态：released / complete；`1.10.0` / `v1.10.0` 已发布到 `latest`。
 
 目标：先冻结“任何 Expo 项目”入口面的产品故事，确保不存在无法分类、无法给下一步、无法明确阻断原因的项目。
 
@@ -252,6 +252,8 @@ Acceptance checklist：
 
 目标日期：`2026-11-30`
 
+状态：burn-down ledger kickoff；第一阶段只建立 blocker 台账和验收出口，不提升任何 capability 到 `verified`。
+
 目标：把还会阻止“任何 Expo 项目可靠打包”的剩余高频 blocker 清到只剩极少数明确已知例外。
 
 - 逐项清掉剩余高频 blocker：
@@ -261,6 +263,27 @@ Acceptance checklist：
   - 自动生成 sidecar 与真实项目 drift
 - 对仍无法在 `v2.0.0` 前关闭的项，必须提前明确降级策略与替代路径
 - `v2.0.0` 不接受“先宣布完成，再慢慢补长尾”
+
+Burn-down ledger：
+
+- `release-evidence`：preview adapter capability 必须逐项补 per-capability release HAP runtime evidence；combined sample smoke 不能替代单项 release 验收
+- `bare-release-gap`：bare workflow 继续保留 intake / debug baseline，只有 release HAP 与 runtime evidence 补齐后才允许宣称 release-ready
+- `third-party-native`：Wave A / Wave B 继续停留在 `experimental`，先关闭 device / release evidence 或写明降级策略
+- `sidecar-drift`：所有 catalog-covered managed 项目都必须能重复执行 `sync-template -> bundle -> build-hap --mode debug`，drift 必须被明确报出或被可验证修复
+
+Sidecar drift audit：
+
+- `detected`：非 build-required managed sidecar drift 必须输出稳定 warning code：`sidecar.drift.requires-force`
+- `auto-refreshed build-required files`：bundle/build gate 必需的 autolinking 与 RNOH shim drift 可以自动刷新，不能误报 unresolved drift
+- `requires --force`：其他 managed sidecar drift 默认保留用户改动，并提示 `expo-harmony sync-template --force` 或 `expo-harmony init --force`
+- `accepted exception`：无法在 v1.11.x 关闭的真实项目 drift 必须写入 acceptance，不得扩写成 build/device/runtime pass
+
+Acceptance checklist：
+
+- 新增 `acceptance/v1.11.0-burn-down-ledger.md` 记录 v1.11.x 起始台账
+- 明确本阶段不改变 `latest` / `verified` 边界
+- 不把 debug/release HAP build pass 表述为真机 device 或 runtime pass
+- 对每个无法在 v1.11.x 关闭的 blocker 写出降级或替代路径
 
 ### v2.0.0 Catalog-covered Expo Project Reliable Packaging
 

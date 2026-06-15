@@ -186,9 +186,15 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('formal experimental onboarding');
     expect(roadmap).toContain('Third-party Native Wave B + Regression Farm');
     expect(roadmap).toContain('Any-project Intake Freeze');
-    expect(roadmap).toContain('implementation target');
+    expect(roadmap).toContain('released / complete');
     expect(roadmap).toContain('v1.10.0-acceptance.md');
     expect(roadmap).toContain('Final Blocker Burn-down');
+    expect(roadmap).toContain('burn-down ledger kickoff');
+    expect(roadmap).toContain('v1.11.0-burn-down-ledger.md');
+    expect(roadmap).toContain('sidecar.drift.requires-force');
+    expect(roadmap).toContain('auto-refreshed build-required files');
+    expect(roadmap).toContain('accepted exception');
+    expect(roadmap).toContain('不把 debug/release HAP build pass 表述为真机 device 或 runtime pass');
     expect(roadmap).toContain('Any Expo Project Reliable Packaging');
     expect(roadmap).toContain('任何 Expo 项目都能可靠打包成鸿蒙 App');
     expect(roadmap).not.toContain('Long-tail Native Module Extension');
@@ -196,6 +202,8 @@ describe('documentation metadata', () => {
     expect(npmRelease).toContain('`next`');
     expect(npmRelease).toContain('official-native-capabilities-sample');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
+    const cliBuild = await fs.readFile(path.join(repoRoot, 'docs', 'cli-build.md'), 'utf8');
+    expect(cliBuild).toContain('expo-harmony build-hap --mode release\n```');
     expect(acceptanceEntries).toEqual(
       expect.arrayContaining([
         'v1.5.1-acceptance.md',
@@ -218,6 +226,7 @@ describe('documentation metadata', () => {
         'v1.9.2-acceptance.md',
         'v1.9.3-acceptance.md',
         'v1.10.0-acceptance.md',
+        'v1.11.0-burn-down-ledger.md',
       ]),
     );
   });
