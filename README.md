@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.10.0-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.1-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.10.0` 冻结 Any-project Intake：任何 Expo 项目进入 `doctor` 后都应得到 `coverageProfile`、明确 `gapCategory` 与有序 `nextActions`。当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力；v1.10.0 不是 verified 扩容，也不承诺 catalog 外项目都能可靠打包。
+> `v1.11.1` 是第一个公开发布的 `v1.11.x`，收口 managed sidecar drift 的可诊断行为：非 build-required drift 会保留用户改动并提示 `sync-template --force` / `init --force`，build-required autolinking 与 RNOH shim drift 可由 bundle/build gate 自动刷新。`v1.11.0` 只作为未发布的 burn-down ledger checkpoint；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.1 不是 verified 扩容。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,14 +48,14 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.10.0` |
+| 当前版本 | `v1.11.1` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类 |
 | `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
 | `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`、`expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler`、`@react-native-async-storage/async-storage`、`react-native-screens`、`react-native-safe-area-context`、`react-native-webview`、`jpush-react-native`、`expo-media-library`、`lottie-react-native`、`@shopify/react-native-skia` |
-| 发布轨 | `latest` = fully accepted verified only；`next` = preview fast track |
+| 发布轨 | `latest` = 已验收 verified 承诺 + 不放宽承诺的稳定工具链 patch；`next` = preview fast track |
 | capability 遥测 | `runtimeMode` + `evidence(...)` + `evidenceSource(...)` + `coverageProfile` + `nextActions` |
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |

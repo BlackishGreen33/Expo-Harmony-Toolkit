@@ -3,7 +3,7 @@ import { CAPABILITY_DEFINITIONS } from './capabilities';
 import { UI_STACK_VALIDATED_ADAPTERS } from './uiStack';
 
 export const PUBLIC_RELEASE_TRACKS = {
-  latest: 'fully accepted verified only',
+  latest: 'verified commitments plus stable toolkit patches',
   next: 'preview fast track',
 } as const;
 

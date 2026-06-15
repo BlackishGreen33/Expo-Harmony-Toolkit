@@ -36,8 +36,8 @@ export function renderReadmeCurrentStatus(locale: DocsLocale): string {
   const supportingSamplesLabel = locale === 'zh' ? '辅助 onboarding samples' : 'Supporting onboarding samples';
   const releaseTracksValue =
     locale === 'zh'
-      ? `\`latest\` = ${PUBLIC_RELEASE_TRACKS.latest}；\`next\` = ${PUBLIC_RELEASE_TRACKS.next}`
-      : `\`latest\` = fully accepted \`verified\` only; \`next\` = ${PUBLIC_RELEASE_TRACKS.next}`;
+      ? `\`latest\` = 已验收 verified 承诺 + 不放宽承诺的稳定工具链 patch；\`next\` = ${PUBLIC_RELEASE_TRACKS.next}`
+      : `\`latest\` = ${PUBLIC_RELEASE_TRACKS.latest}; \`next\` = ${PUBLIC_RELEASE_TRACKS.next}`;
   const inputValue =
     locale === 'zh'
       ? 'Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类'
@@ -284,8 +284,8 @@ export function renderSupportMatrixReleaseTracks(locale: DocsLocale): string {
   return locale === 'zh'
     ? [
         '- `latest`',
-        '  - 只承接完整验收的 `verified` 能力',
-        '  - 只允许 verified sample / gate 作为发布依据',
+        '  - 承接完整验收的 `verified` 能力与不放宽承诺的稳定工具链 patch',
+        '  - 只允许 verified sample / gate、稳定工具链 gate 与明确 acceptance 作为发布依据',
         '- `next`',
         '  - 承接 preview fast track',
         '  - 必须至少通过 preview sample、bundle、debug build gate',
@@ -293,8 +293,8 @@ export function renderSupportMatrixReleaseTracks(locale: DocsLocale): string {
       ].join('\n')
     : [
         '- `latest`',
-        '  - only carries fully accepted `verified` capabilities',
-        '  - only verified samples and gates may justify a release',
+        '  - carries fully accepted `verified` capabilities plus stable toolkit patches that do not widen the public promise',
+        '  - only verified samples/gates, stable toolkit gates, and explicit acceptance records may justify a release',
         '- `next`',
         '  - carries preview fast-track work',
         '  - must at least pass the preview sample, bundle, and debug-build gates',

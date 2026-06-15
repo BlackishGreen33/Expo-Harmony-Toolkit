@@ -3,8 +3,8 @@
 `expo-harmony-toolkit` 继续公开发布到 npm，但从现在开始明确区分两条发布轨：
 
 - `latest`
-  - 只发布完整验收的 `verified` 能力
-  - 面向正式公开承诺
+  - 发布完整验收的 `verified` 能力，或不放宽公开承诺的稳定工具链 patch
+  - 面向正式公开承诺与稳定工具链修复
 - `next`
   - 承接 preview fast track
   - 面向更快的集成反馈，不等于 verified 或 release-ready
@@ -21,7 +21,7 @@
 
 推荐理解：
 
-- `latest` 解决“可以公开承诺什么”
+- `latest` 解决“可以公开承诺什么”，也承接不扩大承诺边界的稳定工具链 patch
 - `next` 解决“怎样更快收敛 preview 能力”
 
 ## 发布前检查
@@ -60,6 +60,7 @@ pnpm release:check
 
 - hosted CI 默认仍可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建
 - debug / release HAP gate 继续由 capability acceptance、带工具链环境的 CI 或本地验收补齐
+- `v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest` 只代表 sidecar drift 工具链行为收口，不代表 verified/capability 边界放宽
 - `v1.8.2` 已补一条 ccnubox release HAP 的本地签名、模拟器安装与启动记录；该记录不替代真机 device acceptance，也不把 preview capability 标为 release-ready
 - `v1.8.3` 只刷新 RNOH runtime / CLI 到 `0.82.29`，仍不宣称 RN `0.83.x` 已进入公开 Harmony 矩阵
 - preview capability 若在报告里显示 `device=yes`，必须同时以 `evidenceSource.device=manual-doc` 对外说明其来源，不得表述成 CI 自动设备验证
@@ -135,7 +136,7 @@ pnpm add --ignore-scripts <tarball>
 
 ## 发布边界
 
-- `latest` 不承接 preview capability 的公开承诺
+- `latest` 不承接 preview capability 的公开承诺，但可以发布不扩大 verified 边界的稳定工具链 patch
 - `next` 可以承接 preview fast track，但不得替代 capability promotion gate
 - 任何声称 verified 的能力都必须具备：
   - `bundle`
