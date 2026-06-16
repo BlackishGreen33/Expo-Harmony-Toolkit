@@ -156,6 +156,7 @@ export function renderSupportMatrixCapabilityTelemetry(locale: DocsLocale): stri
           '- `runtimeMode=shim`：说明当前还在桥接或占位阶段，即使 bundle / debug build 已完成，也不应宣称 verified',
           '- `runtimeMode=adapter`：说明已经进入真实适配路径，但仍缺少某些验收证据',
           '- `runtimeMode=verified`：说明能力已进入正式承诺，且证据闭环完成',
+          '- `release=no[none]`：说明 release HAP/runtime evidence 尚未关闭，不能写成 release-ready',
         ]
       : [
           'All capabilities now publish the following fields together:',
@@ -176,6 +177,7 @@ export function renderSupportMatrixCapabilityTelemetry(locale: DocsLocale): stri
           '- `runtimeMode=shim`: the capability is still on a bridge or placeholder path and must not be described as verified',
           '- `runtimeMode=adapter`: the capability is on a real adapter path but still lacks part of the evidence needed for verified promotion',
           '- `runtimeMode=verified`: the capability has entered the formal public promise and closed the evidence loop',
+          '- `release=no[none]`: release HAP/runtime evidence is still open and must not be described as release-ready',
         ];
 
   return lines.join('\n');

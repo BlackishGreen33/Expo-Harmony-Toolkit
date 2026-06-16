@@ -655,7 +655,7 @@ describe('doctor report', () => {
       experimentalReport.blockingIssues.some((issue) => issue.code === 'dependency.not_allowed'),
     ).toBe(false);
     expect(experimentalReport.nextActions).toContain(
-      'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and close device/release evidence before any promotion.',
+      'Keep Third-party Native Wave A on `doctor --target-tier experimental`: pair async-storage and screens with their Harmony adapters, keep safe-area on the toolkit shim, and record fallback paths before any promotion when device/release evidence cannot close in v1.11.x.',
     );
   });
 
@@ -786,7 +786,7 @@ describe('doctor report', () => {
       experimentalReport.blockingIssues.some((issue) => issue.code === 'dependency.not_allowed'),
     ).toBe(false);
     expect(experimentalReport.nextActions).toContain(
-      'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and require debug/release simulator delivery gates before shipping.',
+      'Keep Third-party Native Wave B on `doctor --target-tier experimental`: pair ccnubox WebView, media-library, Lottie, and Skia surfaces with their Harmony adapters, keep JPush runtime evidence separate, and record fallback paths if release/runtime evidence cannot close in v1.11.x.',
     );
   });
 
@@ -996,7 +996,7 @@ describe('doctor report', () => {
     expect(report.coverageProfile).toBe('bare');
     expect(expoBuildProperties?.gapCategory).toBe('bare-workflow-gap');
     expect(report.nextActions).toContain(
-      'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, and only claim verified support after bare workflow support lands in the mainline capability catalog.',
+      'Keep this project on the bare workflow track for now: preserve the native directories, use `expo-harmony doctor --project-root .` for classification, keep release HAP/runtime evidence as the v1.11.x blocker, and do not call it release-ready until that evidence closes.',
     );
   });
 

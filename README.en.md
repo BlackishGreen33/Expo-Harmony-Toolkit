@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.1-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.2-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.1` is the first public `v1.11.x` release. It closes the diagnosable managed sidecar drift behavior: non-build-required drift preserves user edits and points to `sync-template --force` / `init --force`, while build-required autolinking and RNOH shim drift can be refreshed by the bundle/build gate. `v1.11.0` remains an unpublished burn-down ledger checkpoint; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.1 is not a verified expansion.
+> `v1.11.2` prepares the next non-device burn-down ledger: release HAP/runtime, bare workflow, and Third-party Native Wave A/B gaps stay explicit, and blockers that cannot close in v1.11.x must carry a fallback or replacement path. `v1.11.1` remains the first published public `v1.11.x`; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.2 is not a verified expansion.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.11.1` |
+| Current version | `v1.11.2` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects; bare and catalog-out intake classification |

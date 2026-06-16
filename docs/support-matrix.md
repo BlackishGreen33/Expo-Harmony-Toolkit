@@ -15,7 +15,7 @@
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
 - `v1.10.0` 已冻结 Any-project Intake：任何 Expo 项目进入 `doctor` 后都应有分类、明确 blocker 类型与有序 `nextActions`
-- `v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
+- `v1.11.2` 准备非实机 burn-down 台账与降级策略；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
 - 这不是 verified 扩容；`latest` 仍只承诺完整验收的 `verified` 能力，catalog 外项目只承诺可诊断路径
 
 `doctor --strict` 继续只代表 `verified`。
@@ -93,6 +93,7 @@
 - `runtimeMode=shim`：说明当前还在桥接或占位阶段，即使 bundle / debug build 已完成，也不应宣称 verified
 - `runtimeMode=adapter`：说明已经进入真实适配路径，但仍缺少某些验收证据
 - `runtimeMode=verified`：说明能力已进入正式承诺，且证据闭环完成
+- `release=no[none]`：说明 release HAP/runtime evidence 尚未关闭，不能写成 release-ready
 <!-- GENERATED:support-matrix-capability-telemetry:end -->
 
 为了避免把“只差真机”与“当前子 API 还没实现到位”混在一起，`v1.8.x` 文档额外使用以下标记：
@@ -249,7 +250,7 @@ toolkit 受管的核心产物仍包括：
 
 ## Release Tracks
 
-从 `v1.8` 开始，发布节奏按双轨设计；`v1.11.1` 继续沿用同一规则：
+从 `v1.8` 开始，发布节奏按双轨设计；`v1.11.2` 继续沿用同一规则：
 
 <!-- GENERATED:support-matrix-release-tracks:start -->
 - `latest`

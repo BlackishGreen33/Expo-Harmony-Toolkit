@@ -191,8 +191,10 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('Final Blocker Burn-down');
     expect(roadmap).toContain('v1.11.0` 是未发布的 burn-down ledger checkpoint');
     expect(roadmap).toContain('v1.11.1` 是第一个公开 `v1.11.x`');
+    expect(roadmap).toContain('v1.11.2` 准备非实机 burn-down 台账与降级策略');
     expect(roadmap).toContain('v1.11.0-burn-down-ledger.md');
     expect(roadmap).toContain('v1.11.1-acceptance.md');
+    expect(roadmap).toContain('v1.11.2-acceptance.md');
     expect(roadmap).toContain('sidecar.drift.requires-force');
     expect(roadmap).toContain('auto-refreshed build-required files');
     expect(roadmap).toContain('accepted exception');
@@ -206,6 +208,7 @@ describe('documentation metadata', () => {
     expect(npmRelease).toContain('official-native-capabilities-sample');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
     expect(npmRelease).toContain('第一个公开 `v1.11.x`');
+    expect(npmRelease).toContain('非实机 burn-down 台账与降级策略');
     const cliBuild = await fs.readFile(path.join(repoRoot, 'docs', 'cli-build.md'), 'utf8');
     expect(cliBuild).toContain('expo-harmony build-hap --mode release\n```');
     expect(acceptanceEntries).toEqual(
@@ -232,6 +235,7 @@ describe('documentation metadata', () => {
         'v1.10.0-acceptance.md',
         'v1.11.0-burn-down-ledger.md',
         'v1.11.1-acceptance.md',
+        'v1.11.2-acceptance.md',
       ]),
     );
   });

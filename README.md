@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.1-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.2-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.1` 是第一个公开发布的 `v1.11.x`，收口 managed sidecar drift 的可诊断行为：非 build-required drift 会保留用户改动并提示 `sync-template --force` / `init --force`，build-required autolinking 与 RNOH shim drift 可由 bundle/build gate 自动刷新。`v1.11.0` 只作为未发布的 burn-down ledger checkpoint；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.1 不是 verified 扩容。
+> `v1.11.2` 准备下一段非实机 burn-down 台账：release HAP/runtime、bare workflow 与 Third-party Native Wave A/B 的缺口继续被明确记录，无法在 v1.11.x 关闭的项必须写出降级或替代路径。`v1.11.1` 仍是已发布的第一个公开 `v1.11.x`；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.2 不是 verified 扩容。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.11.1` |
+| 当前版本 | `v1.11.2` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类 |

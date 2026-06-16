@@ -61,6 +61,7 @@ pnpm release:check
 - hosted CI 默认仍可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建
 - debug / release HAP gate 继续由 capability acceptance、带工具链环境的 CI 或本地验收补齐
 - `v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest` 只代表 sidecar drift 工具链行为收口，不代表 verified/capability 边界放宽
+- `v1.11.2` 准备非实机 burn-down 台账与降级策略，不发布 tag/npm/GitHub Release 前，远端公开状态仍以已发布版本为准
 - `v1.8.2` 已补一条 ccnubox release HAP 的本地签名、模拟器安装与启动记录；该记录不替代真机 device acceptance，也不把 preview capability 标为 release-ready
 - `v1.8.3` 只刷新 RNOH runtime / CLI 到 `0.82.29`，仍不宣称 RN `0.83.x` 已进入公开 Harmony 矩阵
 - preview capability 若在报告里显示 `device=yes`，必须同时以 `evidenceSource.device=manual-doc` 对外说明其来源，不得表述成 CI 自动设备验证

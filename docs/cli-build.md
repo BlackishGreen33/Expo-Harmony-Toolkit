@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v1.11.1` 延续 `verified + preview + experimental` 支持分层，并把 `v1.11.0` 的 sidecar drift 台账收口成第一个公开 `v1.11.x` 工具链 patch：`doctor` 继续分类任意 Expo 项目、标出 blocker 类型并给出有序下一步；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+`v1.11.2` 延续 `verified + preview + experimental` 支持分层，并把 v1.11.x 剩余非实机 blocker 写成 burn-down 台账与降级策略：`doctor` 继续分类任意 Expo 项目、标出 blocker 类型并给出有序下一步；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 
