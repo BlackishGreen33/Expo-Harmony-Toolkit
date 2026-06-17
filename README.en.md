@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.2` has completed the pre-release non-device closeout: release HAP/runtime, bare workflow, and Third-party Native Wave A/B gaps stay explicit, and the ccnubox_rn signed simulator app-shell gate has passed. `v1.11.1` remains the first published public `v1.11.x`; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.2 is not a verified expansion and has not been published yet.
+> `v1.11.2` is now published to npm `latest` and has completed the non-device closeout: release HAP/runtime, bare workflow, and Third-party Native Wave A/B gaps stay explicit, and the ccnubox_rn signed simulator app-shell gate has passed. `v1.11.1` remains the first public `v1.11.x`; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.2 is not a verified expansion.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.

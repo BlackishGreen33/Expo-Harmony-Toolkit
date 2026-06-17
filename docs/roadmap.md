@@ -252,7 +252,7 @@ Acceptance checklist：
 
 目标日期：`2026-11-30`
 
-状态：`v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest`，只收口 sidecar drift 工具链行为；`v1.11.2` 已完成发布前非实机 closeout 与 ccnubox signed simulator app-shell gate，不提升任何 capability 到 `verified`，且尚未发布。
+状态：`v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest`，只收口 sidecar drift 工具链行为；`v1.11.2` 已发布到 `latest`，完成非实机 closeout 与 ccnubox signed simulator app-shell gate，但不提升任何 capability 到 `verified`。
 
 目标：把还会阻止“任何 Expo 项目可靠打包”的剩余高频 blocker 清到只剩极少数明确已知例外。
 

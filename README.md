@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.2` 已完成发布前非实机 closeout：release HAP/runtime、bare workflow 与 Third-party Native Wave A/B 的缺口继续被明确记录，ccnubox_rn 的 signed simulator app-shell gate 已通过。`v1.11.1` 仍是已发布的第一个公开 `v1.11.x`；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.2 不是 verified 扩容，也尚未发布。
+> `v1.11.2` 已发布到 npm `latest`，并完成非实机 closeout：release HAP/runtime、bare workflow 与 Third-party Native Wave A/B 的缺口继续被明确记录，ccnubox_rn 的 signed simulator app-shell gate 已通过。`v1.11.1` 仍是第一个公开 `v1.11.x`；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.2 不是 verified 扩容。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
