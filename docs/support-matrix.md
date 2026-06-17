@@ -15,7 +15,7 @@
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
 - `v1.10.0` 已冻结 Any-project Intake：任何 Expo 项目进入 `doctor` 后都应有分类、明确 blocker 类型与有序 `nextActions`
-- `v1.11.2` 准备非实机 burn-down 台账与降级策略；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
+- `v1.11.2` 已完成发布前非实机 closeout 与 ccnubox signed simulator app-shell gate；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
 - 这不是 verified 扩容；`latest` 仍只承诺完整验收的 `verified` 能力，catalog 外项目只承诺可诊断路径
 
 `doctor --strict` 继续只代表 `verified`。
@@ -123,7 +123,7 @@
 - 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
 - 当前原生 adapter preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
 - `v1.9.0` 新增的 app foundation modules 当前是 `runtimeMode=shim`，`bundle/debugBuild=automated`，`device/release=none`
-- `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录只证明 app-shell release 构建链路，不改变上述 per-capability `release=no[none]`
+- `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录与 `v1.11.2` 的 ccnubox_rn signed simulator app-shell gate 都只证明 app-shell 非实机链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
 - `v1.8.x` repo 内可完成的 closeout 已完成；剩余 carryover 只包括单 capability 真机 device record 与 release HAP runtime acceptance
 - `expo-file-system`
@@ -274,7 +274,7 @@ toolkit 受管的核心产物仍包括：
 - release signing / release HAP 验收完成
 - 文档、矩阵、roadmap、acceptance 记录同 PR 更新
 
-`v1.8.2` 记录的 simulator release-HAP evidence 只覆盖 ccnubox app-shell 的 signed HAP 构建、安装和启动；单 capability 的 release acceptance 仍必须按各自记录单独关闭。
+`v1.11.2` 记录的 simulator evidence 只覆盖当前本地 ccnubox_rn dirty checkout 的 signed HAP 构建、安装和启动；单 capability 的 release acceptance 仍必须按各自记录单独关闭。
 
 `v1.8.x` repo-only closeout 不改变 capability evidence source：`device=yes[manual-doc]` 仍只代表既有人工基线，`release=no[none]` 仍表示没有单 capability release HAP runtime evidence。
 

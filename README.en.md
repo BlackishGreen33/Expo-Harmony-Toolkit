@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.2` prepares the next non-device burn-down ledger: release HAP/runtime, bare workflow, and Third-party Native Wave A/B gaps stay explicit, and blockers that cannot close in v1.11.x must carry a fallback or replacement path. `v1.11.1` remains the first published public `v1.11.x`; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.2 is not a verified expansion.
+> `v1.11.2` has completed the pre-release non-device closeout: release HAP/runtime, bare workflow, and Third-party Native Wave A/B gaps stay explicit, and the ccnubox_rn signed simulator app-shell gate has passed. `v1.11.1` remains the first published public `v1.11.x`; the public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and v1.11.2 is not a verified expansion and has not been published yet.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -264,7 +264,7 @@ Additional preview evidence semantics:
 - `bundle/debugBuild` are marked as `automated`
 - `device` is marked as `manual-doc`, which means a human acceptance record exists rather than CI automation
 - `release` is marked as `none`, which means no release evidence exists yet
-- `v1.8.2` additionally records local signing plus simulator install/start evidence for the ccnubox release HAP; this only proves the minimal app-shell release-HAP path and does not close per-capability release acceptance
+- `v1.11.2` additionally records the current local ccnubox_rn dirty checkout signed simulator install/start gate; this only proves the app-shell non-device smoke and does not close per-capability release acceptance
 - `v1.8.3` aligns the RNOH runtime / CLI to the current latest `0.82.x` patch (`0.82.29`) while keeping the buildable `react-native@0.82.1` matrix boundary
 
 Manual Harmony acceptance still requires:

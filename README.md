@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.2` 准备下一段非实机 burn-down 台账：release HAP/runtime、bare workflow 与 Third-party Native Wave A/B 的缺口继续被明确记录，无法在 v1.11.x 关闭的项必须写出降级或替代路径。`v1.11.1` 仍是已发布的第一个公开 `v1.11.x`；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.2 不是 verified 扩容。
+> `v1.11.2` 已完成发布前非实机 closeout：release HAP/runtime、bare workflow 与 Third-party Native Wave A/B 的缺口继续被明确记录，ccnubox_rn 的 signed simulator app-shell gate 已通过。`v1.11.1` 仍是已发布的第一个公开 `v1.11.x`；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.2 不是 verified 扩容，也尚未发布。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -270,7 +270,7 @@ preview 证据的额外说明：
 - `bundle/debugBuild` 标记为 `automated`
 - `device` 标记为 `manual-doc`，表示已有人工验收记录，不等于 CI 自动验收
 - `release` 标记为 `none`，表示当前仍没有 release 证据
-- `v1.8.2` 额外记录了 ccnubox release HAP 的本地签名、模拟器安装与启动证据；这只证明 app-shell release HAP 最低链路，不关闭单 capability release acceptance
+- `v1.11.2` 额外记录了当前本地 ccnubox_rn dirty checkout 的 signed simulator install/start gate；这只证明 app-shell 非实机 smoke，不关闭单 capability release acceptance
 - `v1.8.3` 将 RNOH runtime / CLI 对齐到当前 `0.82.x` 最新 patch（`0.82.29`），继续保留 `react-native@0.82.1` 的可构建矩阵边界
 
 手动 Harmony 验收继续要求：
