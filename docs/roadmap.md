@@ -252,7 +252,7 @@ Acceptance checklist：
 
 目标日期：`2026-11-30`
 
-状态：`v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest`，只收口 sidecar drift 工具链行为；`v1.11.2` 已发布到 `latest`，完成非实机 closeout 与 ccnubox signed simulator app-shell gate，但不提升任何 capability 到 `verified`。
+状态：`v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest`，只收口 sidecar drift 工具链行为；`v1.11.2` 已发布到 `latest`，完成非实机 closeout 与 ccnubox signed simulator app-shell gate；`v1.11.3` 更新仓库代码，完成 v2 readiness 非实机 gate / fallback / exception 台账，但不发布 tag/npm/GitHub Release，也不提升任何 capability 到 `verified`。
 
 目标：把还会阻止“任何 Expo 项目可靠打包”的剩余高频 blocker 清到只剩极少数明确已知例外。
 
@@ -283,6 +283,7 @@ Acceptance checklist：
 - 新增 `acceptance/v1.11.0-burn-down-ledger.md` 记录 v1.11.x 起始台账
 - 新增 `acceptance/v1.11.1-acceptance.md` 记录第一个公开 v1.11.x release、`v1.11.0` 不发布决策与 sidecar drift 收口结果
 - 更新 `acceptance/v1.11.2-acceptance.md` 记录非实机 closeout、ccnubox signed simulator app-shell gate、bare release gap 与 third-party fallback 策略
+- 新增 `acceptance/v1.11.3-acceptance.md` 记录 v2 readiness 非实机 gate、fallback、exception 与公开边界
 - 明确本阶段不改变 `latest` / `verified` 边界
 - 不把 debug/release HAP build pass 表述为真机 device 或 runtime pass
 - 对每个无法在 v1.11.x 关闭的 blocker 写出降级或替代路径

@@ -64,6 +64,7 @@ pnpm release:check
 - `v1.11.2` 已完成非实机 closeout 与 ccnubox signed simulator app-shell gate，并已通过 tag/npm/GitHub Release 发布到 `latest`
 - `v1.11.2` 远端状态：npm `latest -> 1.11.2`，npm `next -> 1.9.0`，GitHub Release `v1.11.2` 已建立
 - `v1.11.2` 的 ccnubox signed simulator install/start 记录不替代真机 device acceptance，也不把 preview capability 标为 release-ready
+- `v1.11.3` 当前只更新仓库代码与 v2 readiness 非实机台账；未创建 tag，未发布 npm，未创建 GitHub Release
 - `v1.8.3` 只刷新 RNOH runtime / CLI 到 `0.82.29`，仍不宣称 RN `0.83.x` 已进入公开 Harmony 矩阵
 - preview capability 若在报告里显示 `device=yes`，必须同时以 `evidenceSource.device=manual-doc` 对外说明其来源，不得表述成 CI 自动设备验证
 

@@ -192,9 +192,11 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('v1.11.0` 是未发布的 burn-down ledger checkpoint');
     expect(roadmap).toContain('v1.11.1` 是第一个公开 `v1.11.x`');
     expect(roadmap).toContain('v1.11.2` 已发布到 `latest`');
+    expect(roadmap).toContain('v1.11.3` 更新仓库代码');
     expect(roadmap).toContain('v1.11.0-burn-down-ledger.md');
     expect(roadmap).toContain('v1.11.1-acceptance.md');
     expect(roadmap).toContain('v1.11.2-acceptance.md');
+    expect(roadmap).toContain('v1.11.3-acceptance.md');
     expect(roadmap).toContain('sidecar.drift.requires-force');
     expect(roadmap).toContain('auto-refreshed build-required files');
     expect(roadmap).toContain('accepted exception');
@@ -206,6 +208,7 @@ describe('documentation metadata', () => {
     expect(npmRelease).toContain('`next`');
     expect(npmRelease).toContain('稳定工具链 patch');
     expect(npmRelease).toContain('npm `latest -> 1.11.2`');
+    expect(npmRelease).toContain('`v1.11.3` 当前只更新仓库代码');
     expect(npmRelease).toContain('official-native-capabilities-sample');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
     expect(npmRelease).toContain('第一个公开 `v1.11.x`');
@@ -238,6 +241,7 @@ describe('documentation metadata', () => {
         'v1.11.0-burn-down-ledger.md',
         'v1.11.1-acceptance.md',
         'v1.11.2-acceptance.md',
+        'v1.11.3-acceptance.md',
       ]),
     );
   });

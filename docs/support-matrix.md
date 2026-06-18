@@ -15,7 +15,7 @@
 - `v2.0.0` 本身被定义成“任何 Expo 项目都能可靠打包成鸿蒙 App”的目标版本
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
 - `v1.10.0` 已冻结 Any-project Intake：任何 Expo 项目进入 `doctor` 后都应有分类、明确 blocker 类型与有序 `nextActions`
-- `v1.11.2` 已发布到 `latest`，并完成非实机 closeout 与 ccnubox signed simulator app-shell gate；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
+- `v1.11.3` 已更新仓库代码，完成 v2 readiness 非实机 gate / fallback / exception 台账；`v1.11.2` 是当前已发布到 `latest` 的 tag/npm/GitHub Release，并完成非实机 closeout 与 ccnubox signed simulator app-shell gate；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
 - 这不是 verified 扩容；`latest` 仍只承诺完整验收的 `verified` 能力，catalog 外项目只承诺可诊断路径
 
 `doctor --strict` 继续只代表 `verified`。
@@ -250,7 +250,7 @@ toolkit 受管的核心产物仍包括：
 
 ## Release Tracks
 
-从 `v1.8` 开始，发布节奏按双轨设计；`v1.11.2` 继续沿用同一规则：
+从 `v1.8` 开始，发布节奏按双轨设计；`v1.11.3` 继续沿用同一规则：
 
 <!-- GENERATED:support-matrix-release-tracks:start -->
 - `latest`
