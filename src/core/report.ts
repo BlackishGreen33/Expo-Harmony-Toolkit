@@ -10,6 +10,7 @@ import {
   TEMPLATE_VERSION,
   TOOLKIT_VERSION,
 } from './constants';
+import { writeProjectJson } from './safeProjectWrite';
 import { annotateDependencyBuildability } from './dependencyInspection';
 import { DEPENDENCY_CATALOG } from '../data/dependencyCatalog';
 import {
@@ -256,8 +257,12 @@ export async function writeDoctorReport(
   const resolvedOutputPath =
     outputPath ?? path.join(projectRoot, GENERATED_DIR, DOCTOR_REPORT_FILENAME);
 
-  await fs.ensureDir(path.dirname(resolvedOutputPath));
-  await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  if (outputPath) {
+    await fs.ensureDir(path.dirname(resolvedOutputPath));
+    await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  } else {
+    await writeProjectJson(projectRoot, path.join(GENERATED_DIR, DOCTOR_REPORT_FILENAME), report);
+  }
 
   return resolvedOutputPath;
 }

@@ -2,15 +2,15 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "{{APP_DESCRIPTION}}"
+      "value": {{APP_DESCRIPTION_JSON}}
     },
     {
       "name": "EntryAbility_desc",
-      "value": "{{APP_DESCRIPTION}}"
+      "value": {{APP_DESCRIPTION_JSON}}
     },
     {
       "name": "EntryAbility_label",
-      "value": "{{APP_NAME}}"
+      "value": {{APP_NAME_JSON}}
     }
   ]
 }

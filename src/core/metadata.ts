@@ -7,6 +7,7 @@ import {
   MANIFEST_FILENAME,
   TOOLKIT_CONFIG_FILENAME,
 } from './constants';
+import { writeProjectJson } from './safeProjectWrite';
 import { BuildReport, EnvReport, ToolkitConfig, ToolkitManifest } from '../types';
 
 export function getManifestPath(projectRoot: string): string {
@@ -51,8 +52,12 @@ export async function writeEnvReport(
   outputPath?: string,
 ): Promise<string> {
   const resolvedOutputPath = outputPath ?? getEnvReportPath(projectRoot);
-  await fs.ensureDir(path.dirname(resolvedOutputPath));
-  await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  if (outputPath) {
+    await fs.ensureDir(path.dirname(resolvedOutputPath));
+    await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  } else {
+    await writeProjectJson(projectRoot, path.join(GENERATED_DIR, ENV_REPORT_FILENAME), report);
+  }
   return resolvedOutputPath;
 }
 
@@ -62,7 +67,11 @@ export async function writeBuildReport(
   outputPath?: string,
 ): Promise<string> {
   const resolvedOutputPath = outputPath ?? getBuildReportPath(projectRoot);
-  await fs.ensureDir(path.dirname(resolvedOutputPath));
-  await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  if (outputPath) {
+    await fs.ensureDir(path.dirname(resolvedOutputPath));
+    await fs.writeJson(resolvedOutputPath, report, { spaces: 2 });
+  } else {
+    await writeProjectJson(projectRoot, path.join(GENERATED_DIR, BUILD_REPORT_FILENAME), report);
+  }
   return resolvedOutputPath;
 }

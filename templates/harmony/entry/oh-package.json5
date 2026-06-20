@@ -1,7 +1,7 @@
 {
   "name": "{{ENTRY_MODULE_NAME}}",
-  "description": "{{APP_DESCRIPTION}}",
-  "version": "{{APP_VERSION}}",
+  "description": {{APP_DESCRIPTION_JSON}},
+  "version": {{APP_VERSION_JSON}},
   "modelVersion": "5.0.0",
   "license": "ISC",
   "dependencies": {

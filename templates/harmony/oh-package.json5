@@ -1,8 +1,8 @@
 {
   modelVersion: '5.0.0',
   name: '{{BUNDLE_NAME}}',
-  version: '{{APP_VERSION}}',
-  description: '{{APP_DESCRIPTION}}',
+  version: '{{APP_VERSION_JSON5}}',
+  description: '{{APP_DESCRIPTION_JSON5}}',
   dependencies: {},
   devDependencies: {
     '@ohos/hypium': '1.0.6',

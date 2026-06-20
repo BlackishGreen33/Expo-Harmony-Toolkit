@@ -1,4 +1,3 @@
-import fs from 'fs-extra';
 import path from 'path';
 import { ConfigPlugin, createRunOncePlugin, withDangerousMod } from 'expo/config-plugins';
 import { DEFAULT_VALIDATED_MATRIX_ID } from './data/validatedMatrices';
@@ -15,6 +14,7 @@ import {
 } from './core/constants';
 import { deriveHarmonyIdentifiers } from './core/project';
 import { collectExpoPlugins, collectExpoSchemes } from './core/project';
+import { writeProjectJson } from './core/safeProjectWrite';
 
 export const withExpoHarmony: ConfigPlugin<ExpoHarmonyPluginProps> = (config, props = {}) => {
   validatePluginProps(props);
@@ -76,10 +76,12 @@ function registerMetadataDangerousMod(
     async (currentConfig) => {
       const metadata = buildPrebuildMetadata(currentConfig, identifiers, props);
       const projectRoot = currentConfig.modRequest.projectRoot;
-      const targetPath = path.join(projectRoot, GENERATED_DIR, PREBUILD_METADATA_FILENAME);
 
-      await fs.ensureDir(path.dirname(targetPath));
-      await fs.writeJson(targetPath, metadata, { spaces: 2 });
+      await writeProjectJson(
+        projectRoot,
+        path.join(GENERATED_DIR, PREBUILD_METADATA_FILENAME),
+        metadata,
+      );
 
       return currentConfig;
     },

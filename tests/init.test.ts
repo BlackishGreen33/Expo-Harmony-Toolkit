@@ -1,9 +1,10 @@
 import fs from 'fs-extra';
+import JSON5 from 'json5';
 import os from 'os';
 import path from 'path';
 import { TOOLKIT_VERSION } from '../src/core/constants';
 import { initProject, syncProjectTemplate } from '../src/core/template';
-import { readManifest, readToolkitConfig } from '../src/core/metadata';
+import { readManifest, readToolkitConfig, writeBuildReport } from '../src/core/metadata';
 
 const fixtureRoot = path.join(__dirname, '..', 'fixtures', 'managed-app');
 const nativePreviewFixtureRoot = path.join(__dirname, '..', 'fixtures', 'native-preview-app');
@@ -122,6 +123,80 @@ describe('init project', () => {
     expect(result.warnings).toContain(
       '[sidecar.drift.requires-force] Skipped managed sidecar file metro.harmony.config.js because it drifted from the last generated version. Re-run expo-harmony sync-template --force or expo-harmony init --force to overwrite it.',
     );
+  });
+
+  it('rejects symlinked managed outputs before writing outside the project root', async () => {
+    const projectRoot = await createTempFixture();
+    const outsideRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-outside-'));
+    const outsideTarget = path.join(outsideRoot, 'escaped-readme.md');
+
+    await fs.ensureDir(path.join(projectRoot, 'harmony'));
+    await fs.writeFile(outsideTarget, 'outside\n');
+    await fs.symlink(outsideTarget, path.join(projectRoot, 'harmony', 'README.md'));
+
+    await expect(syncProjectTemplate(projectRoot, true)).rejects.toThrow(
+      'Project output path contains a symlink: harmony/README.md',
+    );
+    await expect(fs.readFile(outsideTarget, 'utf8')).resolves.toBe('outside\n');
+  });
+
+  it('rejects symlinked default report outputs before writing outside the project root', async () => {
+    const projectRoot = await createTempFixture();
+    const outsideRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'expo-harmony-outside-'));
+    const outsideTarget = path.join(outsideRoot, 'escaped-build-report.json');
+
+    await fs.ensureDir(path.join(projectRoot, '.expo-harmony'));
+    await fs.writeFile(outsideTarget, 'outside\n');
+    await fs.symlink(outsideTarget, path.join(projectRoot, '.expo-harmony', 'build-report.json'));
+
+    await expect(
+      writeBuildReport(projectRoot, {
+        generatedAt: new Date(0).toISOString(),
+        projectRoot,
+        toolkitVersion: TOOLKIT_VERSION,
+        command: 'bundle',
+        mode: null,
+        status: 'succeeded',
+        harmonyProjectRoot: null,
+        entryFile: null,
+        bundleOutputPath: null,
+        assetsDestPath: null,
+        artifactPaths: [],
+        blockingIssues: [],
+        warnings: [],
+        steps: [],
+      }),
+    ).rejects.toThrow('Project output path contains a symlink: .expo-harmony/build-report.json');
+    await expect(fs.readFile(outsideTarget, 'utf8')).resolves.toBe('outside\n');
+  });
+
+  it('escapes Expo config values before rendering JSON and JSON5 templates', async () => {
+    const projectRoot = await createTempFixture();
+    const appJsonPath = path.join(projectRoot, 'app.json');
+    const appJson = await fs.readJson(appJsonPath);
+
+    appJson.expo.name = "Template PoC', injected: true, broken: '\nnext";
+    appJson.expo.version = "1.0.0', injectedVersion: 'owned";
+    await fs.writeJson(appJsonPath, appJson, { spaces: 2 });
+
+    await syncProjectTemplate(projectRoot, true);
+
+    const harmonyRootPackage = JSON5.parse(
+      await fs.readFile(path.join(projectRoot, 'harmony', 'oh-package.json5'), 'utf8'),
+    ) as Record<string, unknown>;
+    const appScopeConfig = JSON5.parse(
+      await fs.readFile(path.join(projectRoot, 'harmony', 'AppScope', 'app.json5'), 'utf8'),
+    ) as { app: Record<string, unknown> };
+    const entryPackage = JSON5.parse(
+      await fs.readFile(path.join(projectRoot, 'harmony', 'entry', 'oh-package.json5'), 'utf8'),
+    ) as Record<string, unknown>;
+
+    expect(harmonyRootPackage).not.toHaveProperty('injected');
+    expect(harmonyRootPackage).not.toHaveProperty('injectedVersion');
+    expect(harmonyRootPackage.description).toContain("Template PoC', injected: true");
+    expect(appScopeConfig.app.versionName).toBe("1.0.0', injectedVersion: 'owned");
+    expect(entryPackage).not.toHaveProperty('injectedVersion');
+    expect(entryPackage.version).toBe("1.0.0', injectedVersion: 'owned");
   });
 
   it('merges non-secret local signing input into the managed Harmony build profile', async () => {

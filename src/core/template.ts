@@ -39,6 +39,7 @@ import {
 } from './project';
 import { normalizeKnownJavaScriptDependencies } from './javascriptDependencies';
 import { buildDoctorReport, writeDoctorReport } from './report';
+import { resolveProjectPathForWrite, writeProjectFile, writeProjectJson } from './safeProjectWrite';
 import {
   mergeSigningLocalConfigIntoBuildProfile,
   renderSigningLocalExampleConfig,
@@ -181,7 +182,10 @@ export async function syncProjectTemplate(
   const manifestFiles: ManagedFileRecord[] = [];
 
   for (const file of desiredFiles) {
-    const targetPath = path.join(loadedProject.projectRoot, file.relativePath);
+    const targetPath = await resolveProjectPathForWrite(
+      loadedProject.projectRoot,
+      file.relativePath,
+    );
     const expectedHash = createGeneratedSha(file.contents);
     const previousRecord = previousManifest?.files.find(
       (record) => record.relativePath === file.relativePath,
@@ -207,8 +211,7 @@ export async function syncProjectTemplate(
       }
     }
 
-    await fs.ensureDir(path.dirname(targetPath));
-    await fs.writeFile(targetPath, file.contents);
+    await writeProjectFile(loadedProject.projectRoot, file.relativePath, file.contents);
     result.writtenFiles.push(file.relativePath);
     manifestFiles.push({ relativePath: file.relativePath, sha1: expectedHash });
   }
@@ -220,7 +223,6 @@ export async function syncProjectTemplate(
     );
   }
 
-  await fs.ensureDir(path.dirname(result.manifestPath));
   const manifest: ToolkitManifest = {
     generatedAt: new Date().toISOString(),
     toolkitVersion: TOOLKIT_VERSION,
@@ -229,7 +231,11 @@ export async function syncProjectTemplate(
     projectRoot: loadedProject.projectRoot,
     files: manifestFiles,
   };
-  await fs.writeJson(result.manifestPath, manifest, { spaces: 2 });
+  await writeProjectJson(
+    loadedProject.projectRoot,
+    path.relative(loadedProject.projectRoot, result.manifestPath),
+    manifest,
+  );
 
   return result;
 }
@@ -427,7 +433,7 @@ async function buildManagedFiles(
 }
 
 async function syncPackageScripts(projectRoot: string, _force: boolean): Promise<string[]> {
-  const packageJsonPath = path.join(projectRoot, 'package.json');
+  const packageJsonPath = await resolveProjectPathForWrite(projectRoot, 'package.json');
   const packageJson = (await fs.readJson(packageJsonPath)) as PackageJson;
   const desiredScripts = buildDesiredPackageScripts(packageJson);
   const scripts = { ...(packageJson.scripts ?? {}) };
@@ -458,8 +464,7 @@ async function syncPackageScripts(projectRoot: string, _force: boolean): Promise
 
   if (didChange) {
     packageJson.scripts = sortRecordByKey(scripts);
-    await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
-    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+    await writeProjectFile(projectRoot, 'package.json', JSON.stringify(packageJson, null, 2) + '\n');
   }
 
   return warnings;
@@ -472,7 +477,7 @@ function renderTemplate(
   hvigorPluginFilename: string,
 ): string {
   const appDescription = `${identifiers.appName} official minimal Harmony sample`;
-  const replacements: Record<string, string> = {
+  const rawReplacements: Record<string, string> = {
     APP_NAME: identifiers.appName,
     APP_SLUG: identifiers.slug,
     APP_VERSION: String(loadedProject.expoConfig.version ?? loadedProject.packageJson.version ?? '1.0.0'),
@@ -484,8 +489,25 @@ function renderTemplate(
     RNOH_CLI_VERSION,
     RNOH_HVIGOR_PLUGIN_FILENAME: hvigorPluginFilename,
   };
+  const replacements: Record<string, string> = {
+    ...rawReplacements,
+    APP_NAME_JSON: JSON.stringify(rawReplacements.APP_NAME),
+    APP_VERSION_JSON: JSON.stringify(rawReplacements.APP_VERSION),
+    APP_VERSION_JSON5: renderSingleQuotedStringContents(rawReplacements.APP_VERSION),
+    APP_DESCRIPTION_JSON: JSON.stringify(rawReplacements.APP_DESCRIPTION),
+    APP_DESCRIPTION_JSON5: renderSingleQuotedStringContents(rawReplacements.APP_DESCRIPTION),
+    APP_SLUG_ARKTS: renderSingleQuotedStringContents(rawReplacements.APP_SLUG),
+  };
 
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key: string) => replacements[key] ?? '');
+}
+
+function renderSingleQuotedStringContents(value: string): string {
+  return JSON.stringify(value)
+    .slice(1, -1)
+    .replace(/'/g, "\\'")
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 function renderRnohGeneratedTsShim(): string {

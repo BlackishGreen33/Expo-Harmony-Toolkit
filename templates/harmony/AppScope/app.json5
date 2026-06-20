@@ -3,7 +3,7 @@
     "bundleName": "{{BUNDLE_NAME}}",
     "vendor": "expo-harmony-toolkit",
     "versionCode": 1000000,
-    "versionName": "{{APP_VERSION}}",
+    "versionName": {{APP_VERSION_JSON}},
     "icon": "$media:app_icon",
     "label": "$string:app_name"
   }

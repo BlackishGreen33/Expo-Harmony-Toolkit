@@ -21,12 +21,12 @@ struct Index {
         }
         RNApp({
           rnInstanceConfig: {
-            name: '{{APP_SLUG}}',
+            name: '{{APP_SLUG_ARKTS}}',
             createRNPackages: getRNOHPackages,
             fontResourceByFontFamily: {},
             enableDebugger: this.rnohCoreContext?.isDebugModeEnabled,
           },
-          appKey: '{{APP_SLUG}}',
+          appKey: '{{APP_SLUG_ARKTS}}',
           jsBundleProvider: this.rnohCoreContext?.isDebugModeEnabled
             ? new AnyJSBundleProvider([
                 new MetroJSBundleProvider(),
