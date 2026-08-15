@@ -240,10 +240,14 @@ describe('documentation metadata', () => {
     expect(v1114Acceptance).toContain('`EXPO_HARMONY_RELEASE_SKIP_HAP=1 pnpm release:check`');
     expect(v1114Acceptance).toContain('`exit 0`');
     expect(v1114Acceptance).toContain('发布证据');
-    expect(v1114Acceptance).toContain('| Git tag | `v1.11.4` 指向 release commit |');
-    expect(v1114Acceptance).toContain('| npm | `expo-harmony-toolkit@1.11.4` 发布到 `latest` |');
-    expect(v1114Acceptance).toContain('| GitHub Release | `v1.11.4` Release 已建立 |');
-    expect(v1114Acceptance).toContain('| GitHub Actions | tag 触发的 release workflow run 已记录 |');
+    expect(v1114Acceptance).toContain('`v1.11.4` 指向 `ab01e02dbbe28bdcf3af6062d869007409b40997`');
+    expect(v1114Acceptance).toContain('`latest -> 1.11.4`；`next -> 1.9.0`');
+    expect(v1114Acceptance).toContain('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases/tag/v1.11.4');
+    expect(v1114Acceptance).toContain('`publishedAt=2026-08-15T19:25:49Z`；`draft=false`；`prerelease=false`');
+    expect(v1114Acceptance).toContain('`31903698914` success，`head=ab01e02dbbe28bdcf3af6062d869007409b40997`');
+    expect(v1114Acceptance).toContain('https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/runs/31903698914');
+    expect(v1114Acceptance).toContain('`31903434400` success');
+    expect(v1114Acceptance).toContain('PR `#3` 已 merge');
     const cliBuild = await fs.readFile(path.join(repoRoot, 'docs', 'cli-build.md'), 'utf8');
     expect(cliBuild).toContain('`v1.11.4` 延续');
     expect(cliBuild).toContain('expo-harmony build-hap --mode release\n```');
