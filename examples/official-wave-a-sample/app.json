@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Expo Harmony Official Wave A Sample",
+    "slug": "expo-harmony-official-wave-a-sample",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.blackishgreen.expoharmonyofficialwavea"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyofficialwavea"
+    }
+  }
+}

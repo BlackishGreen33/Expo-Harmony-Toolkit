@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const REMOTE_ASSET_URI = 'https://example.com/expo-harmony-foundation.png';
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-asset';
 
 export default function AssetFoundationScreen() {
   const [message, setMessage] = useState(
@@ -39,6 +40,7 @@ export default function AssetFoundationScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-asset foundation check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.9.0 Asset shim. Native resource resolution and cache parity
             remain promotion evidence, but app startup can keep importing expo-asset.

@@ -3,6 +3,8 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-device';
+
 export default function DeviceFoundationScreen() {
   const [message, setMessage] = useState(
     'Validate expo-device placeholder metadata and getDeviceTypeAsync for v1.9 app-foundation.',
@@ -26,6 +28,7 @@ export default function DeviceFoundationScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-device foundation check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.9.0 device metadata shim. Real model, build, and hardware
             metadata remain device-side promotion evidence.

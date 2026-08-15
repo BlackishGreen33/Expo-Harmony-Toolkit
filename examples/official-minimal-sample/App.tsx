@@ -16,6 +16,8 @@ const CHECKPOINTS = [
   },
 ];
 
+const SAMPLE_MARKER = 'EXPO_HARMONY_V2_SAMPLE:official-minimal';
+
 export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -23,6 +25,7 @@ export default function App() {
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
         <Text style={styles.title}>Official Minimal Sample</Text>
+        <Text style={styles.marker}>{SAMPLE_MARKER}</Text>
         <Text style={styles.body}>
           This is the smallest onboarding sample in the repo. Its job is not to look impressive. Its
           job is to make the minimal managed Expo to Harmony chain obvious and reproducible.
@@ -68,6 +71,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     color: '#111827',
+  },
+  marker: {
+    fontSize: 12,
+    color: '#6b7280',
   },
   body: {
     fontSize: 16,

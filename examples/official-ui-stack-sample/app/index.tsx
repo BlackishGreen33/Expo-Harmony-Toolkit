@@ -14,6 +14,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 
 const detailsUrl = Linking.createURL('/details');
 const MAX_SHIFT = 72;
+const SAMPLE_MARKER = 'EXPO_HARMONY_V2_SAMPLE:official-ui-stack';
 
 export default function HomeScreen() {
   const motion = useSharedValue(0);
@@ -64,6 +65,7 @@ export default function HomeScreen() {
           <View style={styles.copyColumn}>
             <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
             <Text style={styles.title}>Official UI Stack Sample</Text>
+            <Text style={styles.metaLine}>{SAMPLE_MARKER}</Text>
             <Text style={styles.body}>
               This is the public onboarding sample for the verified UI stack. It makes router, linking,
               constants, SVG, and reanimated success states visible without adding product logic on top.

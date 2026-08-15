@@ -5,6 +5,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 
 const CLIPBOARD_TEXT = 'expo-harmony-v1.9-clipboard';
 const CLIPBOARD_URL = 'https://example.com/expo-harmony-clipboard';
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-clipboard';
 
 export default function ClipboardFoundationScreen() {
   const [message, setMessage] = useState(
@@ -50,6 +51,7 @@ export default function ClipboardFoundationScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-clipboard foundation check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.9.0 clipboard session shim. Real system pasteboard behavior
             stays pending until native adapter evidence is recorded.

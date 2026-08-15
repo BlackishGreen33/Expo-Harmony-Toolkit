@@ -7,6 +7,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 
 const detailsUrl = Linking.createURL('/details');
 const homeUrl = Linking.createURL('/');
+const SAMPLE_MARKER = 'EXPO_HARMONY_V2_SAMPLE:official-app-shell';
 
 export default function HomeScreen() {
   const pathname = usePathname();
@@ -43,6 +44,7 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
           <Text style={styles.title}>Official App Shell Sample</Text>
+          <Text style={styles.metaLine}>{SAMPLE_MARKER}</Text>
           <Text style={styles.body}>
             This sample is the minimal developer walkthrough for Expo Router, Expo Linking, and Expo
             Constants inside the Harmony app shell. Every action on this page maps to a core path that
