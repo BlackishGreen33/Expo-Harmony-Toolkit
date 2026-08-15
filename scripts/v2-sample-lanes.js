@@ -74,6 +74,9 @@ const V2_SAMPLE_LANE_GROUPS = [
         marker: 'EXPO_HARMONY_V2_SAMPLE:official-wave-a',
         capabilityRoutePrefix: '/third-party-wave-a/',
         capabilityRouteDirectory: 'app/third-party-wave-a',
+        capabilityRouteFiles: {
+          '/gesture-handler': 'app/third-party-wave-a/gesture-handler.tsx',
+        },
       },
     ],
   },

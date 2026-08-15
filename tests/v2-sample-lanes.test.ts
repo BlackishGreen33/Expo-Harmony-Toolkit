@@ -18,6 +18,7 @@ interface V2SampleProject {
   readonly marker: string;
   readonly capabilityRoutePrefix?: string;
   readonly capabilityRouteDirectory?: string;
+  readonly capabilityRouteFiles?: Readonly<Record<string, string>>;
 }
 
 interface V2SampleLaneGroup {
@@ -48,6 +49,16 @@ const exceptionByPackage = new Map<string, (typeof V2_PACKAGING_CATALOG.exceptio
 );
 
 function resolveRouteProject(sampleRoute: string): V2SampleProject {
+  const mappedProjects = V2_SAMPLE_PROJECTS.filter(
+    (candidate) => candidate.capabilityRouteFiles?.[sampleRoute],
+  );
+  if (mappedProjects.length > 1) {
+    throw new Error(`Multiple v2 sample projects own capability route ${sampleRoute}.`);
+  }
+  if (mappedProjects[0]) {
+    return mappedProjects[0];
+  }
+
   const project = [...V2_SAMPLE_PROJECTS]
     .filter(
       (candidate) =>
@@ -67,6 +78,11 @@ function resolveRouteProject(sampleRoute: string): V2SampleProject {
 }
 
 function resolveRouteFile(project: V2SampleProject, sampleRoute: string): string {
+  const mappedRouteFile = project.capabilityRouteFiles?.[sampleRoute];
+  if (mappedRouteFile) {
+    return path.join(repoRoot, project.root, mappedRouteFile);
+  }
+
   const prefix = project.capabilityRoutePrefix ?? '';
   const relativeRoute = sampleRoute.slice(prefix.length).replace(/^\//, '');
   return path.join(
@@ -182,6 +198,23 @@ describe('v2 sample lane manifest', () => {
 });
 
 describe('v2 capability sample routes', () => {
+  it('keeps the public gesture-handler route owned by the Wave A sample', () => {
+    const definition = CAPABILITY_DEFINITIONS.find(
+      (candidate) => candidate.id === 'react-native-gesture-handler',
+    );
+
+    expect(definition?.sampleRoute).toBe('/gesture-handler');
+    if (!definition) {
+      throw new Error('Missing react-native-gesture-handler capability definition.');
+    }
+
+    const project = resolveRouteProject(definition.sampleRoute);
+    expect(project.id).toBe('official-wave-a');
+    expect(
+      path.relative(repoRoot, resolveRouteFile(project, definition.sampleRoute)).replace(/\\/g, '/'),
+    ).toBe('examples/official-wave-a-sample/app/third-party-wave-a/gesture-handler.tsx');
+  });
+
   it('maps all 19 capability definitions to real route files owned by a sample entry', async () => {
     expect(CAPABILITY_DEFINITIONS).toHaveLength(19);
 

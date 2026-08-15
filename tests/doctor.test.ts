@@ -565,6 +565,11 @@ describe('doctor report', () => {
       'Keep `react-native-gesture-handler` on the formal experimental slice until its Harmony adapter path closes device and release evidence.',
     );
     expect(experimentalReport.eligibility).toBe('eligible');
+    expect(
+      experimentalReport.capabilities.find(
+        (capability) => capability.id === 'react-native-gesture-handler',
+      )?.sampleRoute,
+    ).toBe('/gesture-handler');
     expect(experimentalReport.capabilities.find((capability) => capability.id === 'react-native-gesture-handler')?.runtimeMode).toBe(
       'adapter',
     );

@@ -269,7 +269,7 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     docsUrl: 'https://github.com/react-native-oh-library/react-native-harmony-gesture-handler',
     nativePackageNames: ['@react-native-oh-tpl/react-native-gesture-handler'],
     harmonyPermissions: [],
-    sampleRoute: '/third-party-wave-a/gesture-handler',
+    sampleRoute: '/gesture-handler',
     acceptanceChecklist: [
       'Install the canonical package with the matching Harmony adapter.',
       'Bundle a minimal GestureHandlerRootView and tap handler surface.',
