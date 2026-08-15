@@ -9,7 +9,7 @@
   <p>
     <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/actions/workflows/ci.yml"><img alt="Checks" src="https://img.shields.io/badge/checks-passing-16a34a?style=flat-square&logo=githubactions&logoColor=white"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square"></a>
-    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.3-111827?style=flat-square"></a>
+    <a href="https://github.com/BlackishGreen33/Expo-Harmony-Toolkit/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.11.4-111827?style=flat-square"></a>
     <a href="./docs/support-matrix.md"><img alt="Matrix" src="https://img.shields.io/badge/matrix-expo55--rnoh082--ui--stack-2563eb?style=flat-square"></a>
     <img alt="Input" src="https://img.shields.io/badge/input-Managed%2FCNG%20%2B%20bare%20intake-059669?style=flat-square">
   </p>
@@ -24,7 +24,7 @@
 </div>
 
 > [!IMPORTANT]
-> `v1.11.3` 已更新仓库代码，完成 v2 readiness 非实机 gate / fallback / exception 台账；本次不创建 tag、不发布 npm、不创建 GitHub Release。`v1.11.2` 仍是当前已发布到 npm `latest` 的版本，并保留 ccnubox_rn signed simulator app-shell gate 记录；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，v1.11.3 不是 verified 扩容。
+> `v1.11.4` 对账 `v1.11.3` 的发布状态，并继续保留 v2 readiness 的非实机 gate / fallback / exception 台账；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，稳定工具链 patch 不构成 verified 扩容。精确的远端发布证据记录在各版本 acceptance 文件中。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,7 +48,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.11.3` |
+| 当前版本 | `v1.11.4` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类 |
