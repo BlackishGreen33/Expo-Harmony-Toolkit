@@ -23,6 +23,8 @@ const supportMatrixPath = path.join(repoRoot, 'docs', 'support-matrix.md');
 const roadmapPath = path.join(repoRoot, 'docs', 'roadmap.md');
 const npmReleasePath = path.join(repoRoot, 'docs', 'npm-release.md');
 const acceptanceRootPath = path.join(repoRoot, 'acceptance');
+const v1113AcceptancePath = path.join(acceptanceRootPath, 'v1.11.3-acceptance.md');
+const v1114AcceptancePath = path.join(acceptanceRootPath, 'v1.11.4-acceptance.md');
 
 function getLocalLinks(contents: string): string[] {
   const markdownMatches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
@@ -67,6 +69,8 @@ describe('documentation metadata', () => {
 
     expect(readmeZh).toContain('href="./README.en.md"');
     expect(readmeEn).toContain('href="./README.md"');
+    expect(readmeZh).toContain('version-v1.11.4');
+    expect(readmeEn).toContain('version-v1.11.4');
     expect(readmeZh).toContain('expo55-rnoh082-ui-stack');
     expect(readmeEn).toContain('expo55-rnoh082-ui-stack');
     expect(readmeZh).toContain('./docs/official-ui-stack-sample.md');
@@ -149,6 +153,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
+    expect(TOOLKIT_VERSION).toBe('1.11.4');
     expect(packageJson.version).toBe(TOOLKIT_VERSION);
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
@@ -168,6 +173,9 @@ describe('documentation metadata', () => {
   it('keeps roadmap and release docs aligned with stable/latest plus fast-track/next', async () => {
     const roadmap = await fs.readFile(roadmapPath, 'utf8');
     const npmRelease = await fs.readFile(npmReleasePath, 'utf8');
+    const supportMatrix = await fs.readFile(supportMatrixPath, 'utf8');
+    const v1113Acceptance = await fs.readFile(v1113AcceptancePath, 'utf8');
+    const v1114Acceptance = await fs.readFile(v1114AcceptancePath, 'utf8');
     const acceptanceEntries = await fs.readdir(acceptanceRootPath);
 
     expect(roadmap).toContain('2026-05-15');
@@ -192,11 +200,14 @@ describe('documentation metadata', () => {
     expect(roadmap).toContain('v1.11.0` 是未发布的 burn-down ledger checkpoint');
     expect(roadmap).toContain('v1.11.1` 是第一个公开 `v1.11.x`');
     expect(roadmap).toContain('v1.11.2` 已发布到 `latest`');
-    expect(roadmap).toContain('v1.11.3` 更新仓库代码');
+    expect(roadmap).toContain('v1.11.3` 已发布到 `latest`');
+    expect(roadmap).toContain('v1.11.4` 进行 publication-state reconciliation');
+    expect(supportMatrix).toContain('`v1.11.4` 对账 `v1.11.3` 的发布状态');
     expect(roadmap).toContain('v1.11.0-burn-down-ledger.md');
     expect(roadmap).toContain('v1.11.1-acceptance.md');
     expect(roadmap).toContain('v1.11.2-acceptance.md');
     expect(roadmap).toContain('v1.11.3-acceptance.md');
+    expect(roadmap).toContain('v1.11.4-acceptance.md');
     expect(roadmap).toContain('sidecar.drift.requires-force');
     expect(roadmap).toContain('auto-refreshed build-required files');
     expect(roadmap).toContain('accepted exception');
@@ -207,14 +218,21 @@ describe('documentation metadata', () => {
     expect(npmRelease).toContain('`latest`');
     expect(npmRelease).toContain('`next`');
     expect(npmRelease).toContain('稳定工具链 patch');
-    expect(npmRelease).toContain('npm `latest -> 1.11.2`');
-    expect(npmRelease).toContain('`v1.11.3` 当前只更新仓库代码');
+    expect(npmRelease).toContain('精确远端发布状态只记录在各版本 acceptance 文件中');
+    expect(npmRelease).not.toContain('npm `latest ->');
+    expect(npmRelease).not.toContain('当前只更新仓库代码');
     expect(npmRelease).toContain('official-native-capabilities-sample');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
     expect(npmRelease).toContain('第一个公开 `v1.11.x`');
     expect(npmRelease).toContain('非实机 closeout');
     expect(npmRelease).toContain('ccnubox signed simulator app-shell gate');
+    expect(v1113Acceptance).toContain('初始 readiness 记录时尚未创建 tag、发布 npm 或创建 GitHub Release');
+    expect(v1113Acceptance).toContain('后续 security commit 后已发布 npm、tag 与 GitHub Release');
+    expect(v1114Acceptance).toContain('publication-state reconciliation');
+    expect(v1114Acceptance).toContain('本地验证证据');
+    expect(v1114Acceptance).toContain('发布证据');
     const cliBuild = await fs.readFile(path.join(repoRoot, 'docs', 'cli-build.md'), 'utf8');
+    expect(cliBuild).toContain('`v1.11.4` 延续');
     expect(cliBuild).toContain('expo-harmony build-hap --mode release\n```');
     expect(acceptanceEntries).toEqual(
       expect.arrayContaining([
@@ -242,6 +260,7 @@ describe('documentation metadata', () => {
         'v1.11.1-acceptance.md',
         'v1.11.2-acceptance.md',
         'v1.11.3-acceptance.md',
+        'v1.11.4-acceptance.md',
       ]),
     );
   });
