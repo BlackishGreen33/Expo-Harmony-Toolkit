@@ -26,39 +26,34 @@
 
 ## 发布前检查
 
+`2.0.0-next.0` 目前仅是未发布工作版本；已发布的稳定 npm `latest` 仍是 `1.11.4`。sample lanes 是 packaging gate 分组，不是 npm release channels。
+
 统一执行：
 
 ```bash
-pnpm build
-pnpm test
-npm pack --dry-run
 pnpm release:check
 ```
 
-`release:check` 会根据发布轨选择 smoke sample 与 doctor gate：
+`release:check` 先根据 package semver major 选择 gate：
 
-- `latest`
-  - smoke sample：`examples/official-ui-stack-sample`
-  - doctor gate：`expo-harmony doctor --strict`
-- `next`
-  - smoke sample：`examples/official-native-capabilities-sample`
-  - doctor gate：`expo-harmony doctor --target-tier preview`
+- v1 保留既有单 sample 语义：`latest` 使用 `official-ui-stack-sample` 的 strict doctor，`next` 使用 `official-native-capabilities-sample` 的 preview doctor。
+- v2 直接读取内部 manifest，以同一个 packed tarball 执行 5 lane groups / 7 physical projects。
 
 固定覆盖：
 
 - `pnpm build`
 - `pnpm test`
-- `npm pack --dry-run`
+- 单次实际 `npm pack` 与 tarball 文件清单检查
 - tarball 文件清单检查，不允许包含 `examples/`、`fixtures/`、`tests/`
-- tarball 安装 smoke：
-  - `doctor`
-  - `init --force`
-  - `bundle`
-- `next` 轨额外要求 preview sample 作为 smoke 根目录
+- 同一 tarball 的独立 consumer production dependency graph audit，要求 critical advisories 为 0
+- v2 每个 project 都执行 JSON doctor 结果验证、`init --force`、两次 `sync-template --force`、marker-bearing bundle
+- 第二次 sync 必须同时满足 `written=0` 与 `skipped=0`
+
+consumer audit 只覆盖发布 tarball 的实际 consumer graph。workspace/examples audit 不属于 publish hard gate；它继续单独记录既有开发与 sample baseline，不能拿总数或未经审查的 allowlist 代替 consumer 的 `critical=0` 判定。
 
 说明：
 
-- hosted CI 默认仍可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建
+- hosted CI 可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建，但不得跳过任一 portable project
 - debug / release HAP gate 继续由 capability acceptance、带工具链环境的 CI 或本地验收补齐
 - `v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest` 只代表 sidecar drift 工具链行为收口，不代表 verified/capability 边界放宽
 - `v1.11.2` 已完成非实机 closeout 与 ccnubox signed simulator app-shell gate，并已通过 tag/npm/GitHub Release 发布到 `latest`
@@ -88,7 +83,7 @@ npm publish --tag next --access public
 
 - 已登录 npm
 - 当前包版本与预期发布轨一致
-- `next` 版本建议使用 prerelease version，例如 `1.8.0-next.1`
+- `next` 版本使用 prerelease version，例如 `2.0.0-next.0`
 
 ## GitHub 自动发布
 
@@ -100,14 +95,15 @@ npm publish --tag next --access public
 工作流行为：
 
 - 安装依赖
-- 判断发布轨
+- 根据 package semver 判断发布轨：prerelease 只会得到 `next`，stable 只会得到 `latest`
 - 执行对应轨道的 `release:check`
 - 使用 npm Trusted Publisher 发布到对应 dist-tag
 
 约定：
 
-- 普通版本 tag 发布到 `latest`
-- 包含 `-next.`、`-beta.` 或 `-alpha.` 的 tag 发布到 `next`
+- push tag 必须精确等于 `v<package version>`，否则在 publish 前失败
+- `workflow_dispatch` 不要求 tag，按 package version 执行同一 gate，但不会触发 publish step
+- prerelease package 发布到 `next`；stable package 发布到 `latest`
 
 要求：
 
@@ -131,11 +127,11 @@ pnpm install --ignore-scripts
 pnpm add --ignore-scripts <tarball>
 ```
 
-这不会影响公开发布验证，因为 smoke 只要求：
+这不会影响 portable 发布验证；v2 gate 仍要求：
 
-- `doctor`
-- `init`
-- `bundle`
+- JSON `doctor`
+- `init` 与两次幂等 `sync-template`
+- 包含唯一 sample marker 的 `bundle`
 
 ## 发布边界
 

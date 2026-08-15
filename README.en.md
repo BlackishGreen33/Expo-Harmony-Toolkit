@@ -18,6 +18,7 @@
     <a href="./docs/cli-build.md">CLI Build Guide</a> ·
     <a href="./docs/official-native-capabilities-sample.md">Official Native Capabilities Sample</a> ·
     <a href="./docs/official-ui-stack-sample.md">Official UI Stack Sample</a> ·
+    <a href="./docs/v2-sample-lanes.md">v2 Sample Lanes</a> ·
     <a href="./docs/npm-release.md">npm Release Notes</a> ·
     <a href="./docs/roadmap.md">Roadmap</a>
   </p>
@@ -25,6 +26,9 @@
 
 > [!IMPORTANT]
 > `v1.11.4` reconciles the publication state of `v1.11.3` and retains the v2 readiness non-device gate / fallback / exception ledger. The public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and stable toolkit patches are not verified expansions. Exact remote publication evidence lives in each version's acceptance record.
+
+> [!WARNING]
+> `v2.0.0-next.0` is an unpublished working version that enables the portable release hard gate across five groups and seven official samples. The published stable npm `latest` remains `1.11.4`; sample lanes are not npm release channels.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.
@@ -48,7 +52,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v1.11.4` |
+| Current version | `v2.0.0-next.0` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Managed/CNG Expo projects; bare and catalog-out intake classification |
@@ -60,7 +64,7 @@
 | Build path | `doctor -> init -> bundle -> build-hap` |
 | Primary sample | `examples/official-ui-stack-sample` |
 | Preview sample | `examples/official-native-capabilities-sample` |
-| Supporting onboarding samples | `examples/official-app-shell-sample`, `examples/official-minimal-sample` |
+| Supporting onboarding samples | `examples/official-app-shell-sample`, `examples/official-minimal-sample`, `examples/official-bare-sample`, `examples/official-wave-a-sample`, `examples/official-wave-b-sample` |
 <!-- GENERATED:readme-current-status:end -->
 
 <details>
@@ -206,6 +210,12 @@ If you want the `v1.8.x` promotion board directly, use [acceptance/v1.8.x-capabi
   The minimal App Shell onboarding sample that demonstrates router, linking, constants, pathname, observed URL, and a generated deep-link flow.
 - `examples/official-minimal-sample`
   The smallest onboarding sample, explaining the shortest `doctor -> init -> bundle -> build-hap` chain and what it intentionally does not cover.
+- `examples/official-bare-sample`
+  The bare lane's independent packaging marker and experimental intake sample.
+- `examples/official-wave-a-sample`
+  The Wave A lane for gesture, async storage, the safe-area limitation, and the screens fallback.
+- `examples/official-wave-b-sample`
+  The Wave B lane for WebView, media library, Lottie, push fallbacks, and the Skia fallback.
 
 See:
 
@@ -213,6 +223,7 @@ See:
 - [Official UI Stack Sample Guide](./docs/official-ui-stack-sample.md)
 - [Official App Shell Sample Guide](./docs/official-app-shell-sample.md)
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
+- [v2 Official Sample Lanes](./docs/v2-sample-lanes.md)
 
 ## CLI Commands
 
@@ -247,16 +258,16 @@ Pre-publish checks:
 
 - `pnpm build`
 - `pnpm test`
-- `npm pack --dry-run`
-- tarball smoke:
-  `latest` runs `doctor --strict`, `init --force`, `bundle`
-  `next` runs `doctor --target-tier preview`, `init --force`, `bundle`
+- one real `npm pack` plus tarball-file validation
+- an isolated production consumer graph for the same tarball must pass a `critical=0` audit
+- v1 retains the single-sample `latest` / `next` smoke behavior
+- v2 runs 5 lane groups / 7 physical projects; each project must pass parsed JSON doctor, init, two syncs, and a marker-bearing bundle
 
 Automatic publishing still defaults to hosted CI only, but now splits into two tracks:
 
 - `stable/latest`: only verified samples and fully accepted capabilities
 - `fast-track/next`: preview sample smoke and preview capability validation
-- GitHub auto-publish selects `latest` or `next` based on the tag and keeps provenance enabled
+- GitHub auto-publish derives `latest` or `next` from package semver and requires an exact package-version tag on push; tagless `workflow_dispatch` still runs the gate
 - `build-hap --mode debug` still does not block hosted npm publishing
 
 Additional preview evidence semantics:
@@ -292,6 +303,7 @@ See [docs/npm-release.md](./docs/npm-release.md) and [docs/signing-and-release.m
 - [Official UI Stack Sample Guide](./docs/official-ui-stack-sample.md)
 - [Official App Shell Sample Guide](./docs/official-app-shell-sample.md)
 - [Official Minimal Sample Guide](./docs/official-minimal-sample.md)
+- [v2 Official Sample Lanes](./docs/v2-sample-lanes.md)
 - [npm Release Notes](./docs/npm-release.md)
 - [Signing and Release Notes](./docs/signing-and-release.md)
 - [Roadmap](./docs/roadmap.md)

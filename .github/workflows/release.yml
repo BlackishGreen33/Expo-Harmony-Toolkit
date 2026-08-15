@@ -30,24 +30,12 @@ jobs:
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@11.5.1
 
-      - name: Resolve release channel
-        id: channel
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          case "$REF_NAME" in
-            *-next.*|*-beta.*|*-alpha.*)
-              echo "release_channel=next" >> "$GITHUB_OUTPUT"
-              echo "dist_tag=next" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "release_channel=latest" >> "$GITHUB_OUTPUT"
-              echo "dist_tag=latest" >> "$GITHUB_OUTPUT"
-              ;;
-          esac
-
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Resolve release channel
+        id: channel
+        run: node scripts/release-channel.js >> "$GITHUB_OUTPUT"
 
       - name: Release Check
         env:

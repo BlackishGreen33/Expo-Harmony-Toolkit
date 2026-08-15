@@ -293,6 +293,8 @@ Acceptance checklist：
 
 原 `Any Expo Project Reliable Packaging` 叙事保留为 intake 目标，但可靠打包承诺明确收敛到 catalog-covered 项目。
 
+当前仓库工作版本已 staging 为未发布的 `2.0.0-next.0`，用于执行五组／七个 official samples 的 portable release hard gate；npm 已发布的稳定 `latest` 仍是 `1.11.4`。这不代表 stable v2、release HAP、simulator 或实机 evidence 已完成。
+
 目标日期：`2026-12-31`
 
 定义：任何 Expo 项目，只要依赖已经存在于主线 capability catalog 内，就能可靠打包成鸿蒙 App；未进入 catalog 的依赖必须至少被 `doctor` 明确分类、指出 blocker，并给出下一步。`v2.0.0` 本身就是基本接近最完美、最最终的形态。

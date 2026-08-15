@@ -12,6 +12,9 @@ export const PREVIEW_SAMPLE_PATH = 'examples/official-native-capabilities-sample
 export const SUPPORTING_SAMPLE_PATHS = [
   'examples/official-app-shell-sample',
   'examples/official-minimal-sample',
+  'examples/official-bare-sample',
+  'examples/official-wave-a-sample',
+  'examples/official-wave-b-sample',
 ] as const;
 
 export const VERIFIED_JS_UI_CAPABILITY_NAMES = [

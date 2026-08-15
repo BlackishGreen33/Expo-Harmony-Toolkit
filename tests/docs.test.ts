@@ -71,6 +71,10 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('href="./README.md"');
     expect(readmeZh).toContain('version-v1.11.4');
     expect(readmeEn).toContain('version-v1.11.4');
+    expect(readmeZh).toContain('`v2.0.0-next.0` 是尚未发布的工作版本');
+    expect(readmeEn).toContain('`v2.0.0-next.0` is an unpublished working version');
+    expect(readmeZh).toContain('./docs/v2-sample-lanes.md');
+    expect(readmeEn).toContain('./docs/v2-sample-lanes.md');
     expect(readmeZh).toContain('expo55-rnoh082-ui-stack');
     expect(readmeEn).toContain('expo55-rnoh082-ui-stack');
     expect(readmeZh).toContain('./docs/official-ui-stack-sample.md');
@@ -153,7 +157,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(TOOLKIT_VERSION).toBe('1.11.4');
+    expect(TOOLKIT_VERSION).toBe('2.0.0-next.0');
     expect(packageJson.version).toBe(TOOLKIT_VERSION);
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
@@ -222,6 +226,13 @@ describe('documentation metadata', () => {
     expect(npmRelease).not.toContain('npm `latest ->');
     expect(npmRelease).not.toContain('当前只更新仓库代码');
     expect(npmRelease).toContain('official-native-capabilities-sample');
+    expect(npmRelease).toContain('5 lane groups / 7 physical projects');
+    expect(npmRelease).toContain('`2.0.0-next.0` 目前仅是未发布工作版本');
+    expect(npmRelease).toContain('consumer production dependency graph');
+    expect(npmRelease).toContain('critical advisories 为 0');
+    expect(npmRelease).toContain('workspace/examples audit 不属于 publish hard gate');
+    expect(npmRelease).toContain('push tag 必须精确等于 `v<package version>`');
+    expect(npmRelease).toContain('`workflow_dispatch` 不要求 tag');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
     expect(npmRelease).toContain('第一个公开 `v1.11.x`');
     expect(npmRelease).toContain('非实机 closeout');

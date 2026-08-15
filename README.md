@@ -18,6 +18,7 @@
     <a href="./docs/cli-build.md">CLI 构建指南</a> ·
     <a href="./docs/official-native-capabilities-sample.md">官方 Native Capabilities Sample</a> ·
     <a href="./docs/official-ui-stack-sample.md">官方 UI Stack Sample</a> ·
+    <a href="./docs/v2-sample-lanes.md">v2 Sample Lanes</a> ·
     <a href="./docs/npm-release.md">npm 发布说明</a> ·
     <a href="./docs/roadmap.md">路线图</a>
   </p>
@@ -25,6 +26,9 @@
 
 > [!IMPORTANT]
 > `v1.11.4` 对账 `v1.11.3` 的发布状态，并继续保留 v2 readiness 的非实机 gate / fallback / exception 台账；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，稳定工具链 patch 不构成 verified 扩容。精确的远端发布证据记录在各版本 acceptance 文件中。
+
+> [!WARNING]
+> `v2.0.0-next.0` 是尚未发布的工作版本，用来启用五组／七个 official samples 的 portable release hard gate；npm 已发布的稳定 `latest` 仍是 `1.11.4`，sample lanes 不是 npm release channels。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。
@@ -48,7 +52,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v1.11.4` |
+| 当前版本 | `v2.0.0-next.0` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类 |
@@ -60,7 +64,7 @@
 | 构建链 | `doctor -> init -> bundle -> build-hap` |
 | 主 sample | `examples/official-ui-stack-sample` |
 | preview sample | `examples/official-native-capabilities-sample` |
-| 辅助 onboarding samples | `examples/official-app-shell-sample`、`examples/official-minimal-sample` |
+| 辅助 onboarding samples | `examples/official-app-shell-sample`、`examples/official-minimal-sample`、`examples/official-bare-sample`、`examples/official-wave-a-sample`、`examples/official-wave-b-sample` |
 <!-- GENERATED:readme-current-status:end -->
 
 <details>
@@ -212,6 +216,12 @@ pnpm exec expo-harmony build-hap --mode release
   最小可理解的 App Shell onboarding sample，用来展示 router、linking、constants、pathname、observed URL 与 generated deep link。
 - `examples/official-minimal-sample`
   最小 onboarding sample，用来说明最短 `doctor -> init -> bundle -> build-hap` 链路，以及它故意不覆盖的范围。
+- `examples/official-bare-sample`
+  bare lane 的独立 packaging marker 与 experimental intake sample。
+- `examples/official-wave-a-sample`
+  Wave A lane，覆盖 gesture、async storage、safe-area limitation 与 screens fallback。
+- `examples/official-wave-b-sample`
+  Wave B lane，覆盖 WebView、media library、Lottie、push fallback 与 Skia fallback。
 
 详见：
 
@@ -219,6 +229,7 @@ pnpm exec expo-harmony build-hap --mode release
 - [官方 Native Capabilities sample 指南](./docs/official-native-capabilities-sample.md)
 - [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
+- [v2 Official Sample Lanes](./docs/v2-sample-lanes.md)
 
 ## CLI 命令
 
@@ -253,16 +264,16 @@ pnpm exec expo-harmony build-hap --mode release
 
 - `pnpm build`
 - `pnpm test`
-- `npm pack --dry-run`
-- tarball 安装 smoke：
-  `latest` 走 `doctor --strict`、`init --force`、`bundle`
-  `next` 走 `doctor --target-tier preview`、`init --force`、`bundle`
+- 单次实际 `npm pack` 与 tarball 文件清单检查
+- 同一 tarball 的独立 consumer production graph 必须通过 `critical=0` audit
+- v1 继续按 `latest`／`next` 跑单 sample smoke
+- v2 跑 5 lane groups / 7 physical projects；每个 project 都执行 JSON doctor、init、两次 sync 与 marker bundle gate
 
 自动发布默认走 hosted CI only，并区分双轨：
 
 - `stable/latest`：只承接 verified sample 与完整验收能力
 - `fast-track/next`：承接 preview sample 与 preview capability smoke
-- GitHub 自动发布按 tag 选择 `latest` 或 `next` dist-tag，并保留 provenance
+- GitHub 自动发布由 package semver 决定 `latest` 或 `next`，且 push tag 必须精确匹配 package version；`workflow_dispatch` 无 tag 时仍可跑 gate
 - `build-hap --mode debug` 继续不作为 hosted npm publish 的硬阻塞条件
 
 preview 证据的额外说明：
@@ -298,6 +309,7 @@ verified capability 晋升还必须补齐：
 - [官方 UI Stack sample 指南](./docs/official-ui-stack-sample.md)
 - [官方 App Shell sample 指南](./docs/official-app-shell-sample.md)
 - [官方最小 sample 指南](./docs/official-minimal-sample.md)
+- [v2 Official Sample Lanes](./docs/v2-sample-lanes.md)
 - [npm 发布说明](./docs/npm-release.md)
 - [签名与 Release 说明](./docs/signing-and-release.md)
 - [路线图](./docs/roadmap.md)
