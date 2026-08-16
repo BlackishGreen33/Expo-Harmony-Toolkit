@@ -71,8 +71,29 @@ export function usesExpoRouter(packageJson: PackageJson): boolean {
   return hasDeclaredDependency(packageJson, 'expo-router');
 }
 
-export function resolveHarmonyBundleEntryFile(packageJson: PackageJson): string {
-  return usesExpoRouter(packageJson) ? HARMONY_ROUTER_ENTRY_FILENAME : 'index.js';
+export function resolveHarmonyBundleEntryFile(_packageJson: PackageJson): string {
+  return HARMONY_ROUTER_ENTRY_FILENAME;
+}
+
+export function renderNonRouterHarmonyEntry(identifiers: HarmonyIdentifiers): string {
+  const appKey = JSON.stringify(identifiers.slug);
+
+  return `require('./${HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH}');
+
+const { AppRegistry } = require('react-native');
+
+require('./index.js');
+
+if (!AppRegistry.getRunnable(${appKey})) {
+  const mainRunnable = AppRegistry.getRunnable('main');
+
+  if (!mainRunnable) {
+    throw new Error('Expo registerRootComponent did not register the main runnable.');
+  }
+
+  AppRegistry.registerRunnable(${appKey}, mainRunnable);
+}
+`;
 }
 
 export function renderRouterHarmonyEntry(identifiers: HarmonyIdentifiers): string {

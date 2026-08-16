@@ -71,6 +71,7 @@ import {
   contentsEqual,
   isBinaryTemplate,
   isEquivalentToolkitScript,
+  renderNonRouterHarmonyEntry,
   renderRouterHarmonyEntry,
   resolveHarmonyBundleEntryFile,
   sortRecordByKey,
@@ -370,14 +371,12 @@ async function buildManagedFiles(
       relativePath: HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH,
       contents: renderHarmonyRuntimePrelude(),
     },
-    ...(hasExpoRouter
-      ? [
-          {
-            relativePath: HARMONY_ROUTER_ENTRY_FILENAME,
-            contents: renderRouterHarmonyEntry(identifiers),
-          } satisfies TemplateFileDefinition,
-        ]
-      : []),
+    {
+      relativePath: HARMONY_ROUTER_ENTRY_FILENAME,
+      contents: hasExpoRouter
+        ? renderRouterHarmonyEntry(identifiers)
+        : renderNonRouterHarmonyEntry(identifiers),
+    },
     ...(hasManagedExpoHarmonyPackage
       ? [
           {
