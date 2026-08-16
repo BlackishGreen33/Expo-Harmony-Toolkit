@@ -25,6 +25,10 @@ const npmReleasePath = path.join(repoRoot, 'docs', 'npm-release.md');
 const acceptanceRootPath = path.join(repoRoot, 'acceptance');
 const v1113AcceptancePath = path.join(acceptanceRootPath, 'v1.11.3-acceptance.md');
 const v1114AcceptancePath = path.join(acceptanceRootPath, 'v1.11.4-acceptance.md');
+const v2NonDeviceCloseoutPath = path.join(
+  acceptanceRootPath,
+  'v2.0.0-non-device-closeout.md',
+);
 
 function getLocalLinks(contents: string): string[] {
   const markdownMatches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
@@ -289,7 +293,99 @@ describe('documentation metadata', () => {
         'v1.11.2-acceptance.md',
         'v1.11.3-acceptance.md',
         'v1.11.4-acceptance.md',
+        'v2.0.0-non-device-closeout.md',
       ]),
     );
+  });
+
+  it('records the v2 non-device closeout without claiming device or publication evidence', async () => {
+    const closeout = await fs.readFile(v2NonDeviceCloseoutPath, 'utf8');
+    const projects = [
+      ['managed-verified', 'official-minimal'],
+      ['managed-verified', 'official-app-shell'],
+      ['managed-verified', 'official-ui-stack'],
+      ['preview-foundation', 'official-native-capabilities'],
+      ['bare', 'official-bare'],
+      ['wave-a', 'official-wave-a'],
+      ['wave-b', 'official-wave-b'],
+    ] as const;
+    const variantProjects = [
+      'official-native-capabilities',
+      'official-wave-b',
+    ];
+
+    expect(closeout).toContain('expo-harmony-toolkit@2.0.0-next.0');
+    expect(closeout).toMatch(/Tarball SHA-256:\s*`[a-f0-9]{64}`/);
+    expect(closeout).toContain('5 lane groups / 7 physical projects');
+    expect(closeout).toContain('| Lane group | Project | portable | debugHap | releaseHap | simulator |');
+    expect(closeout).toContain('packed consumer');
+    expect(closeout).toContain('critical=0');
+    expect(closeout).toContain('workspace/examples');
+    expect(closeout).toContain('GHSA-w7jw-789q-3m8p');
+    expect(closeout).toContain('GHSA-23hp-3jrh-7fpw');
+    expect(closeout).toContain('未发布');
+    expect(closeout).toContain('Publication status');
+    expect(closeout.match(/^- Publication status：`([^`]+)`/m)?.[1]).toBe('未发布');
+    expect(closeout).not.toMatch(/^- Publication status：`(?:已发布|published)`/im);
+    expect(closeout).toContain('simulator pass 不是 device pass');
+    expect(closeout).toContain('真机语义保持 deferred');
+    expect(closeout).not.toMatch(
+      /(?:device|真機)(?: evidence| 語義)?\s*[:：=]\s*`?pass\b/i,
+    );
+    expect(closeout).not.toMatch(
+      /CapabilityEvidence\.release\/device`?\s*[:：=]\s*`?pass\b/i,
+    );
+    expect(closeout).toContain('file-system');
+    expect(closeout).toContain('image-picker');
+    expect(closeout).toContain('location');
+    expect(closeout).toContain('camera');
+    expect(closeout).toContain('push fallback');
+    expect(closeout).toContain('screens fallback');
+    expect(closeout).toContain('Skia fallback');
+    expect(closeout).toContain('Artifact SHA-256');
+    for (const [laneGroup, project] of projects) {
+      expect(closeout).toContain(
+        `| ${laneGroup} | ${project} | pass | pass | pass | pass |`,
+      );
+    }
+
+    const artifactSection = closeout.match(
+      /## Artifact SHA-256\s+([\s\S]*?)\s+## Fresh-build provenance/,
+    )?.[1];
+    expect(artifactSection).toBeDefined();
+    const artifactRows = Array.from(
+      artifactSection?.matchAll(
+        /^\| ([^|\n]+) \| ([^|\n]+) \| (yes|no) \| `([a-f0-9]{64})` \|$/gm,
+      ) ?? [],
+      ([, project, artifact, signed, sha256]) => ({
+        project: project.trim(),
+        artifact: artifact.trim(),
+        signed,
+        sha256,
+      }),
+    );
+    expect(artifactRows).toHaveLength(23);
+    expect(new Set(artifactRows.map(({ sha256 }) => sha256)).size).toBe(23);
+
+    const artifactKeys = new Set(
+      artifactRows.map(({ project, artifact, signed }) => `${project}|${artifact}|${signed}`),
+    );
+    for (const [, project] of projects) {
+      const releasePrefix = variantProjects.includes(project) ? 'original release' : 'release';
+      expect(artifactKeys).toContain(
+        `${project}|debug \`entry-default-unsigned.hap\`|no`,
+      );
+      expect(artifactKeys).toContain(
+        `${project}|${releasePrefix} \`entry-default-signed.hap\`|yes`,
+      );
+      expect(artifactKeys).toContain(
+        `${project}|release \`1-entry-default-unsigned.hap\`|no`,
+      );
+    }
+    for (const project of variantProjects) {
+      expect(artifactKeys).toContain(
+        `${project}|temp-only \`entry-default-simulator-signed.hap\`|yes`,
+      );
+    }
   });
 });
