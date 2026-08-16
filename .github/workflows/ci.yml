@@ -66,7 +66,7 @@ jobs:
           pnpm --dir examples/official-app-shell-sample run harmony:bundle
           pnpm --dir examples/official-ui-stack-sample run harmony:bundle
 
-  next-lane:
+  release-gate:
     runs-on: ubuntu-latest
 
     steps:
@@ -86,9 +86,9 @@ jobs:
 
       - name: Resolve release channel
         id: channel
-        run: node scripts/release-channel.js --ci-next >> "$GITHUB_OUTPUT"
+        run: node scripts/release-channel.js --ci-gate >> "$GITHUB_OUTPUT"
 
-      - name: Next Release Gate
+      - name: Release Gate
         env:
           EXPO_HARMONY_RELEASE_CHANNEL: ${{ steps.channel.outputs.release_channel }}
           EXPO_HARMONY_RELEASE_SKIP_HAP: '1'

@@ -367,17 +367,23 @@ describe('release gate orchestration', () => {
     expect(harness.materialized).toHaveLength(0);
   });
 
-  it('keeps hosted next and tag publishing on the same release gate without shell execution', async () => {
+  it('keeps the neutral hosted release gate and tag publishing on the same gate without shell execution', async () => {
     const repoRoot = path.join(__dirname, '..');
-    const [ciWorkflow, releaseWorkflow, releaseCheck] = await Promise.all([
+    const [ciWorkflow, releaseWorkflow, releaseCheck, releaseChannel] = await Promise.all([
       fs.readFile(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8'),
       fs.readFile(path.join(repoRoot, '.github', 'workflows', 'release.yml'), 'utf8'),
       fs.readFile(path.join(repoRoot, 'scripts', 'release-check.js'), 'utf8'),
+      fs.readFile(path.join(repoRoot, 'scripts', 'release-channel.js'), 'utf8'),
     ]);
 
     expect(ciWorkflow).toContain('EXPO_HARMONY_RELEASE_SKIP_HAP');
     expect(ciWorkflow).toContain('run: pnpm release:check');
-    expect(ciWorkflow).toContain('node scripts/release-channel.js --ci-next');
+    expect(ciWorkflow).toMatch(/^  release-gate:$/m);
+    expect(ciWorkflow).toContain('node scripts/release-channel.js --ci-gate');
+    expect(ciWorkflow).toContain('- name: Release Gate');
+    expect(ciWorkflow).not.toContain('next-lane:');
+    expect(ciWorkflow).not.toContain('--ci-next');
+    expect(ciWorkflow).not.toContain('- name: Next Release Gate');
     expect(ciWorkflow).toContain(
       'EXPO_HARMONY_RELEASE_CHANNEL: ${{ steps.channel.outputs.release_channel }}',
     );
@@ -389,5 +395,7 @@ describe('release gate orchestration', () => {
     );
     expect(releaseCheck).toContain('shell: false');
     expect(releaseCheck).not.toContain('shell: true');
+    expect(releaseChannel).toContain("args[0] === '--ci-gate'");
+    expect(releaseChannel).not.toContain('--ci-next');
   });
 });

@@ -52,12 +52,12 @@ function main() {
   const packageJson = require(path.join(repoRoot, 'package.json'));
   const args = process.argv.slice(2);
 
-  if (args.length > 1 || (args.length === 1 && args[0] !== '--ci-next')) {
-    throw new Error('Usage: node scripts/release-channel.js [--ci-next]');
+  if (args.length > 1 || (args.length === 1 && args[0] !== '--ci-gate')) {
+    throw new Error('Usage: node scripts/release-channel.js [--ci-gate]');
   }
 
   const metadata =
-    args[0] === '--ci-next'
+    args[0] === '--ci-gate'
       ? resolveCiReleaseMetadata(packageJson.version)
       : resolveReleaseMetadata({
           version: packageJson.version,
