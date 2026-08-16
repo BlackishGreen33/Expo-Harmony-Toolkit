@@ -215,6 +215,39 @@ describe('v2 capability sample routes', () => {
     ).toBe('examples/official-wave-a-sample/app/third-party-wave-a/gesture-handler.tsx');
   });
 
+  it('renders a canonical Harmony gesture button probe without claiming callback success', async () => {
+    const definition = CAPABILITY_DEFINITIONS.find(
+      (candidate) => candidate.id === 'react-native-gesture-handler',
+    );
+    if (!definition) {
+      throw new Error('Missing react-native-gesture-handler capability definition.');
+    }
+
+    const project = resolveRouteProject(definition.sampleRoute);
+    const routeSource = await fs.readFile(resolveRouteFile(project, definition.sampleRoute), 'utf8');
+
+    expect(routeSource).toContain(
+      "import { GestureHandlerRootView, RectButton } from 'react-native-gesture-handler';",
+    );
+    expect(routeSource).toContain('const [gestureCount, setGestureCount] = useState(0);');
+    expect(routeSource).toContain('const handlePress = () => {');
+    expect(routeSource).toContain('<RectButton');
+    expect(routeSource).toContain('onPress={handlePress}');
+    expect(routeSource).toContain('setGestureCount((count) => count + 1);');
+    expect(routeSource).toContain('Run tap gesture');
+    expect(routeSource).toContain('Gesture callback count={gestureCount}');
+    expect(routeSource).toContain(
+      'Canonical RectButton adapter probe; simulator callback evidence is blocked and device semantics are deferred.',
+    );
+    expect(routeSource).not.toContain('is handled by the installed Harmony adapter');
+    expect(routeSource).not.toContain('Gesture.Tap');
+    expect(routeSource).not.toContain('GestureDetector');
+    expect(routeSource).not.toContain('TapGestureHandler');
+    expect(routeSource).not.toContain('State.END');
+    expect(routeSource).not.toContain('onHandlerStateChange');
+    expect(routeSource).not.toContain('.runOnJS(');
+  });
+
   it('maps all 19 capability definitions to real route files owned by a sample entry', async () => {
     expect(CAPABILITY_DEFINITIONS).toHaveLength(19);
 
