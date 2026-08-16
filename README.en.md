@@ -28,7 +28,7 @@
 > `v1.11.4` reconciles the publication state of `v1.11.3` and retains the v2 readiness non-device gate / fallback / exception ledger. The public promise stays tight: `latest` only carries fully accepted `verified` capabilities, and stable toolkit patches are not verified expansions. Exact remote publication evidence lives in each version's acceptance record.
 
 > [!WARNING]
-> `v2.0.0-next.0` is an unpublished working version that enables the portable release hard gate across five groups and seven official samples. The published stable npm `latest` remains `1.11.4`; sample lanes are not npm release channels.
+> The v2 release channel is derived from package semver: v2 prerelease versions publish to `next`; stable versions publish to `latest`. The five-group, seven-project sample lanes are portable packaging gates, not npm release channels. Exact publication state lives only in the matching [`acceptance/`](./acceptance/) record.
 
 > [!TIP]
 > The two validated `@react-native-oh-tpl/*` adapters in the public matrix are currently consumed via exact Git URLs and commits. For repository development and the official UI-stack sample, prefer `pnpm install --ignore-scripts` so adapter prepare hooks do not fail on private upstream resources.

@@ -293,7 +293,7 @@ Acceptance checklist：
 
 原 `Any Expo Project Reliable Packaging` 叙事保留为 intake 目标，但可靠打包承诺明确收敛到 catalog-covered 项目。
 
-当前仓库工作版本已 staging 为未发布的 `2.0.0-next.0`，用于执行五组／七个 official samples 的 portable release hard gate；npm 已发布的稳定 `latest` 仍是 `1.11.4`。这不代表 stable v2、release HAP、simulator 或实机 evidence 已完成。
+v2 发布轨由 package semver 决定：prerelease 版本发布到 `next`，稳定版本发布到 `latest`；五组／七个 official sample lanes 用于 portable release hard gate，不是 npm release channels。release HAP 与 simulator 非实机 closeout 已记录在对应 acceptance，sample 行为变更后必须刷新相关证据；这些记录不代表 stable v2 或实机 evidence 已完成。精确发布状态只记录在 acceptance。
 
 目标日期：`2026-12-31`
 

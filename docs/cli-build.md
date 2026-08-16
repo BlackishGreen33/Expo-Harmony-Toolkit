@@ -1,6 +1,6 @@
 # CLI 构建指南
 
-`v2.0.0-next.0` 是尚未发布的工作版本；已发布的稳定 `latest` 仍是 `1.11.4`。`v1.11.4` 延续 `verified + preview + experimental` 支持分层，并对账 `v1.11.3` 的发布状态：v1.11.x 剩余 blocker 继续写成 burn-down 台账与降级策略，ccnubox_rn signed simulator app-shell gate 作为既有证据保留；`doctor` 继续分类任意 Expo 项目、标出 blocker 类型并给出有序下一步；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
+v2 发布轨由 package semver 决定：v2 prerelease 版本发布到 `next`，稳定版本发布到 `latest`；精确发布状态只记录在对应 acceptance 文件中。`v1.11.4` 延续 `verified + preview + experimental` 支持分层，并对账 `v1.11.3` 的发布状态：v1.11.x 剩余 blocker 继续写成 burn-down 台账与降级策略，ccnubox_rn signed simulator app-shell gate 作为既有证据保留；`doctor` 继续分类任意 Expo 项目、标出 blocker 类型并给出有序下一步；`expo55-rnoh082-ui-stack` 仍是唯一 verified 矩阵。
 
 CLI 命令集合不变：
 

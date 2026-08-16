@@ -28,7 +28,7 @@
 > `v1.11.4` 对账 `v1.11.3` 的发布状态，并继续保留 v2 readiness 的非实机 gate / fallback / exception 台账；当前公开承诺仍然收紧为：`latest` 只承诺完整验收的 `verified` 能力，稳定工具链 patch 不构成 verified 扩容。精确的远端发布证据记录在各版本 acceptance 文件中。
 
 > [!WARNING]
-> `v2.0.0-next.0` 是尚未发布的工作版本，用来启用五组／七个 official samples 的 portable release hard gate；npm 已发布的稳定 `latest` 仍是 `1.11.4`，sample lanes 不是 npm release channels。
+> v2 发布轨由 package semver 决定：v2 prerelease 版本发布到 `next`，稳定版本发布到 `latest`；五组／七个 official sample lanes 只是 portable packaging gate，不是 npm release channels。精确发布状态只记录在对应的 [`acceptance/`](./acceptance/) 文件中。
 
 > [!TIP]
 > 由于当前公开矩阵内的两套 `@react-native-oh-tpl/*` adapter 依赖以 Git URL + exact commit 形式接入，仓库开发和官方 UI-stack sample 推荐使用 `pnpm install --ignore-scripts`，避免 Git adapter 在 prepare 阶段拉取私有资源而中断安装。

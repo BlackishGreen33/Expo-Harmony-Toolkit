@@ -26,7 +26,7 @@
 
 ## 发布前检查
 
-`2.0.0-next.0` 目前仅是未发布工作版本；已发布的稳定 npm `latest` 仍是 `1.11.4`。sample lanes 是 packaging gate 分组，不是 npm release channels。
+v2 发布轨由 package semver 决定：v2 prerelease 版本发布到 `next`，稳定版本发布到 `latest`。sample lanes 是 packaging gate 分组，不是 npm release channels；精确远端发布状态只记录在各版本 acceptance 文件中。
 
 统一执行：
 
@@ -54,7 +54,7 @@ consumer audit 只覆盖发布 tarball 的实际 consumer graph。workspace/exam
 说明：
 
 - hosted CI 可通过 `EXPO_HARMONY_RELEASE_SKIP_HAP=1` 跳过真实 DevEco HAP 构建，但不得跳过任一 portable project
-- debug / release HAP gate 继续由 capability acceptance、带工具链环境的 CI 或本地验收补齐
+- debug / release HAP 与 simulator 非实机证据由 capability acceptance、带工具链环境的 CI 或本地验收记录；已有 closeout 不替代 source 变更后的重验，也不替代真机验收
 - `v1.11.0` 是未发布的 burn-down ledger checkpoint；`v1.11.1` 是第一个公开 `v1.11.x`，发布到 `latest` 只代表 sidecar drift 工具链行为收口，不代表 verified/capability 边界放宽
 - `v1.11.2` 已完成非实机 closeout 与 ccnubox signed simulator app-shell gate，并已通过 tag/npm/GitHub Release 发布到 `latest`
 - `v1.11.2` 的 ccnubox signed simulator install/start 记录不替代真机 device acceptance，也不把 preview capability 标为 release-ready
