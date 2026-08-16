@@ -12,6 +12,7 @@ import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 
 type CameraPermission = Awaited<ReturnType<typeof getCameraPermissionsAsync>>;
 type MicrophonePermission = Awaited<ReturnType<typeof getMicrophonePermissionsAsync>>;
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-camera';
 
 type CameraHandle = {
   takePictureAsync?: (options?: Record<string, unknown>) => Promise<{
@@ -165,6 +166,7 @@ export default function CameraFunctionalScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-camera functional check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.7.2 preview subset: embedded live preview, preview
             pause/resume, still capture, video recording controls, and microphone permission

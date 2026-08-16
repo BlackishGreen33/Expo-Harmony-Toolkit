@@ -1,6 +1,6 @@
 {
   "name": "expo-harmony-toolkit",
-  "version": "1.11.4",
+  "version": "2.0.0-next.0",
   "description": "面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链",
   "main": "app.plugin.js",
   "types": "build/index.d.ts",
@@ -29,6 +29,7 @@
     "docs/official-minimal-sample.md",
     "docs/official-native-capabilities-sample.md",
     "docs/official-ui-stack-sample.md",
+    "docs/v2-sample-lanes.md",
     "docs/roadmap.md",
     "docs/signing-and-release.md",
     "docs/support-matrix.md"

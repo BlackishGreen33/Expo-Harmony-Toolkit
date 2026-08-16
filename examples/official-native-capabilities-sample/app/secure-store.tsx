@@ -5,6 +5,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 
 const STORAGE_KEY = 'expo-harmony-v1.9-secure-store';
 const STORAGE_VALUE = 'foundation-baseline';
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-secure-store';
 
 export default function SecureStoreFoundationScreen() {
   const [message, setMessage] = useState(
@@ -57,6 +58,7 @@ export default function SecureStoreFoundationScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-secure-store foundation check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.9.0 app-foundation shim. It keeps JS startup and bundle/debug
             paths stable, but encrypted persistence still requires native device evidence.

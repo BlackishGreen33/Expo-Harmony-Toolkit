@@ -50,6 +50,8 @@ const ROUTES = [
   },
 ];
 
+const SAMPLE_MARKER = 'EXPO_HARMONY_V2_SAMPLE:official-native-capabilities';
+
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -58,6 +60,7 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
           <Text style={styles.title}>Official Native Capabilities Sample</Text>
+          <Text style={styles.boundaryLine}>{SAMPLE_MARKER}</Text>
           <Text style={styles.body}>
             This is the canonical simulator-friendly walkthrough for the current preview native
             capabilities and v1.9 app-foundation modules. Each route demonstrates the documented

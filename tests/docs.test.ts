@@ -25,6 +25,10 @@ const npmReleasePath = path.join(repoRoot, 'docs', 'npm-release.md');
 const acceptanceRootPath = path.join(repoRoot, 'acceptance');
 const v1113AcceptancePath = path.join(acceptanceRootPath, 'v1.11.3-acceptance.md');
 const v1114AcceptancePath = path.join(acceptanceRootPath, 'v1.11.4-acceptance.md');
+const v2NonDeviceCloseoutPath = path.join(
+  acceptanceRootPath,
+  'v2.0.0-non-device-closeout.md',
+);
 
 function getLocalLinks(contents: string): string[] {
   const markdownMatches = contents.matchAll(/\[[^\]]+\]\((\.\/[^)]+)\)/g);
@@ -71,6 +75,10 @@ describe('documentation metadata', () => {
     expect(readmeEn).toContain('href="./README.md"');
     expect(readmeZh).toContain('version-v1.11.4');
     expect(readmeEn).toContain('version-v1.11.4');
+    expect(readmeZh).toContain('v2 prerelease 版本发布到 `next`，稳定版本发布到 `latest`');
+    expect(readmeEn).toContain('v2 prerelease versions publish to `next`; stable versions publish to `latest`');
+    expect(readmeZh).toContain('./docs/v2-sample-lanes.md');
+    expect(readmeEn).toContain('./docs/v2-sample-lanes.md');
     expect(readmeZh).toContain('expo55-rnoh082-ui-stack');
     expect(readmeEn).toContain('expo55-rnoh082-ui-stack');
     expect(readmeZh).toContain('./docs/official-ui-stack-sample.md');
@@ -107,6 +115,38 @@ describe('documentation metadata', () => {
     for (const link of linkedFiles) {
       const target = path.resolve(repoRoot, link);
       expect(await fs.pathExists(target)).toBe(true);
+    }
+  });
+
+  it('keeps every packed v2 publication statement channel-based instead of time-sensitive', async () => {
+    const packageJson = await fs.readJson(packageJsonPath);
+    const packedMarkdownPaths = (packageJson.files as string[]).filter(
+      (filePath) => /^README(?:\.en)?\.md$/.test(filePath) || /^docs\/.*\.md$/.test(filePath),
+    );
+    const packedDocuments = await Promise.all(
+      packedMarkdownPaths.map((filePath) => fs.readFile(path.join(repoRoot, filePath), 'utf8')),
+    );
+    const volatileV2PublicationPatterns = [
+      /`?v?2\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?`?[^。\n.]{0,120}(?:尚未發布|尚未发布|未發布|未发布|unpublished)/i,
+      /`?v?2\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?`?[^\n]{0,160}(?:(?:目前|当前)[^\n]{0,80}`latest`|current[^\n]{0,80}`latest`)/i,
+      /(?:published stable npm `latest` remains|已發布的穩定 `latest` 仍是|已发布的稳定(?: npm )?`latest` 仍是)/i,
+    ];
+
+    expect(packedMarkdownPaths).toEqual(
+      expect.arrayContaining([
+        'README.md',
+        'README.en.md',
+        'docs/cli-build.md',
+        'docs/npm-release.md',
+        'docs/roadmap.md',
+        'docs/support-matrix.md',
+        'docs/v2-sample-lanes.md',
+      ]),
+    );
+    for (const contents of packedDocuments) {
+      for (const pattern of volatileV2PublicationPatterns) {
+        expect(contents).not.toMatch(pattern);
+      }
     }
   });
 
@@ -153,7 +193,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(TOOLKIT_VERSION).toBe('1.11.4');
+    expect(TOOLKIT_VERSION).toBe('2.0.0-next.0');
     expect(packageJson.version).toBe(TOOLKIT_VERSION);
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');
@@ -222,6 +262,16 @@ describe('documentation metadata', () => {
     expect(npmRelease).not.toContain('npm `latest ->');
     expect(npmRelease).not.toContain('当前只更新仓库代码');
     expect(npmRelease).toContain('official-native-capabilities-sample');
+    expect(npmRelease).toContain('5 lane groups / 7 physical projects');
+    expect(npmRelease).toContain('v2 prerelease 版本发布到 `next`，稳定版本发布到 `latest`');
+    expect(npmRelease).toContain('精确远端发布状态只记录在各版本 acceptance 文件中');
+    expect(roadmap).toContain('release HAP 与 simulator 非实机 closeout 已记录在对应 acceptance');
+    expect(roadmap).not.toContain('这不代表 stable v2、release HAP、simulator 或实机 evidence 已完成');
+    expect(npmRelease).toContain('consumer production dependency graph');
+    expect(npmRelease).toContain('critical advisories 为 0');
+    expect(npmRelease).toContain('workspace/examples audit 不属于 publish hard gate');
+    expect(npmRelease).toContain('push tag 必须精确等于 `v<package version>`');
+    expect(npmRelease).toContain('`workflow_dispatch` 不要求 tag');
     expect(npmRelease).toContain('`evidenceSource.device=manual-doc`');
     expect(npmRelease).toContain('第一个公开 `v1.11.x`');
     expect(npmRelease).toContain('非实机 closeout');
@@ -278,7 +328,110 @@ describe('documentation metadata', () => {
         'v1.11.2-acceptance.md',
         'v1.11.3-acceptance.md',
         'v1.11.4-acceptance.md',
+        'v2.0.0-non-device-closeout.md',
       ]),
     );
+  });
+
+  it('records the v2 non-device closeout without claiming device or publication evidence', async () => {
+    const closeout = await fs.readFile(v2NonDeviceCloseoutPath, 'utf8');
+    const projects = [
+      ['managed-verified', 'official-minimal'],
+      ['managed-verified', 'official-app-shell'],
+      ['managed-verified', 'official-ui-stack'],
+      ['preview-foundation', 'official-native-capabilities'],
+      ['bare', 'official-bare'],
+      ['wave-a', 'official-wave-a'],
+      ['wave-b', 'official-wave-b'],
+    ] as const;
+    const variantProjects = [
+      'official-native-capabilities',
+      'official-wave-b',
+    ];
+
+    expect(closeout).toContain('expo-harmony-toolkit@2.0.0-next.0');
+    expect(closeout).toMatch(/Tarball SHA-256:\s*`[a-f0-9]{64}`/);
+    expect(closeout).toContain('5 lane groups / 7 physical projects');
+    expect(closeout).toContain('| Lane group | Project | portable | debugHap | releaseHap | simulator |');
+    expect(closeout).toContain('packed consumer');
+    expect(closeout).toContain('critical=0');
+    expect(closeout).toContain('workspace/examples');
+    expect(closeout).toContain('GHSA-w7jw-789q-3m8p');
+    expect(closeout).toContain('GHSA-23hp-3jrh-7fpw');
+    expect(closeout).toContain('未发布');
+    expect(closeout).toContain('Publication status');
+    expect(closeout.match(/^- Publication status：`([^`]+)`/m)?.[1]).toBe('未发布');
+    expect(closeout).toContain('repository push、PR或merge不等於npm、Git tag或GitHub Release已發布');
+    expect(closeout).not.toMatch(/^- Publication status：`(?:已发布|published)`/im);
+    expect(closeout).toContain('simulator pass 不是 device pass');
+    expect(closeout).toContain('真机语义保持 deferred');
+    expect(closeout).not.toMatch(
+      /(?:device|真機)(?: evidence| 語義)?\s*[:：=]\s*`?pass\b/i,
+    );
+    expect(closeout).not.toMatch(
+      /CapabilityEvidence\.release\/device`?\s*[:：=]\s*`?pass\b/i,
+    );
+    expect(closeout).toContain('file-system');
+    expect(closeout).toContain('image-picker');
+    expect(closeout).toContain('location');
+    expect(closeout).toContain('camera');
+    expect(closeout).toContain('push fallback');
+    expect(closeout).toContain('screens fallback');
+    expect(closeout).toContain('Skia fallback');
+    expect(closeout).toContain('19/19 route stability pass');
+    expect(closeout).toContain('16/19 functional/fallback pass');
+    expect(closeout).toContain('3 個 action blockers');
+    expect(closeout).toContain('| official-wave-a | `/gesture-handler` | pass | blocked |');
+    expect(closeout).toContain('Gesture callback count=0');
+    expect(closeout).toContain('單次 tap 後仍為 `Gesture callback count=0`');
+    expect(closeout).toContain('callback action blocked');
+    expect(closeout).not.toContain('authoritative simulator rerun pending');
+    expect(closeout).not.toContain('| official-wave-a | `/gesture-handler` | not-run |');
+    expect(closeout).not.toContain('/third-party-wave-a/gesture-handler');
+    expect(closeout).toContain('Artifact SHA-256');
+    for (const [laneGroup, project] of projects) {
+      expect(closeout).toContain(
+        `| ${laneGroup} | ${project} | pass | pass | pass | pass |`,
+      );
+    }
+
+    const artifactSection = closeout.match(
+      /## Artifact SHA-256\s+([\s\S]*?)\s+## Fresh-build provenance/,
+    )?.[1];
+    expect(artifactSection).toBeDefined();
+    const artifactRows = Array.from(
+      artifactSection?.matchAll(
+        /^\| ([^|\n]+) \| ([^|\n]+) \| (yes|no) \| `([a-f0-9]{64})` \|$/gm,
+      ) ?? [],
+      ([, project, artifact, signed, sha256]) => ({
+        project: project.trim(),
+        artifact: artifact.trim(),
+        signed,
+        sha256,
+      }),
+    );
+    expect(artifactRows).toHaveLength(23);
+    expect(new Set(artifactRows.map(({ sha256 }) => sha256)).size).toBe(23);
+
+    const artifactKeys = new Set(
+      artifactRows.map(({ project, artifact, signed }) => `${project}|${artifact}|${signed}`),
+    );
+    for (const [, project] of projects) {
+      const releasePrefix = variantProjects.includes(project) ? 'original release' : 'release';
+      expect(artifactKeys).toContain(
+        `${project}|debug \`entry-default-unsigned.hap\`|no`,
+      );
+      expect(artifactKeys).toContain(
+        `${project}|${releasePrefix} \`entry-default-signed.hap\`|yes`,
+      );
+      expect(artifactKeys).toContain(
+        `${project}|release \`1-entry-default-unsigned.hap\`|no`,
+      );
+    }
+    for (const project of variantProjects) {
+      expect(artifactKeys).toContain(
+        `${project}|temp-only \`entry-default-simulator-signed.hap\`|yes`,
+      );
+    }
   });
 });

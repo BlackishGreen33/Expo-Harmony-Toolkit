@@ -3,6 +3,8 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-haptics';
+
 export default function HapticsFoundationScreen() {
   const [message, setMessage] = useState(
     'Validate expo-haptics no-op-safe selection, impact, and notification calls.',
@@ -42,6 +44,7 @@ export default function HapticsFoundationScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-haptics foundation check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.9.0 haptics shim. Calls resolve safely for bundle/debug
             coverage, while physical feedback remains device-side promotion evidence.

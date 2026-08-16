@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Expo Harmony Official Bare Sample",
+    "slug": "expo-harmony-official-bare-sample",
+    "version": "1.0.0",
+    "plugins": [
+      "expo-build-properties"
+    ],
+    "android": {
+      "package": "com.blackishgreen.expoharmonyofficialbare"
+    },
+    "ios": {
+      "bundleIdentifier": "com.blackishgreen.expoharmonyofficialbare"
+    }
+  }
+}

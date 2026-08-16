@@ -16,6 +16,7 @@ const PUBLIC_TARBALL_DOC_FILES = [
   'docs/roadmap.md',
   'docs/signing-and-release.md',
   'docs/support-matrix.md',
+  'docs/v2-sample-lanes.md',
 ];
 const FORBIDDEN_TARBALL_PREFIXES = ['acceptance/', 'examples/', 'fixtures/', 'tests/'];
 

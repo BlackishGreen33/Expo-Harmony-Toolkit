@@ -259,6 +259,24 @@ describe('bundle and HAP build reports', () => {
     expect(metroConfig).toContain("'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')");
   }, 120000);
 
+  it('only pins screens to the project root when screens is a direct capability', async () => {
+    for (const sourceRoot of [appShellSampleRoot, minimalSampleRoot]) {
+      const projectRoot = await createTempFixture(sourceRoot);
+      const report = await bundleProject(projectRoot, {
+        runner: createSuccessfulRunner(),
+      });
+      const metroConfig = await fs.readFile(
+        path.join(projectRoot, 'metro.harmony.config.js'),
+        'utf8',
+      );
+
+      expect(report.status).toBe('succeeded');
+      expect(metroConfig).not.toContain(
+        "'react-native-screens': path.resolve(__dirname, 'node_modules/react-native-screens')",
+      );
+    }
+  }, 120000);
+
   it('keeps third-party Wave A adapter packages on node resolution while safe-area stays shimmed', async () => {
     const projectRoot = await createTempFixture(thirdPartyWaveAFixtureRoot);
     const devecoRoot = await createFakeDevEcoStudio(projectRoot);
@@ -314,6 +332,9 @@ describe('bundle and HAP build reports', () => {
 
     expect(bundleReport.status).toBe('succeeded');
     expect(metroConfig).toContain("'react-native-safe-area-context'");
+    expect(metroConfig).toContain(
+      "'react-native-screens': path.resolve(__dirname, 'node_modules/react-native-screens')",
+    );
     expect(metroConfig).not.toContain("'.expo-harmony/shims/@react-native-async-storage/async-storage'");
     expect(metroConfig).not.toContain("'.expo-harmony/shims/react-native-screens'");
     expect(safeAreaShim).toContain('SafeAreaProvider');
@@ -508,7 +529,7 @@ describe('bundle and HAP build reports', () => {
     );
   }, 120000);
 
-  it('chooses index.js for minimal samples and index.harmony.js for router samples', async () => {
+  it('uses generated Harmony entries that register the native app key for router and non-router samples', async () => {
     const minimalRoot = await createTempFixture(minimalSampleRoot);
     const routerRoot = await createTempFixture(appShellSampleRoot);
     const runner = createSuccessfulRunner();
@@ -520,9 +541,25 @@ describe('bundle and HAP build reports', () => {
     const routerReport = await bundleProject(routerRoot, { runner });
 
     expect(minimalReport.status).toBe('succeeded');
-    expect(minimalReport.entryFile).toBe(path.join(minimalRoot, 'index.js'));
+    expect(minimalReport.entryFile).toBe(path.join(minimalRoot, 'index.harmony.js'));
+    const minimalHarmonyEntry = await fs.readFile(
+      path.join(minimalRoot, 'index.harmony.js'),
+      'utf8',
+    );
+    expect(minimalHarmonyEntry).toContain("require('./index.js')");
+    expect(minimalHarmonyEntry).toContain("AppRegistry.getRunnable('main')");
+    expect(minimalHarmonyEntry).toContain(
+      'AppRegistry.registerRunnable("expo-harmony-official-sample", mainRunnable)',
+    );
     expect(routerReport.status).toBe('succeeded');
     expect(routerReport.entryFile).toBe(path.join(routerRoot, 'index.harmony.js'));
+    const routerHarmonyEntry = await fs.readFile(
+      path.join(routerRoot, 'index.harmony.js'),
+      'utf8',
+    );
+    expect(routerHarmonyEntry).toContain(
+      'AppRegistry.registerComponent("expo-harmony-app-shell-sample", () => App)',
+    );
   }, 120000);
 
   it('builds a debug HAP for the official native capabilities sample with preview routes enabled', async () => {

@@ -6,6 +6,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 const UTF8_CONTENT = 'expo-harmony-functional-v1.7.2';
 const BASE64_CONTENT = 'ZXhwby1oYXJtb255LWJhc2U2NC1yb3VuZHRyaXA=';
 const DOWNLOAD_URL = 'https://example.com/';
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-file-system';
 
 export default function FileSystemPreviewScreen() {
   const documentDirectory = FileSystem.documentDirectory ?? null;
@@ -208,6 +209,7 @@ export default function FileSystemPreviewScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-file-system functional check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.7.2 preview subset: UTF-8 and base64 writes, append and
             partial reads, md5 info snapshots, and remote download into the app sandbox.

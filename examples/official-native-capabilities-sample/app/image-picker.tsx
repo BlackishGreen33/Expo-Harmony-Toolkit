@@ -11,6 +11,8 @@ import {
   View,
 } from 'react-native';
 
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-image-picker';
+
 type CameraPermissionState = Awaited<ReturnType<typeof ImagePicker.getCameraPermissionsAsync>>;
 type MediaPermissionState = Awaited<ReturnType<typeof ImagePicker.getMediaLibraryPermissionsAsync>>;
 type PickerResult = Awaited<ReturnType<typeof ImagePicker.launchImageLibraryAsync>>;
@@ -167,6 +169,7 @@ export default function ImagePickerPreviewScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-image-picker functional check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.7.2 preview subset: single and multi-select library flows,
             mixed image/video library selection, system photo/video capture, and one-shot pending

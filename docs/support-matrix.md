@@ -16,6 +16,7 @@
 - 但当前公开承诺依旧没有放宽；它们只是进入同一主线 backlog，而不是已经进入 `verified`
 - `v1.10.0` 已冻结 Any-project Intake：任何 Expo 项目进入 `doctor` 后都应有分类、明确 blocker 类型与有序 `nextActions`
 - `v1.11.4` 对账 `v1.11.3` 的发布状态，并保留 v2 readiness 的非实机 gate / fallback / exception 台账；`v1.11.3` 已作为不扩大 verified 边界的稳定工具链 patch 发布；`v1.11.2` 完成非实机 closeout 与 ccnubox signed simulator app-shell gate；`v1.11.1` 是第一个公开 `v1.11.x`，只收口 sidecar drift 的可诊断行为；`v1.11.0` 保留为未发布的 burn-down ledger checkpoint
+- v2 发布轨由 package semver 决定：prerelease 版本发布到 `next`，稳定版本发布到 `latest`；五组／七个 official sample lanes 是 portable hard gate，不是 npm release channels，精确发布状态只记录在 acceptance
 - 这不是 verified 扩容；`latest` 仍只承诺完整验收的 `verified` 能力，catalog 外项目只承诺可诊断路径
 
 `doctor --strict` 继续只代表 `verified`。

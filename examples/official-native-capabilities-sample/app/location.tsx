@@ -9,6 +9,7 @@ type LocationPoint = Awaited<ReturnType<typeof Location.getCurrentPositionAsync>
 type HeadingPoint = Awaited<ReturnType<typeof Location.getHeadingAsync>>;
 
 const SAMPLE_ADDRESS = '1 Huawei Plaza, Shenzhen';
+const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-location';
 
 export default function LocationFunctionalScreen() {
   const [message, setMessage] = useState(
@@ -153,6 +154,7 @@ export default function LocationFunctionalScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>expo-location functional check</Text>
+          <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
             This route validates the v1.7.2 preview subset: foreground/background permissions,
             current fix, watch start/stop, heading snapshot/watch, and geocode helpers.

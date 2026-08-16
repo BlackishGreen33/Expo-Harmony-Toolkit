@@ -3,6 +3,11 @@ import { CapabilityDefinition } from '../../types';
 export function renderMetroConfig(
   enabledCapabilities: readonly CapabilityDefinition[],
 ): string {
+  const reactNativeScreensRootAlias = enabledCapabilities.some(
+    (capability) => capability.packageName === 'react-native-screens',
+  )
+    ? "  'react-native-screens': path.resolve(__dirname, 'node_modules/react-native-screens'),\n"
+    : '';
   const previewCapabilityAliases = enabledCapabilities
     .filter(
       (capability) =>
@@ -39,7 +44,7 @@ ${previewCapabilityAliases ? `${previewCapabilityAliases}\n` : ''}};
 const uiStackRootModuleAliases = {
   'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler'),
   'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
-  'react-native-svg': path.resolve(__dirname, 'node_modules/react-native-svg'),
+${reactNativeScreensRootAlias}  'react-native-svg': path.resolve(__dirname, 'node_modules/react-native-svg'),
 };
 const resolvePackageAlias = (context, moduleName, platform, aliases) => {
   for (const [aliasedModuleName, aliasedModulePath] of Object.entries(aliases)) {
