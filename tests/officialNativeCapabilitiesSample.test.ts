@@ -153,9 +153,15 @@ describe('official native capabilities sample', () => {
     const routeSource = routeSourceByPath.get('file-system') ?? '';
 
     expect(routeSource).toContain('expo-file-system functional check');
+    expect(routeSource).toContain('Run write/read/cleanup probe');
+    expect(routeSource).toContain('File roundtrip OK. write/read/cleanup=pass');
+    expect(routeSource).toContain('testID="file-system-roundtrip-action"');
+    expect(routeSource).toContain('testID="file-system-result"');
     expect(routeSource).toContain('Run full file-system flow');
     expect(routeSource).toContain('Check md5 info');
     expect(bundleContents).toContain('ExpoHarmonyFileSystem');
+    expect(bundleContents).toContain('Run write/read/cleanup probe');
+    expect(bundleContents).toContain('File roundtrip OK. write/read/cleanup=pass');
     expect(bundleContents).toContain('Create sandbox directory');
     expect(bundleContents).toContain('Write UTF-8 file');
     expect(bundleContents).toContain('Base64 roundtrip');

@@ -268,6 +268,19 @@ describe('init project', () => {
       path.join(projectRoot, '.expo-harmony', 'shims', 'expo-camera', 'index.js'),
       'utf8',
     );
+    const fileSystemNativeModule = await fs.readFile(
+      path.join(
+        projectRoot,
+        'harmony',
+        'entry',
+        'src',
+        'main',
+        'ets',
+        'expoHarmony',
+        'ExpoHarmonyFileSystemTurboModule.ts',
+      ),
+      'utf8',
+    );
     const toolkitConfig = await readToolkitConfig(projectRoot);
 
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
@@ -284,6 +297,11 @@ describe('init project', () => {
     expect(fileSystemShim).toContain('ExpoHarmonyFileSystem');
     expect(fileSystemShim).toContain('downloadAsync(url, fileUri, options)');
     expect(fileSystemShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
+    expect(fileSystemNativeModule).toContain('fs.openSync(');
+    expect(fileSystemNativeModule).toContain('fs.writeSync(');
+    expect(fileSystemNativeModule).toContain('fs.readSync(');
+    expect(fileSystemNativeModule).toContain('fs.closeSync(');
+    expect(fileSystemNativeModule).toContain('this.assertValidBase64(contents);');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
     expect(imagePickerShim).toContain('getPendingResultAsync');
     expect(locationShim).toContain('startWatchPosition');
@@ -401,6 +419,11 @@ describe('init project', () => {
     await syncProjectTemplate(projectRoot, true);
 
     const toolkitConfig = await readToolkitConfig(projectRoot);
+    const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
+    const mediaLibraryShim = await fs.readFile(
+      path.join(projectRoot, '.expo-harmony', 'shims', 'expo-media-library', 'index.js'),
+      'utf8',
+    );
 
     expect(toolkitConfig?.coverageProfile).toBe('managed-native-heavy');
     expect(toolkitConfig?.doctorConfig.coverageProfile).toBe('managed-native-heavy');
@@ -432,5 +455,10 @@ describe('init project', () => {
         'ohos.permission.WRITE_IMAGEVIDEO',
       ]),
     );
+    expect(metroConfig).toContain('.expo-harmony/shims/expo-media-library');
+    expect(mediaLibraryShim).toContain("require('@react-native-camera-roll/camera-roll')");
+    expect(mediaLibraryShim).toContain('getPermissionsAsync');
+    expect(mediaLibraryShim).toContain('createAssetAsync');
+    expect(mediaLibraryShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
   });
 });

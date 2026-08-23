@@ -173,6 +173,38 @@ describe('v2 internal packaging contract', () => {
     }
   });
 
+  it('records the accepted non-device packaging evidence without promoting intake-only packages', () => {
+    const acceptedEvidence = {
+      portable: true,
+      debugHap: true,
+      releaseHap: true,
+      simulator: true,
+    };
+    const pendingEvidence = {
+      portable: false,
+      debugHap: false,
+      releaseHap: false,
+      simulator: false,
+    };
+
+    expect(V2_PACKAGING_CATALOG.covered.evidence).toEqual(acceptedEvidence);
+    expect(
+      V2_PACKAGING_CATALOG.exceptions.every(
+        (exception) => JSON.stringify(exception.evidence) === JSON.stringify(acceptedEvidence),
+      ),
+    ).toBe(true);
+    expect(V2_PACKAGING_CATALOG.intakeOnly.evidence).toEqual(pendingEvidence);
+
+    for (const scenario of [V2_PACKAGING_CATALOG.covered, ...V2_PACKAGING_CATALOG.exceptions]) {
+      expect((scenario as { evidenceReference?: string }).evidenceReference).toBe(
+        'acceptance/v2.0.0-non-device-closeout.md',
+      );
+    }
+    expect(
+      (V2_PACKAGING_CATALOG.intakeOnly as { evidenceReference?: string | null }).evidenceReference,
+    ).toBeNull();
+  });
+
   it('stays outside the public entrypoint', () => {
     expect(Object.prototype.hasOwnProperty.call(publicApi, 'V2_PACKAGING_CATALOG')).toBe(false);
   });

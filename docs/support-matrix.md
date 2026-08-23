@@ -170,8 +170,8 @@ canonical 包与 Harmony adapter 包固定为双向强制：
 
 当前固定 exact specifier：
 
-- `@react-native-oh-tpl/react-native-reanimated`: `github:react-native-oh-library/react-native-harmony-reanimated#9fdbe676209937383907be0592291223c6ca7ad7&path:react-native-harmony-reanimated`
-- `@react-native-oh-tpl/react-native-svg`: `github:react-native-oh-library/react-native-harmony-svg#97c31d2f72559931d62fa84a9c86e86d343753d3&path:react-native-harmony-svg`
+- `@react-native-oh-tpl/react-native-reanimated`: `3.6.4-rc.5`
+- `@react-native-oh-tpl/react-native-svg`: `15.0.1-rc.11`
 <!-- GENERATED:support-matrix-ui-stack:end -->
 
 ## `doctor`

@@ -4,6 +4,7 @@ import { CAPABILITY_DEFINITIONS } from './capabilities';
 import {
   HARMONY_NATIVE_ADAPTERS,
   UI_STACK_VALIDATED_ADAPTERS,
+  getUiStackAdapterRepositorySpecifier,
   getUiStackAdapterSpecifier,
 } from './uiStack';
 
@@ -24,7 +25,7 @@ const UI_STACK_COMPATIBILITY_RECORDS = Object.fromEntries(
       {
         status: 'supported',
         supportTier: 'verified',
-        note: `Harmony adapter pinned to ${entry.adapterVersion}. The validated matrix requires the exact Git spec ${getUiStackAdapterSpecifier(entry)}.`,
+        note: `Harmony adapter pinned to the published exact spec ${getUiStackAdapterSpecifier(entry)}. The legacy repository spec ${getUiStackAdapterRepositorySpecifier(entry)} remains accepted for migration.`,
         replacement: entry.canonicalPackageName,
         docsUrl: entry.docsUrl,
       } satisfies CompatibilityRecord,

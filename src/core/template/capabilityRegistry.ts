@@ -26,6 +26,7 @@ import {
   renderExpoLocationHarmonyAdapterShim,
   renderExpoLocationPreviewShim,
 } from './renderers/location';
+import { renderExpoMediaLibraryHarmonyAdapterShim } from './renderers/mediaLibrary';
 import { renderReactNativeSafeAreaContextHarmonyShim } from './runtimeShims';
 
 type CapabilityShimRenderers = {
@@ -74,6 +75,10 @@ const CAPABILITY_SHIM_RENDERERS: Record<string, CapabilityShimRenderers> = {
   'expo-haptics': {
     adapter: renderExpoHapticsPreviewShim,
     preview: renderExpoHapticsPreviewShim,
+  },
+  'expo-media-library': {
+    adapter: renderExpoMediaLibraryHarmonyAdapterShim,
+    preview: renderExpoMediaLibraryHarmonyAdapterShim,
   },
   'react-native-safe-area-context': {
     adapter: renderReactNativeSafeAreaContextHarmonyShim,

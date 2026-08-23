@@ -1,6 +1,10 @@
 import { ValidatedReleaseMatrix } from '../types';
 import { TOOLKIT_PACKAGE_NAME } from '../core/constants';
-import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from './uiStack';
+import {
+  UI_STACK_VALIDATED_ADAPTERS,
+  getUiStackAdapterRepositorySpecifier,
+  getUiStackAdapterSpecifier,
+} from './uiStack';
 
 export const DEFAULT_VALIDATED_MATRIX_ID = 'expo55-rnoh082-ui-stack';
 
@@ -97,7 +101,7 @@ export const VALIDATED_RELEASE_MATRICES: Record<string, ValidatedReleaseMatrix> 
             {
               specifiers: [
                 getUiStackAdapterSpecifier(entry),
-                'npmSpecifier' in entry ? entry.npmSpecifier : entry.adapterVersion,
+                getUiStackAdapterRepositorySpecifier(entry),
               ],
             },
           ],
