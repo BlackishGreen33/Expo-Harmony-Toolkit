@@ -77,7 +77,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
   }
 
   async getInfo(path: string, options?: FileInfoOptions): Promise<FileInfoResult> {
-    const normalizedPath = this.normalizeSandboxPath(path);
+    const normalizedPath = this.normalizeSandboxPath(path, true);
     const stat = await this.getStatOrNull(normalizedPath);
 
     if (!stat) {
@@ -102,7 +102,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
   }
 
   async readAsString(path: string, options?: ReadOptions): Promise<string> {
-    const normalizedPath = this.normalizeSandboxPath(path);
+    const normalizedPath = this.normalizeSandboxPath(path, true);
     const encoding = options?.encoding ?? 'utf8';
     const bytes = await this.readFileBytes(normalizedPath);
     const position = typeof options?.position === 'number' && options.position > 0
@@ -126,7 +126,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
 
     await this.ensureParentDirectory(normalizedPath);
 
-    const file = await fs.open(
+    const file = fs.openSync(
       normalizedPath,
       fs.OpenMode.READ_WRITE |
         fs.OpenMode.CREATE |
@@ -135,12 +135,13 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
 
     try {
       if (encoding === 'base64') {
-        await fs.write(file.fd, this.decodeBase64(contents).buffer);
+        this.assertValidBase64(contents);
+        fs.writeSync(file.fd, this.decodeBase64(contents).buffer);
       } else {
-        await fs.write(file.fd, contents);
+        fs.writeSync(file.fd, contents);
       }
     } finally {
-      await fs.close(file);
+      fs.closeSync(file);
     }
   }
 
@@ -155,7 +156,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
   }
 
   async readDirectory(path: string): Promise<string[]> {
-    const normalizedPath = this.normalizeSandboxPath(path);
+    const normalizedPath = this.normalizeSandboxPath(path, true);
     const stat = await fs.stat(normalizedPath);
 
     if (!stat.isDirectory()) {
@@ -205,15 +206,15 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
       headers: options?.headers ?? {},
     });
     const responseBuffer = new Uint8Array(await response.arrayBuffer());
-    const file = await fs.open(
+    const file = fs.openSync(
       normalizedDestinationPath,
       fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC,
     );
 
     try {
-      await fs.write(file.fd, responseBuffer.buffer);
+      fs.writeSync(file.fd, responseBuffer.buffer);
     } finally {
-      await fs.close(file);
+      fs.closeSync(file);
     }
 
     return {
@@ -344,15 +345,15 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
   }
 
   private async readFileBytes(targetPath: string): Promise<Uint8Array> {
-    const stat = await fs.stat(targetPath);
-    const file = await fs.open(targetPath, fs.OpenMode.READ_ONLY);
+    const stat = fs.statSync(targetPath);
+    const file = fs.openSync(targetPath, fs.OpenMode.READ_ONLY);
     const buffer = new ArrayBuffer(Number(stat.size ?? 0));
 
     try {
-      await fs.read(file.fd, buffer);
-      return new Uint8Array(buffer);
+      const bytesRead = fs.readSync(file.fd, buffer);
+      return new Uint8Array(buffer, 0, Math.max(0, Math.min(buffer.byteLength, bytesRead)));
     } finally {
-      await fs.close(file);
+      fs.closeSync(file);
     }
   }
 
@@ -424,6 +425,17 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
     return new Uint8Array(bytes);
   }
 
+  private assertValidBase64(contents: string): void {
+    const sanitizedContents = contents.replace(/\\s+/g, '');
+    const isValid =
+      sanitizedContents.length % 4 === 0 &&
+      /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(sanitizedContents);
+
+    if (!isValid) {
+      throw new Error('ExpoHarmonyFileSystem expected a valid base64 string.');
+    }
+  }
+
   private computePreviewDigest(bytes: Uint8Array): string {
     let hash = 2166136261;
 
@@ -435,7 +447,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
     return String(hash >>> 0).padStart(32, '0').slice(-32);
   }
 
-  private normalizeSandboxPath(inputPath: string): string {
+  private normalizeSandboxPath(inputPath: string, allowBundleDirectory = false): string {
     if (typeof inputPath !== 'string' || inputPath.length === 0) {
       throw new Error('ExpoHarmonyFileSystem expected a non-empty sandbox path.');
     }
@@ -451,6 +463,7 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
     const allowedRoots = [
       this.ctx.uiAbilityContext.filesDir,
       this.ctx.uiAbilityContext.cacheDir,
+      ...(allowBundleDirectory ? [this.getConstants().bundleDirectoryPath] : []),
     ].filter((value): value is string => typeof value === 'string' && value.length > 0);
 
     const isAllowed = allowedRoots.some(

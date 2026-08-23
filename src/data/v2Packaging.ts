@@ -22,6 +22,7 @@ interface V2PackagingLane {
   readonly id: 'covered' | 'intake-only';
   readonly packageNames: readonly string[];
   readonly evidence: V2PackagingEvidence;
+  readonly evidenceReference: string | null;
   readonly limitations: readonly V2PackagingLimitation[];
 }
 
@@ -29,6 +30,7 @@ interface V2PackagingException {
   readonly id: 'push' | 'screens' | 'skia';
   readonly packageNames: readonly string[];
   readonly evidence: V2PackagingEvidence;
+  readonly evidenceReference: string | null;
   readonly fallback: string;
 }
 
@@ -45,6 +47,16 @@ const PENDING_PACKAGING_EVIDENCE = {
   simulator: false,
 } as const satisfies V2PackagingEvidence;
 
+const ACCEPTED_NON_DEVICE_PACKAGING_EVIDENCE = {
+  portable: true,
+  debugHap: true,
+  releaseHap: true,
+  simulator: true,
+} as const satisfies V2PackagingEvidence;
+
+const ACCEPTED_NON_DEVICE_EVIDENCE_REFERENCE =
+  'acceptance/v2.0.0-non-device-closeout.md';
+
 const V2_PACKAGING_EXCEPTIONS = [
   {
     id: 'push',
@@ -54,7 +66,8 @@ const V2_PACKAGING_EXCEPTIONS = [
       'jpush-react-native',
       'mx-jpush-expo',
     ],
-    evidence: PENDING_PACKAGING_EVIDENCE,
+    evidence: ACCEPTED_NON_DEVICE_PACKAGING_EVIDENCE,
+    evidenceReference: ACCEPTED_NON_DEVICE_EVIDENCE_REFERENCE,
     fallback: 'Disable push or use a manual sidecar.',
   },
   {
@@ -63,7 +76,8 @@ const V2_PACKAGING_EXCEPTIONS = [
       'react-native-screens',
       '@react-native-oh-tpl/react-native-screens',
     ],
-    evidence: PENDING_PACKAGING_EVIDENCE,
+    evidence: ACCEPTED_NON_DEVICE_PACKAGING_EVIDENCE,
+    evidenceReference: ACCEPTED_NON_DEVICE_EVIDENCE_REFERENCE,
     fallback: 'enableScreens(false)',
   },
   {
@@ -72,7 +86,8 @@ const V2_PACKAGING_EXCEPTIONS = [
       '@shopify/react-native-skia',
       '@react-native-oh-tpl/react-native-skia',
     ],
-    evidence: PENDING_PACKAGING_EVIDENCE,
+    evidence: ACCEPTED_NON_DEVICE_PACKAGING_EVIDENCE,
+    evidenceReference: ACCEPTED_NON_DEVICE_EVIDENCE_REFERENCE,
     fallback: 'Use a non-Skia renderer or disable the surface.',
   },
 ] as const satisfies readonly V2PackagingException[];
@@ -147,7 +162,8 @@ export const V2_PACKAGING_CATALOG = {
   covered: {
     id: 'covered',
     packageNames: COVERED_PACKAGE_NAMES,
-    evidence: PENDING_PACKAGING_EVIDENCE,
+    evidence: ACCEPTED_NON_DEVICE_PACKAGING_EVIDENCE,
+    evidenceReference: ACCEPTED_NON_DEVICE_EVIDENCE_REFERENCE,
     limitations: COVERED_LIMITATIONS,
   },
   exceptions: V2_PACKAGING_EXCEPTIONS,
@@ -155,6 +171,7 @@ export const V2_PACKAGING_CATALOG = {
     id: 'intake-only',
     packageNames: V2_PACKAGING_INTAKE_PACKAGE_NAMES,
     evidence: PENDING_PACKAGING_EVIDENCE,
+    evidenceReference: null,
     limitations: [],
   },
 } as const satisfies V2PackagingCatalog;

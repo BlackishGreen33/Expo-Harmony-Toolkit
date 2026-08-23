@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 import { CAPABILITY_DEFINITIONS } from '../src/data/capabilities';
+import { HARMONY_NATIVE_ADAPTERS } from '../src/data/uiStack';
 import { V2_PACKAGING_CATALOG } from '../src/data/v2Packaging';
 import { CoverageProfile, DoctorTargetTier, EligibilityStatus } from '../src/types';
 
@@ -186,6 +187,74 @@ describe('v2 sample lane manifest', () => {
     }
   });
 
+  it('pins published adapters and keeps the Expo/React peer graph aligned', async () => {
+    const packageJsonByProject = new Map(
+      await Promise.all(
+        V2_SAMPLE_PROJECTS.map(async (project) => [
+          project.id,
+          await fs.readJson(path.join(repoRoot, project.root, 'package.json')),
+        ] as const),
+      ),
+    );
+
+    for (const packageJson of packageJsonByProject.values()) {
+      expect(packageJson.dependencies['expo-constants']).toBe('55.0.11');
+      expect(packageJson.dependencies['react-dom']).toBe('19.1.1');
+      expect(JSON.stringify(packageJson.dependencies)).not.toContain('github:');
+    }
+
+    expect(packageJsonByProject.get('official-minimal')?.dependencies).toEqual(
+      expect.objectContaining({
+        '@expo/metro-runtime': '55.0.9',
+      }),
+    );
+
+    for (const projectId of ['official-app-shell', 'official-native-capabilities', 'official-ui-stack']) {
+      expect(packageJsonByProject.get(projectId)?.dependencies).toEqual(
+        expect.objectContaining({
+          '@expo/metro-runtime': '55.0.9',
+          'expo-constants': '55.0.11',
+          'expo-linking': '55.0.11',
+          'expo-router': '55.0.10',
+        }),
+      );
+    }
+
+    expect(packageJsonByProject.get('official-ui-stack')?.dependencies).toEqual(
+      expect.objectContaining({
+        '@react-native-oh-tpl/react-native-reanimated': '3.6.4-rc.5',
+        '@react-native-oh-tpl/react-native-svg': '15.0.1-rc.11',
+      }),
+    );
+    expect(packageJsonByProject.get('official-wave-a')?.dependencies).toEqual(
+      expect.objectContaining({
+        '@react-native-oh-tpl/react-native-gesture-handler': '2.14.17-rc.2',
+        '@react-native-oh-tpl/react-native-reanimated': '3.6.4-rc.5',
+      }),
+    );
+    expect(packageJsonByProject.get('official-wave-b')?.dependencies).toEqual(
+      expect.objectContaining({
+        '@react-native-camera-roll/camera-roll': '7.8.3',
+      }),
+    );
+
+    expect(
+      HARMONY_NATIVE_ADAPTERS.find(
+        (adapter) => adapter.adapterPackageName === '@react-native-oh-tpl/react-native-gesture-handler',
+      )?.adapterVersion,
+    ).toBe('2.14.17-rc.2');
+
+    const rootPackageJson = await fs.readJson(path.join(repoRoot, 'package.json'));
+    expect(rootPackageJson.pnpm?.overrides).toEqual(
+      expect.objectContaining({
+        '@expo/dom-webview': '55.0.5',
+        handlebars: '4.7.9',
+        'shell-quote': '1.9.0',
+        tar: '7.5.21',
+      }),
+    );
+  });
+
   it('keeps all source samples free of generated toolkit outputs', async () => {
     for (const project of V2_SAMPLE_PROJECTS) {
       const projectRoot = path.join(repoRoot, project.root);
@@ -215,7 +284,7 @@ describe('v2 capability sample routes', () => {
     ).toBe('examples/official-wave-a-sample/app/third-party-wave-a/gesture-handler.tsx');
   });
 
-  it('renders a canonical Harmony gesture button probe without claiming callback success', async () => {
+  it('renders the official Harmony tap probe through the adapter-compatible state callback', async () => {
     const definition = CAPABILITY_DEFINITIONS.find(
       (candidate) => candidate.id === 'react-native-gesture-handler',
     );
@@ -226,26 +295,45 @@ describe('v2 capability sample routes', () => {
     const project = resolveRouteProject(definition.sampleRoute);
     const routeSource = await fs.readFile(resolveRouteFile(project, definition.sampleRoute), 'utf8');
 
-    expect(routeSource).toContain(
-      "import { GestureHandlerRootView, RectButton } from 'react-native-gesture-handler';",
-    );
+    expect(routeSource).toContain('GestureHandlerRootView,');
+    expect(routeSource).toContain('State,');
+    expect(routeSource).toContain('TapGestureHandler,');
+    expect(routeSource).toContain('type HandlerStateChangeEvent,');
+    expect(routeSource).toContain('type TapGestureHandlerEventPayload,');
     expect(routeSource).toContain('const [gestureCount, setGestureCount] = useState(0);');
-    expect(routeSource).toContain('const handlePress = () => {');
-    expect(routeSource).toContain('<RectButton');
-    expect(routeSource).toContain('onPress={handlePress}');
+    expect(routeSource).toContain('event.nativeEvent.state !== State.ACTIVE');
+    expect(routeSource).toContain(
+      '<TapGestureHandler onHandlerStateChange={handleTapStateChange}>',
+    );
     expect(routeSource).toContain('setGestureCount((count) => count + 1);');
     expect(routeSource).toContain('Run tap gesture');
     expect(routeSource).toContain('Gesture callback count={gestureCount}');
     expect(routeSource).toContain(
-      'Canonical RectButton adapter probe; simulator callback evidence is blocked and device semantics are deferred.',
+      'TapGestureHandler adapter probe; device semantics remain deferred.',
     );
-    expect(routeSource).not.toContain('is handled by the installed Harmony adapter');
-    expect(routeSource).not.toContain('Gesture.Tap');
+    expect(routeSource).not.toContain('RectButton');
     expect(routeSource).not.toContain('GestureDetector');
-    expect(routeSource).not.toContain('TapGestureHandler');
+    expect(routeSource).not.toContain('Gesture.Tap');
     expect(routeSource).not.toContain('State.END');
-    expect(routeSource).not.toContain('onHandlerStateChange');
     expect(routeSource).not.toContain('.runOnJS(');
+  });
+
+  it('keeps media permission inspection bounded with an explicit result', async () => {
+    const definition = CAPABILITY_DEFINITIONS.find(
+      (candidate) => candidate.id === 'expo-media-library',
+    );
+    if (!definition) {
+      throw new Error('Missing expo-media-library capability definition.');
+    }
+
+    const project = resolveRouteProject(definition.sampleRoute);
+    const routeSource = await fs.readFile(resolveRouteFile(project, definition.sampleRoute), 'utf8');
+
+    expect(routeSource).toContain('withActionTimeout(');
+    expect(routeSource).toContain("permission?.status ?? 'unknown'");
+    expect(routeSource).toContain('Media permission status=${status}.');
+    expect(routeSource).toContain('testID="media-library-result"');
+    expect(routeSource).toContain('testID="media-library-action"');
   });
 
   it('maps all 19 capability definitions to real route files owned by a sample entry', async () => {

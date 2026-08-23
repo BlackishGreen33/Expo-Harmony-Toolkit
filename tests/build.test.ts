@@ -256,7 +256,9 @@ describe('bundle and HAP build reports', () => {
     const metroConfig = await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8');
 
     expect(report.status).toBe('succeeded');
-    expect(metroConfig).toContain("'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')");
+    expect(metroConfig).not.toContain(
+      "'react-native-gesture-handler': path.resolve(__dirname, 'node_modules/react-native-gesture-handler')",
+    );
   }, 120000);
 
   it('only pins screens to the project root when screens is a direct capability', async () => {

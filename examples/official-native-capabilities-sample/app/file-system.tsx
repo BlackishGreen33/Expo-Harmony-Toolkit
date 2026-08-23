@@ -7,6 +7,26 @@ const UTF8_CONTENT = 'expo-harmony-functional-v1.7.2';
 const BASE64_CONTENT = 'ZXhwby1oYXJtb255LWJhc2U2NC1yb3VuZHRyaXA=';
 const DOWNLOAD_URL = 'https://example.com/';
 const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-file-system';
+const ACTION_TIMEOUT_MS = 8000;
+
+function withActionTimeout<T>(operation: Promise<T>, operationName: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`${operationName} timed out after ${ACTION_TIMEOUT_MS} ms.`));
+    }, ACTION_TIMEOUT_MS);
+
+    operation.then(
+      (result) => {
+        clearTimeout(timeout);
+        resolve(result);
+      },
+      (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
 
 export default function FileSystemPreviewScreen() {
   const documentDirectory = FileSystem.documentDirectory ?? null;
@@ -179,6 +199,51 @@ export default function FileSystemPreviewScreen() {
     }
   };
 
+  const runWriteReadCleanupProbe = async () => {
+    const targets = ensureTargets();
+
+    if (!targets) {
+      return;
+    }
+
+    try {
+      setMessage('File roundtrip running: create.');
+      await withActionTimeout(
+        FileSystem.makeDirectoryAsync(targets.sandboxDirectory, { intermediates: true }),
+        'Create sandbox directory',
+      );
+
+      setMessage('File roundtrip running: write.');
+      await withActionTimeout(
+        FileSystem.writeAsStringAsync(targets.workingFile, UTF8_CONTENT),
+        'Write UTF-8 file',
+      );
+
+      setMessage('File roundtrip running: read.');
+      const contents = await withActionTimeout(
+        FileSystem.readAsStringAsync(targets.workingFile),
+        'Read UTF-8 file',
+      );
+
+      if (contents !== UTF8_CONTENT) {
+        throw new Error(`File roundtrip content mismatch. received=${contents}`);
+      }
+
+      setMessage('File roundtrip running: cleanup.');
+      await withActionTimeout(
+        FileSystem.deleteAsync(targets.workingFile, { idempotent: true }),
+        'Delete roundtrip file',
+      );
+      await withActionTimeout(
+        FileSystem.deleteAsync(targets.sandboxDirectory, { idempotent: true }),
+        'Delete roundtrip directory',
+      );
+      setMessage('File roundtrip OK. write/read/cleanup=pass');
+    } catch (error) {
+      setMessage(`File roundtrip failed. ${formatError(error)}`);
+    }
+  };
+
   const runFullFlow = async () => {
     const targets = ensureTargets();
 
@@ -215,8 +280,18 @@ export default function FileSystemPreviewScreen() {
             partial reads, md5 info snapshots, and remote download into the app sandbox.
           </Text>
           <View style={styles.statusBox}>
-            <Text style={styles.message}>{message}</Text>
+            <Text testID="file-system-result" style={styles.message}>
+              {message}
+            </Text>
           </View>
+
+          <Pressable
+            testID="file-system-roundtrip-action"
+            style={[styles.actionButton, styles.primaryButton]}
+            onPress={runWriteReadCleanupProbe}
+          >
+            <Text style={styles.buttonLabel}>Run write/read/cleanup probe</Text>
+          </Pressable>
 
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>Current targets</Text>

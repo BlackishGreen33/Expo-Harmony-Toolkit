@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { GestureHandlerRootView, RectButton } from 'react-native-gesture-handler';
+import {
+  GestureHandlerRootView,
+  State,
+  TapGestureHandler,
+  type HandlerStateChangeEvent,
+  type TapGestureHandlerEventPayload,
+} from 'react-native-gesture-handler';
 import { StyleSheet, Text, View } from 'react-native';
 
 const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:react-native-gesture-handler';
@@ -7,7 +13,13 @@ const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:react-native-gesture-handler';
 export default function GestureHandlerRoute() {
   const [gestureCount, setGestureCount] = useState(0);
 
-  const handlePress = () => {
+  const handleTapStateChange = (
+    event: HandlerStateChangeEvent<TapGestureHandlerEventPayload>,
+  ) => {
+    if (event.nativeEvent.state !== State.ACTIVE) {
+      return;
+    }
+
     setGestureCount((count) => count + 1);
   };
 
@@ -16,18 +28,14 @@ export default function GestureHandlerRoute() {
       <View style={styles.card}>
         <Text style={styles.title}>Gesture Handler adapter lane</Text>
         <Text>
-          {
-            'Canonical RectButton adapter probe; simulator callback evidence is blocked and device semantics are deferred.'
-          }
+          {'TapGestureHandler adapter probe; device semantics remain deferred.'}
         </Text>
         <Text testID="gesture-handler-result">Gesture callback count={gestureCount}</Text>
-        <RectButton
-          onPress={handlePress}
-          testID="gesture-handler-action"
-          style={styles.gestureTarget}
-        >
-          <Text style={styles.gestureTargetLabel}>Run tap gesture</Text>
-        </RectButton>
+        <TapGestureHandler onHandlerStateChange={handleTapStateChange}>
+          <View testID="gesture-handler-action" style={styles.gestureTarget}>
+            <Text style={styles.gestureTargetLabel}>Run tap gesture</Text>
+          </View>
+        </TapGestureHandler>
         <Text style={styles.marker}>{ROUTE_MARKER}</Text>
       </View>
     </GestureHandlerRootView>
