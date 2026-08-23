@@ -359,11 +359,15 @@ describe('documentation metadata', () => {
     expect(closeout).toContain('GHSA-w3rx-r6r6-pgpr');
     expect(closeout).toContain('GHSA-5p2g-fcmc-qvqq');
     expect(closeout).toContain('GHSA-w5hq-g745-h8pq');
-    expect(closeout).toContain('未发布');
+    expect(closeout).not.toContain('未发布');
     expect(closeout).toContain('Publication status');
-    expect(closeout.match(/^- Publication status：`([^`]+)`/m)?.[1]).toBe('未发布');
-    expect(closeout).toContain('repository push、PR或merge不等於npm、Git tag或GitHub Release已發布');
-    expect(closeout).not.toMatch(/^- Publication status：`(?:已发布|published)`/im);
+    expect(closeout.match(/^- Publication status：`([^`]+)`/m)?.[1]).toBe('已發布');
+    expect(closeout).toContain('next=2.0.0-next.0');
+    expect(closeout).toContain('latest=1.11.4');
+    expect(closeout).toContain('b5c1fe1443f746d2f6fbc3f07bff974cf8412821');
+    expect(closeout).toContain('actions/runs/32637997199');
+    expect(closeout).toContain('releases/tag/v2.0.0-next.0');
+    expect(closeout).toContain('repository push、PR 或 merge 本身仍不能替代');
     expect(closeout).toContain('simulator pass 不是 device pass');
     expect(closeout).toContain('真机语义保持 deferred');
     expect(closeout).not.toMatch(
