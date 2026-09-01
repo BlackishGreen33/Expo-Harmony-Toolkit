@@ -169,6 +169,7 @@ export async function syncProjectTemplate(
     doctorReport,
   );
   const previousManifest = await readManifest(loadedProject.projectRoot);
+  const matrixId = doctorReport.matrixId ?? DEFAULT_VALIDATED_MATRIX_ID;
   const forceManagedPaths = new Set(options.forceManagedPaths ?? []);
   const result: SyncResult = {
     writtenFiles: [],
@@ -178,7 +179,9 @@ export async function syncProjectTemplate(
     manifestPath: getManifestPath(loadedProject.projectRoot),
   };
 
-  result.warnings.push(...collectMetadataWarnings(previousManifest, previousToolkitConfig));
+  result.warnings.push(
+    ...collectMetadataWarnings(previousManifest, previousToolkitConfig, matrixId),
+  );
 
   const manifestFiles: ManagedFileRecord[] = [];
 
@@ -228,7 +231,7 @@ export async function syncProjectTemplate(
     generatedAt: new Date().toISOString(),
     toolkitVersion: TOOLKIT_VERSION,
     templateVersion: TEMPLATE_VERSION,
-    matrixId: DEFAULT_VALIDATED_MATRIX_ID,
+    matrixId,
     projectRoot: loadedProject.projectRoot,
     files: manifestFiles,
   };
@@ -315,7 +318,7 @@ async function buildManagedFiles(
     generatedAt: new Date().toISOString(),
     toolkitVersion: TOOLKIT_VERSION,
     templateVersion: TEMPLATE_VERSION,
-    matrixId: DEFAULT_VALIDATED_MATRIX_ID,
+    matrixId: doctorReport.matrixId ?? DEFAULT_VALIDATED_MATRIX_ID,
     rnohVersion: RNOH_VERSION,
     rnohCliVersion: RNOH_CLI_VERSION,
     bundleName: identifiers.bundleName,

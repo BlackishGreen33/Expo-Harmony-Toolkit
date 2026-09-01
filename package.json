@@ -1,6 +1,6 @@
 {
   "name": "expo-harmony-toolkit",
-  "version": "2.0.0-next.0",
+  "version": "2.0.0-next.1",
   "description": "面向 Managed/CNG Expo 项目的 HarmonyOS 迁移、准入检查与 UI-stack 构建工具链",
   "main": "app.plugin.js",
   "types": "build/index.d.ts",
@@ -37,6 +37,7 @@
   "scripts": {
     "build": "rm -rf build && tsc --project tsconfig.json",
     "clean": "rm -rf build coverage",
+    "compat:check": "node ./scripts/version-compatibility-check.js",
     "docs:sync": "node ./scripts/update-generated-docs.js",
     "pack:check": "node ./scripts/pack.js --dry-run --json",
     "release:check": "node ./scripts/release-check.js",
@@ -77,10 +78,10 @@
     }
   },
   "peerDependencies": {
-    "expo": "*"
+    "expo": ">=55.0.0 <58.0.0"
   },
   "dependencies": {
-    "@expo/config": "^55.0.10",
+    "@expo/config": "^57.0.9",
     "commander": "^14.0.0",
     "fs-extra": "^11.3.0",
     "json5": "^2.2.3",

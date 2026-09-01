@@ -52,10 +52,10 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v2.0.0-next.0` |
+| Current version | `v2.0.0-next.1` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
-| Supported input | Managed/CNG Expo projects; bare and catalog-out intake classification |
+| Supported input | Expo SDK 55–57 Managed/CNG projects; bare and catalog-out intake classification |
 | `verified` JS/UI capabilities | `expo-router`, `expo-linking`, `expo-constants`, `react-native-reanimated`, `react-native-svg` |
 | `preview` native capabilities | `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics` |
 | `experimental` capabilities | `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia` |
@@ -181,10 +181,11 @@ Common decision points:
 
 <!-- GENERATED:readme-support-matrix:start -->
 - `verified`: the only public matrix remains `expo55-rnoh082-ui-stack`
+- `preview project shapes`: `expo55-rn083-rnoh082-preview`, `expo56-rn085-rnoh082-preview`, `expo57-rn086-rnoh082-preview`
 - `preview`: `expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics`
 - `experimental`: `expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia`
 
-`doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.
+`doctor --strict` still means `verified` only. `doctor --target-tier preview` admits preview project shapes and capabilities without claiming RNOH runtime parity or a formal support promise.
 
 - `doctor-report.json` exposes `capabilities[].runtimeMode`
 - `doctor-report.json` and `toolkit-config.json` expose `evidence.bundle`, `evidence.debugBuild`, `evidence.device`, and `evidence.release`

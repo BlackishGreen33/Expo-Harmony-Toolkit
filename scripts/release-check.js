@@ -118,6 +118,7 @@ async function main() {
 
   await runCommand('pnpm', ['build']);
   await runCommand('pnpm', ['test']);
+  await runCommand('pnpm', ['compat:check']);
   await executeReleaseSmoke({
     version: packageJson.version,
     repoRoot,

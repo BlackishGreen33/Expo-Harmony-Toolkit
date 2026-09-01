@@ -38,6 +38,16 @@
 | App Shell 依赖 | `expo-router` `55.x`、`expo-linking` `55.x`、`expo-constants` `55.x`、`@expo/metro-runtime` `55.x`、`react-dom` `19.1.1` |
 | UI stack 依赖 | `react-native-reanimated` `3.6.0`、`react-native-svg` `15.0.0` |
 | 原生标识 | 至少设置 `android.package` 或 `ios.bundleIdentifier` |
+
+### Preview 项目形态矩阵
+
+以下矩阵只验证 Expo／React Native 项目形态可进入 RNOH 0.82 sidecar 的 bundle／build 路径，不代表 runtime parity、真机或 release 验收。
+
+| Matrix | Expo SDK | React | React Native | RNOH / CLI |
+| --- | --- | --- | --- | --- |
+| `expo55-rn083-rnoh082-preview` | `55` | `>=19.2.0 <20.0.0` | `>=0.83.0 <0.84.0` | `0.82.29` |
+| `expo56-rn085-rnoh082-preview` | `56` | `>=19.2.0 <20.0.0` | `>=0.85.0 <0.86.0` | `0.82.29` |
+| `expo57-rn086-rnoh082-preview` | `57` | `>=19.2.0 <20.0.0` | `>=0.86.0 <0.87.0` | `0.82.29` |
 <!-- GENERATED:support-matrix-verified-matrix:end -->
 
 ## Support Tiers

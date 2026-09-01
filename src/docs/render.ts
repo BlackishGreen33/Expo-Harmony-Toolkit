@@ -15,6 +15,9 @@ import { UI_STACK_VALIDATED_ADAPTERS, getUiStackAdapterSpecifier } from '../data
 export type DocsLocale = 'zh' | 'en';
 
 const matrix = VALIDATED_RELEASE_MATRICES[DEFAULT_VALIDATED_MATRIX_ID];
+const previewMatrices = Object.values(VALIDATED_RELEASE_MATRICES).filter(
+  (candidate) => candidate.supportTier === 'preview',
+);
 
 export function renderReadmeCurrentStatus(locale: DocsLocale): string {
   const headers =
@@ -40,8 +43,8 @@ export function renderReadmeCurrentStatus(locale: DocsLocale): string {
       : `\`latest\` = ${PUBLIC_RELEASE_TRACKS.latest}; \`next\` = ${PUBLIC_RELEASE_TRACKS.next}`;
   const inputValue =
     locale === 'zh'
-      ? 'Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类'
-      : 'Managed/CNG Expo projects; bare and catalog-out intake classification';
+      ? 'Expo SDK 55–57 Managed/CNG 项目；bare 与 catalog 外项目 intake 分类'
+      : 'Expo SDK 55–57 Managed/CNG projects; bare and catalog-out intake classification';
   const listJoiner = locale === 'zh' ? '、' : ', ';
 
   return [
@@ -72,6 +75,10 @@ export function renderReadmeSupportMatrixSection(locale: DocsLocale): string {
     locale === 'zh'
       ? `- \`preview\`：${joinInlineCode(PREVIEW_CAPABILITY_DEFINITIONS.map((definition) => definition.packageName))}`
       : `- \`preview\`: ${joinInlineCode(PREVIEW_CAPABILITY_DEFINITIONS.map((definition) => definition.packageName))}`;
+  const previewMatrixLine =
+    locale === 'zh'
+      ? `- \`preview project shapes\`：${joinInlineCode(previewMatrices.map((candidate) => candidate.id))}`
+      : `- \`preview project shapes\`: ${joinInlineCode(previewMatrices.map((candidate) => candidate.id))}`;
   const experimentalLine =
     locale === 'zh'
       ? `- \`experimental\`：${joinInlineCode(EXPERIMENTAL_CAPABILITY_NAMES)}`
@@ -79,8 +86,8 @@ export function renderReadmeSupportMatrixSection(locale: DocsLocale): string {
 
   const strictLine =
     locale === 'zh'
-      ? '`doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。'
-      : '`doctor --strict` still means `verified` only. `doctor --target-tier preview` allows the same runtime matrix plus preview-tier capabilities, but that does not promote them into the formal public promise.';
+      ? '`doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会放行 preview 项目形态与 preview 能力，但不代表 RNOH runtime parity 或正式承诺。'
+      : '`doctor --strict` still means `verified` only. `doctor --target-tier preview` admits preview project shapes and capabilities without claiming RNOH runtime parity or a formal support promise.';
 
   const telemetryLines =
     locale === 'zh'
@@ -101,7 +108,7 @@ export function renderReadmeSupportMatrixSection(locale: DocsLocale): string {
           '- `evidenceSource.device=manual-doc` means the current device signal comes from manual acceptance records, not automated verification',
         ];
 
-  return [verifiedLine, previewLine, experimentalLine, '', strictLine, '', ...telemetryLines].join('\n');
+  return [verifiedLine, previewMatrixLine, previewLine, experimentalLine, '', strictLine, '', ...telemetryLines].join('\n');
 }
 
 export function renderSupportMatrixVerifiedMatrix(locale: DocsLocale): string {
@@ -113,6 +120,13 @@ export function renderSupportMatrixVerifiedMatrix(locale: DocsLocale): string {
     locale === 'zh'
       ? '`react-native-reanimated` `3.6.0`、`react-native-svg` `15.0.0`'
       : '`react-native-reanimated` `3.6.0`, `react-native-svg` `15.0.0`';
+
+  const previewHeading =
+    locale === 'zh' ? '### Preview 项目形态矩阵' : '### Preview project-shape matrices';
+  const previewBoundary =
+    locale === 'zh'
+      ? '以下矩阵只验证 Expo／React Native 项目形态可进入 RNOH 0.82 sidecar 的 bundle／build 路径，不代表 runtime parity、真机或 release 验收。'
+      : 'These matrices validate Expo/React Native project-shape intake into the RNOH 0.82 sidecar bundle/build path only; they do not establish runtime parity, device acceptance, or release acceptance.';
 
   return [
     '| 项目 | 要求 |',
@@ -127,6 +141,16 @@ export function renderSupportMatrixVerifiedMatrix(locale: DocsLocale): string {
     `| App Shell 依赖 | ${appShellValue} |`,
     `| UI stack 依赖 | ${uiStackValue} |`,
     '| 原生标识 | 至少设置 `android.package` 或 `ios.bundleIdentifier` |',
+    '',
+    previewHeading,
+    '',
+    previewBoundary,
+    '',
+    '| Matrix | Expo SDK | React | React Native | RNOH / CLI |',
+    '| --- | --- | --- | --- | --- |',
+    ...previewMatrices.map((candidate) =>
+      `| \`${candidate.id}\` | \`${candidate.expoSdkVersion}\` | \`${candidate.dependencyRules.react?.version}\` | \`${candidate.dependencyRules['react-native']?.version}\` | \`${candidate.dependencyRules['@react-native-oh/react-native-harmony']?.version}\` |`,
+    ),
   ].join('\n');
 }
 
