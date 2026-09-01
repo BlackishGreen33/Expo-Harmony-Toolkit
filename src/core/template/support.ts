@@ -6,7 +6,6 @@ import {
   TEMPLATE_VERSION,
 } from '../constants';
 import { hasDeclaredDependency } from '../project';
-import { DEFAULT_VALIDATED_MATRIX_ID } from '../../data/validatedMatrices';
 import {
   HarmonyIdentifiers,
   PackageJson,
@@ -120,6 +119,7 @@ AppRegistry.registerComponent(${JSON.stringify(identifiers.slug)}, () => App);
 export function collectMetadataWarnings(
   previousManifest: ToolkitManifest | null,
   previousToolkitConfig: ToolkitConfig | null,
+  expectedMatrixId: string,
 ): string[] {
   const warnings: string[] = [];
 
@@ -129,9 +129,9 @@ export function collectMetadataWarnings(
     );
   }
 
-  if (previousManifest && previousManifest.matrixId !== DEFAULT_VALIDATED_MATRIX_ID) {
+  if (previousManifest && previousManifest.matrixId !== expectedMatrixId) {
     warnings.push(
-      `Existing manifest matrix ${previousManifest.matrixId ?? 'unknown'} does not match current matrix ${DEFAULT_VALIDATED_MATRIX_ID}. Sync will refresh managed metadata.`,
+      `Existing manifest matrix ${previousManifest.matrixId ?? 'unknown'} does not match current matrix ${expectedMatrixId}. Sync will refresh managed metadata.`,
     );
   }
 
@@ -141,9 +141,9 @@ export function collectMetadataWarnings(
     );
   }
 
-  if (previousToolkitConfig && previousToolkitConfig.matrixId !== DEFAULT_VALIDATED_MATRIX_ID) {
+  if (previousToolkitConfig && previousToolkitConfig.matrixId !== expectedMatrixId) {
     warnings.push(
-      `Existing toolkit-config matrix ${previousToolkitConfig.matrixId ?? 'unknown'} does not match current matrix ${DEFAULT_VALIDATED_MATRIX_ID}. Sync will refresh managed metadata.`,
+      `Existing toolkit-config matrix ${previousToolkitConfig.matrixId ?? 'unknown'} does not match current matrix ${expectedMatrixId}. Sync will refresh managed metadata.`,
     );
   }
 

@@ -210,6 +210,89 @@ describe('doctor report', () => {
     expect(report.dependencies.every((dependency) => dependency.blocking === false)).toBe(true);
   });
 
+  it.each([
+    {
+      expoSdkVersion: 55,
+      expoVersion: '^55.0.31',
+      reactVersion: '19.2.0',
+      reactNativeVersion: '0.83.10',
+      matrixId: 'expo55-rn083-rnoh082-preview',
+    },
+    {
+      expoSdkVersion: 56,
+      expoVersion: '^56.0.21',
+      reactVersion: '19.2.3',
+      reactNativeVersion: '0.85.3',
+      matrixId: 'expo56-rn085-rnoh082-preview',
+    },
+    {
+      expoSdkVersion: 57,
+      expoVersion: '^57.0.19',
+      reactVersion: '19.2.3',
+      reactNativeVersion: '0.86.3',
+      matrixId: 'expo57-rn086-rnoh082-preview',
+    },
+  ])(
+    'accepts the Expo $expoSdkVersion project shape on the preview lane',
+    async ({ expoSdkVersion, expoVersion, reactVersion, reactNativeVersion, matrixId }) => {
+      const tempRoot = await createDoctorFixtureFromSample();
+
+      try {
+        const packageJsonPath = path.join(tempRoot, 'package.json');
+        const packageJson = await fs.readJson(packageJsonPath);
+        packageJson.dependencies = {
+          ...packageJson.dependencies,
+          expo: expoVersion,
+          '@expo/metro-runtime': `^${expoSdkVersion}.0.0`,
+          'expo-constants': `^${expoSdkVersion}.0.0`,
+          react: reactVersion,
+          'react-dom': reactVersion,
+          'react-native': reactNativeVersion,
+        };
+        await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+        const report = await buildDoctorReport(tempRoot, { targetTier: 'preview' });
+
+        expect(report.matrixId).toBe(matrixId);
+        expect(report.matrixSupportTier).toBe('preview');
+        expect(report.expoSdkVersion).toBe(expoSdkVersion);
+        expect(report.eligibility).toBe('eligible');
+        expect(report.blockingIssues).toHaveLength(0);
+      } finally {
+        await fs.remove(tempRoot);
+      }
+    },
+  );
+
+  it('keeps the Expo 56 compatibility matrix outside strict verified eligibility', async () => {
+    const tempRoot = await createDoctorFixtureFromSample();
+
+    try {
+      const packageJsonPath = path.join(tempRoot, 'package.json');
+      const packageJson = await fs.readJson(packageJsonPath);
+      packageJson.dependencies = {
+        ...packageJson.dependencies,
+        expo: '^56.0.21',
+        '@expo/metro-runtime': '^56.0.0',
+        'expo-constants': '^56.0.0',
+        react: '19.2.3',
+        'react-dom': '19.2.3',
+        'react-native': '0.85.3',
+      };
+      await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+      const report = await buildDoctorReport(tempRoot);
+
+      expect(report.matrixId).toBe('expo56-rn085-rnoh082-preview');
+      expect(report.eligibility).toBe('ineligible');
+      expect(report.blockingIssues).toContainEqual(
+        expect.objectContaining({ code: 'matrix.support_tier.unsupported' }),
+      );
+    } finally {
+      await fs.remove(tempRoot);
+    }
+  });
+
   it('classifies the dedicated verified fixture as managed-core with matrix-drift dependency buckets', async () => {
     const report = await buildDoctorReport(verifiedFixtureRoot);
     const expoDependency = report.dependencies.find((dependency) => dependency.name === 'expo');

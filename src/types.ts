@@ -63,6 +63,7 @@ export interface ValidatedDependencyRule {
 
 export interface ValidatedReleaseMatrix {
   id: string;
+  supportTier: DoctorTargetTier;
   expoSdkVersion: number;
   allowedDependencies: string[];
   dependencyRules: Record<string, ValidatedDependencyRule>;
@@ -188,6 +189,7 @@ export interface DoctorReport {
   toolkitVersion: string;
   templateVersion: string;
   matrixId: string | null;
+  matrixSupportTier: DoctorTargetTier;
   eligibility: EligibilityStatus;
   rnohVersion: string;
   rnohCliVersion: string;

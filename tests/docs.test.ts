@@ -193,7 +193,7 @@ describe('documentation metadata', () => {
   it('keeps package metadata aligned with the public repository and license', async () => {
     const packageJson = await fs.readJson(packageJsonPath);
 
-    expect(TOOLKIT_VERSION).toBe('2.0.0-next.0');
+    expect(TOOLKIT_VERSION).toBe('2.0.0-next.1');
     expect(packageJson.version).toBe(TOOLKIT_VERSION);
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.repository?.url).toBe('git+https://github.com/BlackishGreen33/Expo-Harmony-Toolkit.git');

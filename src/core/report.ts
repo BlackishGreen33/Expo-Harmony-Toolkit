@@ -14,8 +14,7 @@ import { writeProjectJson } from './safeProjectWrite';
 import { annotateDependencyBuildability } from './dependencyInspection';
 import { DEPENDENCY_CATALOG } from '../data/dependencyCatalog';
 import {
-  DEFAULT_VALIDATED_MATRIX_ID,
-  VALIDATED_RELEASE_MATRICES,
+  resolveValidatedReleaseMatrix,
 } from '../data/validatedMatrices';
 import {
   CAPABILITY_BY_PACKAGE,
@@ -120,7 +119,7 @@ export async function buildDoctorReport(
     doctorConfig.excludeDependencies,
   );
   const expoSdkVersion = detectExpoSdkVersion(loadedProject.packageJson);
-  const matrix = VALIDATED_RELEASE_MATRICES[DEFAULT_VALIDATED_MATRIX_ID];
+  const matrix = resolveValidatedReleaseMatrix(loadedProject.packageJson, expoSdkVersion);
   const targetTier = options.targetTier ?? 'verified';
   const excludedPlugins = new Set(doctorConfig.excludePlugins);
   const expoPlugins = collectExpoPlugins(loadedProject.expoConfig).filter(
@@ -196,6 +195,7 @@ export async function buildDoctorReport(
     blocking: blockingDependencyNames.has(dependency.name),
   }));
   const nextActions = buildNextActions({
+    matrix,
     targetTier,
     coverageProfile,
     blockingIssues,
@@ -203,7 +203,12 @@ export async function buildDoctorReport(
     capabilities,
   });
 
-  const warnings = buildWarnings(loadedProject.expoConfig, expoSdkVersion, resolvedDependencies);
+  const warnings = buildWarnings(
+    loadedProject.expoConfig,
+    expoSdkVersion,
+    resolvedDependencies,
+    matrix,
+  );
   const advisories = buildAdvisories(loadedProject.expoConfig, doctorConfig);
 
   return {
@@ -213,6 +218,7 @@ export async function buildDoctorReport(
     toolkitVersion: TOOLKIT_VERSION,
     templateVersion: TEMPLATE_VERSION,
     matrixId: matrix.id,
+    matrixSupportTier: matrix.supportTier,
     eligibility: blockingIssues.length === 0 ? 'eligible' : 'ineligible',
     rnohVersion: RNOH_VERSION,
     rnohCliVersion: RNOH_CLI_VERSION,
@@ -273,7 +279,7 @@ export function renderDoctorReport(report: DoctorReport): string {
     `Project: ${report.projectRoot}`,
     `Config: ${report.appConfigPath ?? 'not found'}`,
     `Expo SDK: ${report.expoSdkVersion ?? 'unknown'} (recognized ${SUPPORTED_EXPO_SDKS.join(', ')})`,
-    `Matrix: ${report.matrixId ?? 'none'}`,
+    `Matrix: ${report.matrixId ?? 'none'} (${report.matrixSupportTier})`,
     `Target tier: ${report.targetTier}`,
     `Coverage profile: ${report.coverageProfile}`,
     `Eligibility: ${report.eligibility}`,
@@ -408,6 +414,13 @@ async function collectBlockingIssues(
 ): Promise<BlockingIssue[]> {
   const issues: BlockingIssue[] = [];
   const dependencyMap = new Map(dependencies.map((dependency) => [dependency.name, dependency]));
+
+  if (!isSupportTierAllowed(matrix.supportTier, targetTier)) {
+    issues.push({
+      code: 'matrix.support_tier.unsupported',
+      message: `Matrix ${matrix.id} is ${matrix.supportTier}; rerun doctor with --target-tier ${matrix.supportTier} to evaluate this project shape.`,
+    });
+  }
 
   if (expoSdkVersion !== matrix.expoSdkVersion) {
     issues.push({
@@ -691,6 +704,7 @@ function isThirdPartyNativeGapDependency(dependency: DetectedDependency): boolea
 }
 
 function buildNextActions(input: {
+  matrix: ValidatedReleaseMatrix;
   targetTier: DoctorTargetTier;
   coverageProfile: CoverageProfile;
   blockingIssues: BlockingIssue[];
@@ -698,7 +712,7 @@ function buildNextActions(input: {
   capabilities: ProjectCapabilityReport[];
 }): string[] {
   const actions: string[] = [];
-  const { targetTier, coverageProfile, blockingIssues, dependencies, capabilities } = input;
+  const { matrix, targetTier, coverageProfile, blockingIssues, dependencies, capabilities } = input;
   const hasPreviewCapabilities = capabilities.some((capability) => capability.supportTier === 'preview');
   const hasRouterBlockingIssues = blockingIssues.some((issue) =>
     [
@@ -715,14 +729,24 @@ function buildNextActions(input: {
     THIRD_PARTY_WAVE_B_PACKAGE_NAMES.has(dependency.name),
   );
 
+  if (hasBlockingIssueCode(blockingIssues, 'matrix.support_tier.unsupported')) {
+    actions.push(
+      `Use \`expo-harmony doctor --project-root . --target-tier ${matrix.supportTier}\` for ${matrix.id}; this project-shape lane does not expand the verified runtime promise.`,
+    );
+  }
+
   if (
     hasBlockingIssueCode(blockingIssues, 'matrix.expo_sdk.unsupported') ||
     hasBlockingIssueCode(blockingIssues, 'dependency.version_mismatch') ||
     hasBlockingIssueCode(blockingIssues, 'dependency.specifier_mismatch') ||
     hasBlockingIssueCode(blockingIssues, 'dependency.required_missing')
   ) {
+    const doctorMode =
+      matrix.supportTier === 'verified'
+        ? '--strict'
+        : `--target-tier ${matrix.supportTier}`;
     actions.push(
-      `Align Expo SDK, React Native, RNOH, and validated adapter versions to ${DEFAULT_VALIDATED_MATRIX_ID}, then rerun \`expo-harmony doctor --project-root . --strict\`.`,
+      `Align Expo SDK, React Native, RNOH, and validated adapter versions to ${matrix.id}, then rerun \`expo-harmony doctor --project-root . ${doctorMode}\`.`,
     );
   }
 
@@ -801,7 +825,9 @@ function buildNextActions(input: {
 
   if (coverageProfile === 'managed-core') {
     actions.push(
-      'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.',
+      matrix.supportTier === 'verified'
+        ? 'Stay on the verified lane: rerun `expo-harmony sync-template --project-root .`, `expo-harmony bundle --project-root .`, and `expo-harmony build-hap --project-root . --mode debug` before claiming release readiness.'
+        : `Stay on the ${matrix.supportTier} project-shape lane: rerun \`expo-harmony sync-template --project-root .\`, \`expo-harmony bundle --project-root .\`, and \`expo-harmony build-hap --project-root . --mode debug\`; successful packaging does not establish React Native runtime parity.`,
     );
   }
 
@@ -822,12 +848,19 @@ function buildWarnings(
   expoConfig: Record<string, any>,
   expoSdkVersion: number | null,
   dependencies: DetectedDependency[],
+  matrix: ValidatedReleaseMatrix,
 ): string[] {
   const warnings: string[] = [];
   const expoSdkWarning = getExpoSdkWarning(expoSdkVersion);
 
   if (expoSdkWarning) {
     warnings.push(expoSdkWarning);
+  }
+
+  if (matrix.supportTier !== 'verified') {
+    warnings.push(
+      `Matrix ${matrix.id} validates Expo/React Native project-shape intake against the RNOH ${RNOH_VERSION} sidecar as ${matrix.supportTier} only; bundle or debug-build success does not establish runtime parity or device acceptance.`,
+    );
   }
 
   if (!expoConfig.android?.package && !expoConfig.ios?.bundleIdentifier) {

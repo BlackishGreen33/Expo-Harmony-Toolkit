@@ -1,10 +1,10 @@
 export const TOOLKIT_PACKAGE_NAME = 'expo-harmony-toolkit';
 export const CLI_NAME = 'expo-harmony';
-export const TOOLKIT_VERSION = '2.0.0-next.0';
+export const TOOLKIT_VERSION = '2.0.0-next.1';
 export const TEMPLATE_VERSION = 'rnoh-0.82.29';
 export const RNOH_VERSION = '0.82.29';
 export const RNOH_CLI_VERSION = '0.82.29';
-export const SUPPORTED_EXPO_SDKS = [53, 55];
+export const SUPPORTED_EXPO_SDKS = [55, 56, 57];
 export const GENERATED_DIR = '.expo-harmony';
 export const GENERATED_SHIMS_DIR = `${GENERATED_DIR}/shims`;
 export const SIGNING_LOCAL_FILENAME = 'signing.local.json';

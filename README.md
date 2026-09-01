@@ -52,10 +52,10 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v2.0.0-next.0` |
+| 当前版本 | `v2.0.0-next.1` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
-| 输入范围 | Managed/CNG Expo 项目；bare 与 catalog 外项目 intake 分类 |
+| 输入范围 | Expo SDK 55–57 Managed/CNG 项目；bare 与 catalog 外项目 intake 分类 |
 | `verified` JS/UI 能力 | `expo-router`、`expo-linking`、`expo-constants`、`react-native-reanimated`、`react-native-svg` |
 | `preview` 原生能力 | `expo-file-system`、`expo-image-picker`、`expo-location`、`expo-camera`、`expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` |
 | `experimental` 能力 | `expo-notifications`、`react-native-gesture-handler`、`@react-native-async-storage/async-storage`、`react-native-screens`、`react-native-safe-area-context`、`react-native-webview`、`jpush-react-native`、`expo-media-library`、`lottie-react-native`、`@shopify/react-native-skia` |
@@ -181,10 +181,11 @@ pnpm exec expo-harmony build-hap --mode release
 
 <!-- GENERATED:readme-support-matrix:start -->
 - `verified`：唯一公开矩阵仍是 `expo55-rnoh082-ui-stack`
+- `preview project shapes`：`expo55-rn083-rnoh082-preview`, `expo56-rn085-rnoh082-preview`, `expo57-rn086-rnoh082-preview`
 - `preview`：`expo-file-system`, `expo-image-picker`, `expo-location`, `expo-camera`, `expo-secure-store`, `expo-asset`, `expo-device`, `expo-clipboard`, `expo-haptics`
 - `experimental`：`expo-notifications`, `react-native-gesture-handler`, `@react-native-async-storage/async-storage`, `react-native-screens`, `react-native-safe-area-context`, `react-native-webview`, `jpush-react-native`, `expo-media-library`, `lottie-react-native`, `@shopify/react-native-skia`
 
-`doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会在同一 runtime matrix 下额外放行 preview 能力，但这不等于它们已经进入正式承诺。
+`doctor --strict` 继续只代表 `verified`。`doctor --target-tier preview` 会放行 preview 项目形态与 preview 能力，但不代表 RNOH runtime parity 或正式承诺。
 
 - `doctor-report.json` 的 `capabilities[]` 会带出 `runtimeMode`
 - `doctor-report.json` 与 `toolkit-config.json` 会带出 `evidence.bundle`、`evidence.debugBuild`、`evidence.device`、`evidence.release`
