@@ -19,7 +19,7 @@
     "@react-native-oh/react-native-harmony": "0.82.29",
     "@react-native-oh/react-native-harmony-cli": "0.82.29",
     "@react-native-oh-tpl/react-native-reanimated": "3.6.4-rc.5",
-    "@react-native-oh-tpl/react-native-svg": "15.0.1-rc.11",
+    "@react-native-oh-tpl/react-native-svg": "15.0.1-8",
     "expo": "^55.0.8",
     "expo-constants": "55.0.11",
     "expo-linking": "55.0.11",
