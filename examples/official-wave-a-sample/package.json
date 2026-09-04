@@ -10,7 +10,7 @@
     "start": "expo start"
   },
   "dependencies": {
-    "@babel/runtime": "^7.28.4",
+    "@babel/runtime": "^8.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-oh/react-native-harmony": "0.82.29",
     "@react-native-oh/react-native-harmony-cli": "0.82.29",
