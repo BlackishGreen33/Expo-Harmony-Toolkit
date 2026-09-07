@@ -5,6 +5,49 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { normalizeKnownJavaScriptDependencies } from '../src/core/javascriptDependencies';
 
+it('does not discard a Harmony cold-start URL when the native bridge takes over 150 ms', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'harmony-linking-timeout-'));
+  const file = path.join(root, 'node_modules/expo-router/build/fork/useLinking.native.js');
+  const source = `function getInitialURLWithTimeout() {
+    if (typeof window === 'undefined') return '';
+    if (react_native_1.Platform.OS === 'ios') return ExpoLinking.getLinkingURL();
+    return Promise.race([
+      react_native_1.Linking.getInitialURL(),
+      new Promise(resolve => setTimeout(() => resolve(null), 150)),
+    ]);
+  }
+  exports.getInitialURLWithTimeout = getInitialURLWithTimeout;`;
+  try {
+    await fs.outputFile(file, source);
+    const restore = await normalizeKnownJavaScriptDependencies(
+      root, { dependencies: { react: '19.2.3' } }, { restoreOnCompletion: true },
+    );
+    try {
+      for (const platform of ['harmony', 'android', 'ios']) {
+        const exports: Record<string, any> = {};
+        let timeout: (() => void) | undefined;
+        let resolveNative!: (url: string) => void;
+        const nativeUrl = new Promise<string>(resolve => { resolveNative = resolve; });
+        runInNewContext(await fs.readFile(file, 'utf8'), {
+          exports, window: {},
+          react_native_1: { Platform: { OS: platform }, Linking: { getInitialURL: () => nativeUrl } },
+          ExpoLinking: { getLinkingURL: () => 'ios://calendar' },
+          setTimeout: (callback: () => void) => { timeout = callback; },
+        });
+        const result = exports.getInitialURLWithTimeout();
+        timeout?.();
+        resolveNative('ccnubox://calendar');
+        expect(await result).toBe(platform === 'harmony' ? 'ccnubox://calendar' : platform === 'ios' ? 'ios://calendar' : null);
+      }
+    } finally {
+      await restore();
+    }
+    expect(await fs.readFile(file, 'utf8')).toBe(source);
+  } finally {
+    await fs.remove(root);
+  }
+});
+
 it('bundles Expo Router with old screens while preserving native flags and restoring package files', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'harmony-router-flags-'));
   const file = path.join(root, 'node_modules/expo-router/build/screensFeatureFlags.js');

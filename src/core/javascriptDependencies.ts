@@ -149,6 +149,21 @@ export async function normalizeKnownJavaScriptDependencies(
     }
   }
 
+  const routerLinkingPath = path.join(projectRoot, 'node_modules/expo-router/build/fork/useLinking.native.js');
+  if (await fs.pathExists(routerLinkingPath)) {
+    const contents = await fs.readFile(routerLinkingPath, 'utf8');
+    // The Android timeout workaround can discard RNOH's valid URL while its bridge starts.
+    // RNOH's getter always resolves with its captured launch URI or null.
+    const patched = contents.replace(
+      /function getInitialURLWithTimeout\(\) \{(?!\s*\/\/ Harmony)/,
+      "function getInitialURLWithTimeout() {\n    // Harmony waits for its captured launch URI instead of the Android 150 ms workaround.\n    if (typeof window !== 'undefined' && react_native_1.Platform.OS === 'harmony') return react_native_1.Linking.getInitialURL();",
+    );
+    if (patched !== contents) {
+      originalContents.set(routerLinkingPath, contents);
+      await fs.writeFile(routerLinkingPath, patched);
+    }
+  }
+
   return async () => {
     for (const [filePath, contents] of originalContents) {
       await fs.writeFile(filePath, contents);
