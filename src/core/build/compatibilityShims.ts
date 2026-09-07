@@ -5,6 +5,199 @@ export async function ensureNormalizedLocalHarCompatibilityShims(
   directoryPath: string,
   packageName: string,
 ): Promise<void> {
+  if (packageName === '@rnoh/react-native-openharmony') {
+    const filePath = path.join(directoryPath, 'src/main/ets/RNOH/RNInstancesCoordinator.ets');
+    if (await fs.pathExists(filePath)) {
+      const contents = await fs.readFile(filePath, 'utf8');
+      const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+      // The UI context receives launchURI, but the worker's LinkingManager uses the registry.
+      const patched = contents.replace(
+        /this\.rnInstanceRegistry = new RNInstanceRegistry\([\s\S]*?\r?\n[ \t]*\)/,
+        (registry) => registry.replace(
+          /(\r?\n([ \t]+)\})(\r?\n[ \t]*\))$/,
+          `$1,${newline}$2options?.launchURI$3`,
+        ),
+      );
+      if (patched !== contents) await fs.writeFile(filePath, patched);
+    }
+    return;
+  }
+
+  if (packageName === '@react-native-oh-tpl/react-native-webview') {
+    const filePath = path.join(directoryPath, 'src/main/ets/RNCWebViewPackage.ets');
+    if (await fs.pathExists(filePath)) {
+      const contents = await fs.readFile(filePath, 'utf8');
+      // The adapter registers its descriptor and TurboModule, but not the ArkUI view builder.
+      if (!contents.includes('createWrappedCustomRNComponentBuilderByComponentNameMap')) {
+        const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+        const patched = contents.replace(
+          /export class RNCWebViewPackage extends RNOHPackage\s*\{/,
+          `import type { ComponentBuilderContext } from '@rnoh/react-native-openharmony';
+import { RNCWebView } from './RNCWebView';
+
+@Builder
+function buildWebView(ctx: ComponentBuilderContext) {
+  RNCWebView({ ctx: ctx.rnComponentContext, tag: ctx.tag })
+}
+
+export class RNCWebViewPackage extends RNOHPackage {
+  createWrappedCustomRNComponentBuilderByComponentNameMap(): Map<string, WrappedBuilder<[ComponentBuilderContext]>> {
+    return new Map().set('RNCWebView', wrapBuilder(buildWebView));
+  }
+`.replace(/\n/g, newline),
+        );
+        if (patched !== contents) await fs.writeFile(filePath, patched);
+      }
+    }
+    return;
+  }
+
+  if (packageName === '@react-native-oh-tpl/camera-roll') {
+    const filePath = path.join(directoryPath, 'src/main/ets/CameraRollTurboModule.ts');
+    if (await fs.pathExists(filePath)) {
+      const contents = await fs.readFile(filePath, 'utf8');
+      const patched = contents
+        // Stripping file:/// also stripped the root slash, producing an invalid relative URI.
+        .replace("uriStr = uriStr.replace(/^file:\\/+/i, '');", 'uriStr = decodeURIComponent(uriObj.path);')
+        .replace(/private dialogQueue = \[\];\s*private isDialogOpen = false;/, 'private saveQueue: Promise<void> = Promise.resolve();')
+        // Propagate dialog rejection and release the queue for subsequent saves.
+        .replace(/  async showDialog\(\) \{[\s\S]*?(?=  private getUriOnSandboxPath)/, `  getAssetsPermissionResult(saveUris: string[], photoCreationConfigs: photoAccessHelper.PhotoCreationConfig[]): Promise<string[]> {
+    const result = this.saveQueue.then(() => this.phAccessHelper.showAssetsCreationDialog(saveUris, photoCreationConfigs));
+    this.saveQueue = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+`)
+        .replace(/(Logger\.error\(`saveToDevice error: \$\{e\}`\);)(?!\s*throw e;)/, '$1\n        throw e;')
+        .replace(/(} else \{\s*if \(resourceType\) \{\s*fs\.unlinkSync\(saveUri\);\s*\})\s*\}/, '$1\n      throw new Error("Photo save was canceled");\n    }');
+      if (patched !== contents) await fs.writeFile(filePath, patched);
+    }
+    return;
+  }
+
+  if (packageName === '@react-native-oh-tpl/react-native-skia') {
+    const filePath = path.join(directoryPath, 'src/main/ets/RNSkiaModule.ts');
+    if (await fs.pathExists(filePath)) {
+      const contents = await fs.readFile(filePath, 'utf8');
+      // RNOH already unwraps the native Result; getNativeNodeIdByTag returns the string itself.
+      const patched = contents.replace(
+        /let obj = JSON\.parse\(JSON\.stringify\(this\.ctx\.rnInstance\.getNativeNodeIdByTag\(tag\)\)\);\s+let id = obj\.ok;/,
+        'let id = this.ctx.rnInstance.getNativeNodeIdByTag(tag);\n      if (typeof id !== "string") throw new Error("Skia snapshot view is not mounted");',
+      );
+      if (patched !== contents) await fs.writeFile(filePath, patched);
+    }
+    const packagePath = path.join(directoryPath, 'src/main/ets/RNSkiaPackage.ts');
+    if (await fs.pathExists(packagePath)) {
+      const contents = await fs.readFile(packagePath, 'utf8');
+      const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+      // RNOH collects ArkUI builders only from RNOHPackage subclasses. Keep the legacy
+      // factory implementation, but export an ArkTS package that also registers its views.
+      const patched = contents.replace(/export class RNSkiaPackage extends RNPackage\s*\{/, `@Builder
+function buildSkiaDomView(ctx: ComponentBuilderContext) {
+  RNCSkiaDomView({ ctx: ctx.rnComponentContext, tag: ctx.tag })
+}
+
+@Builder
+function buildSkiaPictureView(ctx: ComponentBuilderContext) {
+  RNCSkiaPictureView({ ctx: ctx.rnComponentContext, tag: ctx.tag })
+}
+
+export class RNSkiaPackage extends RNOHPackage {
+  createWrappedCustomRNComponentBuilderByComponentNameMap(): Map<string, WrappedBuilder<[ComponentBuilderContext]>> {
+    return new Map()
+      .set('SkiaDomView', wrapBuilder(buildSkiaDomView))
+      .set('SkiaPictureView', wrapBuilder(buildSkiaPictureView));
+  }
+`.replace(/\n/g, newline));
+      if (patched !== contents) {
+        const imports = `import { RNOHPackage, ComponentBuilderContext } from '@rnoh/react-native-openharmony';
+import { RNCSkiaDomView } from './RNCSkiaDomView';
+import { RNCSkiaPictureView } from './RNCSkiaPictureView';
+`;
+        await fs.writeFile(path.join(directoryPath, 'src/main/ets/RNOHSkiaPackage.ets'), imports.replace(/\n/g, newline) + patched);
+        const etsEntryPath = path.join(directoryPath, 'ts.ets');
+        const entryPath = await fs.pathExists(etsEntryPath) ? etsEntryPath : path.join(directoryPath, 'ts.ts');
+        const entry = await fs.readFile(entryPath, 'utf8');
+        await fs.writeFile(etsEntryPath, entry.replace('./src/main/ets/RNSkiaPackage', './src/main/ets/RNOHSkiaPackage'));
+        if (entryPath !== etsEntryPath) await fs.remove(entryPath);
+      }
+    }
+    return;
+  }
+
+  if (packageName === '@react-native-oh-tpl/lottie-react-native') {
+    const entryPath = path.join(directoryPath, 'index.ets');
+    if (await fs.pathExists(entryPath)) {
+      const entry = await fs.readFile(entryPath, 'utf8');
+      if (!entry.includes('./src/main/ets/RNOHLottiePackage')) {
+        const newline = entry.includes('\r\n') ? '\r\n' : '\n';
+        await fs.outputFile(path.join(directoryPath, 'src/main/ets/RNOHLottiePackage.ets'), `import { RNOHPackage, ComponentBuilderContext } from '@rnoh/react-native-openharmony';
+import { LottieAnimationView, LOTTIE_TYPE } from './LottieAnimationView';
+
+@Builder
+function buildLottieView(ctx: ComponentBuilderContext) {
+  LottieAnimationView({ ctx: ctx.rnComponentContext, tag: ctx.tag })
+}
+
+export class RNOHLottiePackage extends RNOHPackage {
+  createWrappedCustomRNComponentBuilderByComponentNameMap(): Map<string, WrappedBuilder<[ComponentBuilderContext]>> {
+    return new Map().set(LOTTIE_TYPE, wrapBuilder(buildLottieView));
+  }
+}
+`.replace(/\n/g, newline));
+        await fs.writeFile(entryPath, `${entry}${newline}export * from './src/main/ets/RNOHLottiePackage';${newline}`);
+      }
+    }
+    // The ArkTS implementation reads an array, but this adapter's C++ prop was a string.
+    const replacements = [
+      ['Props.h', 'std::string colorFilters{};', 'folly::dynamic colorFilters = folly::dynamic::array();'],
+      ['Props.cpp', 'sourceProps.colorFilters, {}', 'sourceProps.colorFilters, folly::dynamic::array()'],
+      ['LottieAnimationViewJSIBinder.h', '"colorFilters", "string"', '"colorFilters", "Object"'],
+    ];
+    for (const [file, from, to] of replacements) {
+      const filePath = path.join(directoryPath, 'src/main/cpp', file);
+      if (!(await fs.pathExists(filePath))) continue;
+      const contents = await fs.readFile(filePath, 'utf8');
+      let patched = contents.replace(from, to);
+      if (file === 'Props.h' && patched !== contents && !patched.includes('#include <folly/dynamic.h>')) {
+        const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+        patched = patched.replace('#include <jsi/jsi.h>', `#include <jsi/jsi.h>${newline}#include <folly/dynamic.h>`);
+      }
+      if (patched !== contents) await fs.writeFile(filePath, patched);
+    }
+    return;
+  }
+
+  if (packageName === '@react-native-oh-tpl/react-native-screens') {
+    const packagePath = path.join(directoryPath, 'src/main/ets/RNOHScreensPackage.ets');
+    if (await fs.pathExists(packagePath)) {
+      const contents = await fs.readFile(packagePath, 'utf8');
+      // Screens 4.8.1-rc.3 ships this builder but omits its registration, dropping all screen content.
+      if (contents.includes('import { RNSScreenContentWrapper }') && !/\.set\(RNSScreenContentWrapper\.NAME,/.test(contents)) {
+        const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+        const patched = contents.replace(
+          /(^[ \t]*)\.set\(RNSSearchBar\.NAME, wrapBuilder\(componentBuilder\)\)/m,
+          `$&${newline}$1.set(RNSScreenContentWrapper.NAME, wrapBuilder(componentBuilder))`,
+        );
+        if (patched !== contents) await fs.writeFile(packagePath, patched);
+      }
+    }
+    const stackPath = path.join(directoryPath, 'src/main/ets/components/RNSScreenStack.ets');
+    if (await fs.pathExists(stackPath)) {
+      const contents = await fs.readFile(stackPath, 'utf8');
+      // The descriptor watcher already initializes the paths. A duplicate initial path makes back
+      // navigation reveal an obsolete screen after replace(), including Expo Router's empty index.
+      if (contents.includes('this.updateStack(newChildren)')) {
+        const patched = contents.replace(
+          /^[ \t]*this\.stackController\.pushPathByName\(this\.stack\[0\]\.toString\(\), null\)\r?\n/m,
+          '',
+        );
+        if (patched !== contents) await fs.writeFile(stackPath, patched);
+      }
+    }
+    return;
+  }
+
   if (packageName === '@react-native-oh-tpl/react-native-gesture-handler') {
     const gestureHandlerPackageHeaderPath = path.join(
       directoryPath,
