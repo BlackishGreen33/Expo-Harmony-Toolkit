@@ -32,6 +32,7 @@ import {
 } from '../data/capabilities';
 import {
   createGeneratedSha,
+  collectExpoSchemes,
   deriveHarmonyIdentifiers,
   loadProject,
   resolveExpoHarmonyDoctorConfig,
@@ -265,6 +266,17 @@ async function buildManagedFiles(
   });
   const signingLocalConfig = await readSigningLocalConfig(loadedProject.projectRoot);
   const hvigorPluginFilename = await resolveRnohHvigorPluginFilename(loadedProject.projectRoot);
+  let appIcon: Buffer | undefined;
+  const iconPath = loadedProject.expoConfig.icon;
+  if (iconPath) {
+    if (typeof iconPath !== 'string' || /^https?:/i.test(iconPath)) {
+      throw new Error('Harmony requires expo.icon to reference a local PNG file.');
+    }
+    appIcon = await fs.readFile(path.resolve(loadedProject.projectRoot, iconPath));
+    if (!appIcon.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
+      throw new Error('Harmony requires expo.icon to reference a local PNG file.');
+    }
+  }
   const renderedHarmonyRootPackage = renderTemplate(
     await fs.readFile(path.join(TEMPLATE_ROOT, 'oh-package.json5'), 'utf8'),
     loadedProject,
@@ -275,7 +287,11 @@ async function buildManagedFiles(
     TEMPLATE_FILE_PATHS.map(async (relativePath) => {
       const templatePath = path.join(TEMPLATE_ROOT, relativePath);
       const binary = isBinaryTemplate(relativePath);
-      const rawContents = await fs.readFile(templatePath);
+      const rawContents = appIcon && [
+        'AppScope/resources/base/media/app_icon.png',
+        'entry/src/main/resources/base/media/foreground.png',
+        'entry/src/main/resources/base/media/startIcon.png',
+      ].includes(relativePath) ? appIcon : await fs.readFile(templatePath);
       const contents = binary
         ? rawContents
         : renderTemplate(rawContents.toString('utf8'), loadedProject, identifiers, hvigorPluginFilename);
@@ -289,7 +305,7 @@ async function buildManagedFiles(
                 signingLocalConfig,
               )
             : relativePath === 'entry/src/main/module.json5'
-            ? renderEntryModuleConfig(identifiers.entryModuleName, requestedHarmonyPermissions)
+            ? renderEntryModuleConfig(identifiers, requestedHarmonyPermissions, loadedProject.expoConfig)
             : relativePath === 'entry/src/main/resources/base/element/string.json'
               ? renderEntryStringResources(
                   `${identifiers.appName} official minimal Harmony sample`,
@@ -533,9 +549,17 @@ function renderRnohGeneratedTsShim(): string {
 }
 
 function renderEntryModuleConfig(
-  entryModuleName: string,
+  identifiers: HarmonyIdentifiers,
   requestedHarmonyPermissions: readonly string[],
+  expoConfig: Record<string, unknown>,
 ): string {
+  const schemes = [...new Set(collectExpoSchemes(expoConfig))];
+  if (schemes.length === 0) {
+    schemes.push(identifiers.androidPackage ?? identifiers.iosBundleIdentifier ?? identifiers.bundleName);
+  }
+  if (schemes.some((scheme) => !/^[a-z][a-z0-9+.-]*$/i.test(scheme))) {
+    throw new Error('Harmony requires expo.scheme to contain valid URI schemes, without :// or paths.');
+  }
   const requestPermissions = [
     { name: 'ohos.permission.INTERNET' },
     ...requestedHarmonyPermissions.map((permission) =>
@@ -547,7 +571,7 @@ function renderEntryModuleConfig(
     JSON.stringify(
       {
         module: {
-          name: entryModuleName,
+          name: identifiers.entryModuleName,
           type: 'entry',
           description: '$string:module_desc',
           mainElement: 'EntryAbility',
@@ -555,6 +579,7 @@ function renderEntryModuleConfig(
           deliveryWithInstall: true,
           installationFree: false,
           pages: '$profile:main_pages',
+          querySchemes: [...new Set(['http', 'https', ...schemes])],
           requestPermissions,
           abilities: [
             {
@@ -562,10 +587,15 @@ function renderEntryModuleConfig(
               srcEntry: './ets/entryability/EntryAbility.ets',
               description: '$string:EntryAbility_desc',
               icon: '$media:layered_image',
-              label: '$string:EntryAbility_label',
+              label: '$string:app_name',
               startWindowIcon: '$media:startIcon',
               startWindowBackground: '$color:start_window_background',
               visible: true,
+              skills: [{
+                actions: ['ohos.want.action.viewData'],
+                entities: ['entity.system.browsable'],
+                uris: schemes.map((scheme) => ({ scheme })),
+              }],
             },
           ],
         },

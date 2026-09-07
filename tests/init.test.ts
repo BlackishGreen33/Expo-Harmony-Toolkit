@@ -63,6 +63,60 @@ async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
 }
 
 describe('init project', () => {
+  it('registers Expo schemes for implicit native deep links without changing the Expo config', async () => {
+    const projectRoot = await createTempFixture();
+    const configPath = path.join(projectRoot, 'app.json');
+    const config = await fs.readJson(configPath);
+    config.expo.scheme = ['sample-preview', 'sample', 'sample'];
+    await fs.writeJson(configPath, config);
+    await initProject(projectRoot, false);
+    const modulePath = path.join(projectRoot, 'harmony/entry/src/main/module.json5');
+    const moduleConfig = JSON5.parse(await fs.readFile(modulePath, 'utf8'));
+    expect(moduleConfig.module.abilities[0].skills).toContainEqual({
+      actions: ['ohos.want.action.viewData'],
+      entities: ['entity.system.browsable'],
+      uris: [{ scheme: 'sample' }, { scheme: 'sample-preview' }],
+    });
+    expect(moduleConfig.module.querySchemes).toEqual(['http', 'https', 'sample', 'sample-preview']);
+    expect(await fs.readJson(configPath)).toEqual(config);
+    const secondRun = await syncProjectTemplate(projectRoot, false);
+    expect(secondRun.writtenFiles).not.toContain('harmony/entry/src/main/module.json5');
+    config.expo.scheme = 'invalid://path';
+    await fs.writeJson(configPath, config);
+    await expect(syncProjectTemplate(projectRoot, false)).rejects.toThrow('valid URI schemes');
+  });
+
+  it('copies the Expo PNG icon into Harmony resources without overwriting a custom sidecar', async () => {
+    const projectRoot = await createTempFixture();
+    const configPath = path.join(projectRoot, 'app.json');
+    const config = await fs.readJson(configPath);
+    config.expo.icon = './icon.png';
+    await fs.writeJson(configPath, config);
+    const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X8rsAAAAASUVORK5CYII=', 'base64');
+    await fs.writeFile(path.join(projectRoot, 'icon.png'), icon);
+    await initProject(projectRoot, false);
+    const outputs = [
+      'harmony/AppScope/resources/base/media/app_icon.png',
+      'harmony/entry/src/main/resources/base/media/foreground.png',
+      'harmony/entry/src/main/resources/base/media/startIcon.png',
+    ];
+    for (const output of outputs) {
+      expect(await fs.readFile(path.join(projectRoot, output))).toEqual(icon);
+    }
+    const custom = Buffer.concat([icon, Buffer.from('custom sidecar')]);
+    await fs.writeFile(path.join(projectRoot, outputs[0]), custom);
+    const result = await syncProjectTemplate(projectRoot, false);
+    expect(result.skippedFiles).toContain(outputs[0]);
+    expect(await fs.readFile(path.join(projectRoot, outputs[0]))).toEqual(custom);
+    expect(await fs.readJson(configPath)).toEqual(config);
+
+    await fs.writeFile(path.join(projectRoot, 'icon.png'), '<svg/>');
+    await expect(syncProjectTemplate(projectRoot, false)).rejects.toThrow('local PNG');
+    config.expo.icon = 'https://example.invalid/icon.png';
+    await fs.writeJson(configPath, config);
+    await expect(syncProjectTemplate(projectRoot, false)).rejects.toThrow('local PNG');
+  });
+
   it('writes scaffold files and remains idempotent on the second run', async () => {
     const projectRoot = await createTempFixture();
 
@@ -71,9 +125,17 @@ describe('init project', () => {
     const packageJson = await fs.readJson(path.join(projectRoot, 'package.json'));
     const manifest = await readManifest(projectRoot);
     const toolkitConfig = await readToolkitConfig(projectRoot);
+    const moduleConfig = JSON5.parse(await fs.readFile(path.join(projectRoot, 'harmony/entry/src/main/module.json5'), 'utf8'));
+    expect(moduleConfig.module.querySchemes).toEqual(['http', 'https', 'com.example.expoharmonyfixture']);
+    expect(moduleConfig.module.abilities[0].skills[0].uris).toEqual([{ scheme: 'com.example.expoharmonyfixture' }]);
+    const appScope = JSON5.parse(await fs.readFile(path.join(projectRoot, 'harmony/AppScope/app.json5'), 'utf8'));
+    // The module label is inherited from its main ability; PhotoAccessHelper matches it to the app label.
+    const mainAbility = moduleConfig.module.abilities.find((ability: { name: string }) => ability.name === moduleConfig.module.mainElement);
+    expect(mainAbility.label).toBe(appScope.app.label);
 
     expect(firstRun.sync.writtenFiles).toContain('harmony/README.md');
     expect(await fs.pathExists(path.join(projectRoot, 'metro.harmony.config.js'))).toBe(true);
+    expect(await fs.readFile(path.join(projectRoot, 'metro.harmony.config.js'), 'utf8')).toContain("'@harmony-js/react/package.json'");
     expect(packageJson.scripts['harmony:init']).toBe('expo-harmony init');
     expect(packageJson.scripts['harmony:env']).toBe('expo-harmony env');
     expect(packageJson.scripts['harmony:bundle']).toBe('expo-harmony bundle');
