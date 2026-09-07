@@ -47,10 +47,14 @@ const expoHarmonyShims = {
   ),
 ${previewCapabilityAliases ? `${previewCapabilityAliases}\n` : ''}};
 const uiStackRootModuleAliases = {
+  ...(fs.existsSync(path.join(__dirname, 'node_modules/@harmony-js/react/package.json'))
+    ? { react: path.dirname(require.resolve('@harmony-js/react/package.json')) }
+    : {}),
 ${reactNativeGestureHandlerRootAlias}  'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
 ${reactNativeScreensRootAlias}  'react-native-svg': path.resolve(__dirname, 'node_modules/react-native-svg'),
 };
 const resolvePackageAlias = (context, moduleName, platform, aliases) => {
+  if (platform !== 'harmony') return null;
   for (const [aliasedModuleName, aliasedModulePath] of Object.entries(aliases)) {
     if (moduleName === aliasedModuleName) {
       return context.resolveRequest(context, aliasedModulePath, platform);

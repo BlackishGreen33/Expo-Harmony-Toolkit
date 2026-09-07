@@ -171,6 +171,33 @@ function expectActionFragmentsInOrder(actions: string[], expectedFragments: stri
 }
 
 describe('doctor report', () => {
+  it('classifies app-managed Harmony adapters without promoting their runtime evidence', async () => {
+    const projectRoot = await createDoctorFixtureFromSample();
+    const adapters = [
+      '@react-native-ohos/jpush-react-native',
+      '@react-native-ohos/react-native-blob-util',
+      '@react-native-ohos/react-native-inappbrowser-reborn',
+      '@react-native-ohos/react-native-linear-gradient',
+      '@react-native-ohos/react-native-pdf',
+    ];
+    try {
+      for (const name of adapters) await addFakeDependency(projectRoot, name, '1.0.0');
+      await addFakeDependency(projectRoot, 'expo-modules-core', '55.0.0');
+      await addFakeDependency(projectRoot, 'babel-preset-expo', '55.0.0');
+      const report = await buildDoctorReport(projectRoot, { targetTier: 'experimental' });
+      expect(report.eligibility).toBe('eligible');
+      for (const name of adapters) {
+        expect(report.dependencies.find((entry) => entry.name === name)).toMatchObject({
+          status: 'manual', supportTier: 'experimental', blocking: false,
+        });
+      }
+      const strict = await buildDoctorReport(projectRoot);
+      expect(strict.eligibility).toBe('ineligible');
+      expect(strict.blockingIssues.filter((issue) => adapters.includes(issue.subject ?? ''))).toHaveLength(adapters.length);
+    } finally {
+      await fs.remove(projectRoot);
+    }
+  });
   it('classifies known Expo and third-party dependencies and marks the legacy fixture as ineligible', async () => {
     const report = await buildDoctorReport(managedFixtureRoot);
     const byName = new Map(report.dependencies.map((dependency) => [dependency.name, dependency]));
@@ -248,6 +275,7 @@ describe('doctor report', () => {
           react: reactVersion,
           'react-dom': reactVersion,
           'react-native': reactNativeVersion,
+          '@harmony-js/react': 'npm:react@19.1.1',
         };
         await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -258,6 +286,12 @@ describe('doctor report', () => {
         expect(report.expoSdkVersion).toBe(expoSdkVersion);
         expect(report.eligibility).toBe('eligible');
         expect(report.blockingIssues).toHaveLength(0);
+
+        delete packageJson.dependencies['@harmony-js/react'];
+        await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+        const unpaired = await buildDoctorReport(tempRoot, { targetTier: 'preview' });
+        expect(unpaired.eligibility).toBe('ineligible');
+        expect(unpaired.blockingIssues.some((issue) => issue.message.includes('@harmony-js/react'))).toBe(true);
       } finally {
         await fs.remove(tempRoot);
       }

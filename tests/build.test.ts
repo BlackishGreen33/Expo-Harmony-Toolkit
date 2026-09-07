@@ -622,15 +622,27 @@ describe('bundle and HAP build reports', () => {
     expect(report.warnings.some((warning) => warning.includes('RNOHPackagesFactory.h'))).toBe(false);
   }, 120000);
 
-  it('temporarily strips the legacy reanimated class-component invariant for React 19 Harmony bundles', async () => {
+  it.each(['react-native-reanimated', '@harmony-js/react-native-reanimated'])(
+    'temporarily strips the legacy class-component invariant from %s for React 19 Harmony bundles',
+    async (packageName) => {
     const projectRoot = await createTempFixture(uiStackSampleRoot);
 
     await initProject(projectRoot, true);
 
+    if (packageName.startsWith('@harmony-js/')) {
+      const packagePath = path.join(projectRoot, 'package.json');
+      const packageJson = await fs.readJson(packagePath);
+      packageJson.devDependencies = {
+        ...packageJson.devDependencies,
+        [packageName]: 'npm:react-native-reanimated@3.6.0',
+      };
+      await fs.writeJson(packagePath, packageJson);
+    }
+
     const reanimatedSourcePath = path.join(
       projectRoot,
       'node_modules',
-      'react-native-reanimated',
+      packageName,
       'src',
       'createAnimatedComponent',
       'createAnimatedComponent.tsx',
@@ -638,7 +650,7 @@ describe('bundle and HAP build reports', () => {
     const reanimatedModulePath = path.join(
       projectRoot,
       'node_modules',
-      'react-native-reanimated',
+      packageName,
       'lib',
       'module',
       'createAnimatedComponent',

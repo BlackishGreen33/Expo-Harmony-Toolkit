@@ -80,6 +80,26 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     supportTier: 'verified',
     note: 'Metro runtime is part of the validated managed Expo routing/bundling chain and keeps Expo workspace peers aligned.',
   },
+  '@harmony-js/react': {
+    status: 'supported',
+    supportTier: 'preview',
+    note: 'Harmony-only React 19.1.1 alias matching the RNOH 0.82.29 renderer. The canonical React dependency remains unchanged for iOS, Android and web.',
+  },
+  'babel-preset-expo': {
+    status: 'supported',
+    supportTier: 'preview',
+    note: 'Expo SDK 55–57 Babel presets participate in the preview bundle matrix; Harmony must use the Babel plugin matching its native animation runtime.',
+  },
+  'expo-modules-core': {
+    status: 'manual',
+    supportTier: 'preview',
+    note: 'Harmony resolves this package to the toolkit compatibility shim. Only implemented modules are available; importing this package does not provide arbitrary Expo native modules.',
+  },
+  '@expo/dom-webview': {
+    status: 'manual',
+    supportTier: 'experimental',
+    note: 'Expo installs this peer for DOM components. Apps using use-dom must validate their WebView bridge on Harmony; installation alone does not establish DOM component support.',
+  },
   '@babel/runtime': {
     status: 'supported',
     supportTier: 'verified',
@@ -176,6 +196,19 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   },
   ...UI_STACK_COMPATIBILITY_RECORDS,
   ...HARMONY_NATIVE_ADAPTER_COMPATIBILITY_RECORDS,
+  ...Object.fromEntries(
+    [
+      '@react-native-ohos/jpush-react-native',
+      '@react-native-ohos/react-native-blob-util',
+      '@react-native-ohos/react-native-inappbrowser-reborn',
+      '@react-native-ohos/react-native-linear-gradient',
+      '@react-native-ohos/react-native-pdf',
+    ].map((name) => [name, {
+      status: 'manual',
+      supportTier: 'experimental',
+      note: 'App-managed Harmony native adapter. The consuming sidecar must register its ETS/C++ packages, link its HAR, and validate permissions and runtime behavior. The toolkit does not generate this integration.',
+    } satisfies CompatibilityRecord]),
+  ),
   'react-native-gesture-handler': {
     status: 'manual',
     supportTier: 'experimental',
@@ -379,6 +412,11 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     status: 'supported',
     supportTier: 'experimental',
     note: 'Carousel behavior is accepted when paired with the validated reanimated Harmony adapter and homepage smoke tests.',
+  },
+  'react-native-element-dropdown': {
+    status: 'manual',
+    supportTier: 'experimental',
+    note: 'JavaScript dropdown components use React Native views, modals and gestures; validate interaction and layout in the consuming Harmony app.',
   },
   'react-native-svg-transformer': {
     status: 'supported',

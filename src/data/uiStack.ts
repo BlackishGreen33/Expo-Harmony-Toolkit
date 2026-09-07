@@ -98,6 +98,8 @@ export const HARMONY_NATIVE_ADAPTERS = [
     harmonyHarFileName: 'lottie.har',
     supportsAutolinking: true,
     managedAutolinking: {
+      etsImportPath: '@react-native-oh-tpl/lottie-react-native',
+      etsPackageName: 'RNOHLottiePackage',
       cppHeaderName: 'LottieAnimationViewPackage.h',
       cppPackageName: 'LottieAnimationViewPackage',
       cmakeTargetName: 'rnoh_lottie',

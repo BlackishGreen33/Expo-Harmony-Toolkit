@@ -16,6 +16,7 @@ const BASE_ALLOWED_DEPENDENCIES = [
   'expo-linking',
   'expo-router',
   'react',
+  '@harmony-js/react',
   'react-dom',
   'react-native',
   'expo-status-bar',
@@ -64,6 +65,10 @@ function createDependencyRules(input: {
     react: {
       required: true,
       version: input.reactVersion,
+    },
+    '@harmony-js/react': {
+      required: input.reactVersion !== '19.1.1',
+      specifier: 'npm:react@19.1.1',
     },
     'react-dom': {
       version: input.reactVersion,

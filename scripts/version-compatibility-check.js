@@ -74,6 +74,7 @@ async function materializeProject(tempRoot, matrix) {
   packageJson.dependencies = {
     '@babel/runtime': '^7.28.4',
     '@expo/metro-runtime': `^${matrix.sdk}.0.0`,
+    '@harmony-js/react': 'npm:react@19.1.1',
     '@react-native-oh/react-native-harmony': '0.82.29',
     '@react-native-oh/react-native-harmony-cli': '0.82.29',
     expo: matrix.expo,
@@ -155,7 +156,11 @@ async function main() {
       process.stdout.write(`Expo SDK ${matrix.sdk}: ${matrix.id} ${checks} passed.\n`);
     }
   } finally {
-    await fs.remove(tempRoot);
+    if (process.env.EXPO_HARMONY_COMPAT_KEEP_ARTIFACTS === '1') {
+      process.stdout.write(`Compatibility artifacts retained at ${tempRoot}\n`);
+    } else {
+      await fs.remove(tempRoot);
+    }
   }
 }
 

@@ -1,5 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState, version as reactVersion } from 'react';
+import {
+  Button,
+  findNodeHandle,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 const CHECKPOINTS = [
   {
@@ -19,28 +28,46 @@ const CHECKPOINTS = [
 const SAMPLE_MARKER = 'EXPO_HARMONY_V2_SAMPLE:official-minimal';
 
 export default function App() {
+  const view = useRef<View>(null);
+  const [checks, setChecks] = useState(0);
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <View style={styles.card}>
-        <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
-        <Text style={styles.title}>Official Minimal Sample</Text>
-        <Text style={styles.marker}>{SAMPLE_MARKER}</Text>
-        <Text style={styles.body}>
-          This is the smallest onboarding sample in the repo. Its job is not to look impressive. Its
-          job is to make the minimal managed Expo to Harmony chain obvious and reproducible.
-        </Text>
-        <View style={styles.chainBox}>
-          <Text style={styles.chainLabel}>Core chain</Text>
-          <Text style={styles.chainValue}>doctor -&gt; init -&gt; bundle -&gt; build-hap</Text>
-        </View>
-        {CHECKPOINTS.map((checkpoint) => (
-          <View key={checkpoint.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{checkpoint.title}</Text>
-            <Text style={styles.sectionBody}>{checkpoint.body}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View ref={view} collapsable={false} style={styles.card}>
+          <Text style={styles.eyebrow}>Expo Harmony Toolkit</Text>
+          <Text style={styles.title}>Official Minimal Sample</Text>
+          <Text style={styles.marker}>{SAMPLE_MARKER}</Text>
+          <Text style={styles.body}>
+            This is the smallest onboarding sample in the repo. Its job is not
+            to look impressive. Its job is to make the minimal managed Expo to
+            Harmony chain obvious and reproducible.
+          </Text>
+          <View style={styles.chainBox}>
+            <Text style={styles.chainLabel}>Core chain</Text>
+            <Text style={styles.chainValue}>
+              doctor -&gt; init -&gt; bundle -&gt; build-hap
+            </Text>
           </View>
-        ))}
-      </View>
+          <Text>
+            React {reactVersion}; native checks: {checks}
+          </Text>
+          <Button
+            title="Check native renderer"
+            onPress={() => {
+              if (findNodeHandle(view.current) == null)
+                throw new Error('Native view is not mounted');
+              setChecks(count => count + 1);
+            }}
+          />
+          {CHECKPOINTS.map(checkpoint => (
+            <View key={checkpoint.title} style={styles.section}>
+              <Text style={styles.sectionTitle}>{checkpoint.title}</Text>
+              <Text style={styles.sectionBody}>{checkpoint.body}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -49,6 +76,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f3f4f6',
+  },
+  content: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
