@@ -73,6 +73,15 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
 
   private readonly atManager = abilityAccessCtrl.createAtManager();
   private nextWatchId = 1;
+  private readonly watches = new Map<number, () => void>();
+
+  __onDestroy__(): void {
+    this.watches.forEach((remove) => {
+      try { remove(); } catch (error) { console.warn('Location watch cleanup failed', error); }
+    });
+    this.watches.clear();
+    super.__onDestroy__();
+  }
 
   getConstants(): Record<string, never> {
     return {};
@@ -170,18 +179,41 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
   }
 
   async startWatchPosition(
-    options?: { accuracy?: number },
-    _listenerConfig?: Record<string, unknown>,
-  ): Promise<{ watchId: number; initialLocation: ExpoLocationObject | null }> {
-    const watchId = this.nextWatchId++;
-    return {
-      watchId,
-      initialLocation: await this.getLastKnownPosition(options ?? {}),
+    options?: { accuracy?: number; timeInterval?: number; distanceInterval?: number },
+    listenerConfig?: { watchId?: number },
+  ): Promise<{ watchId: number }> {
+    const watchId = listenerConfig?.watchId ?? this.nextWatchId++;
+    const onLocation = (location: geoLocationManager.Location): void => {
+      this.ctx.rnInstance.emitDeviceEvent('ExpoHarmonyLocationWatch', {
+        watchId, location: this.normalizeLocation(location),
+      });
     };
+    const onError = (error: geoLocationManager.LocationError): void => {
+      this.ctx.rnInstance.emitDeviceEvent('ExpoHarmonyLocationWatch', {
+        watchId, error: 'Location service error: ' + String(error),
+      });
+    };
+    geoLocationManager.on('locationError', onError);
+    try {
+      const request: geoLocationManager.LocationRequest = {
+        priority: this.createCurrentLocationRequest(options?.accuracy).priority,
+      };
+      if (options?.timeInterval !== undefined) request.timeInterval = options.timeInterval / 1000;
+      if (options?.distanceInterval !== undefined) request.distanceInterval = options.distanceInterval;
+      geoLocationManager.on('locationChange', request, onLocation);
+    } catch (error) {
+      geoLocationManager.off('locationError', onError);
+      throw error;
+    }
+    this.watches.set(watchId, () => {
+      try { geoLocationManager.off('locationChange', onLocation); }
+      finally { geoLocationManager.off('locationError', onError); }
+    });
+    return { watchId };
   }
 
-  async stopWatchPosition(_watchId: number): Promise<void> {
-    return;
+  async stopWatchPosition(watchId: number): Promise<void> {
+    this.removeWatch(watchId);
   }
 
   async getHeading(): Promise<HeadingObject> {
@@ -189,17 +221,27 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
   }
 
   async startWatchHeading(
-    _listenerConfig?: Record<string, unknown>,
-  ): Promise<{ watchId: number; initialHeading: HeadingObject }> {
-    const watchId = this.nextWatchId++;
-    return {
-      watchId,
-      initialHeading: await this.getHeading(),
+    listenerConfig?: { watchId?: number },
+  ): Promise<{ watchId: number }> {
+    const watchId = listenerConfig?.watchId ?? this.nextWatchId++;
+    const onHeading = (data: sensor.RotationVectorResponse): void => {
+      this.ctx.rnInstance.emitDeviceEvent('ExpoHarmonyLocationWatch', {
+        watchId, heading: this.normalizeHeading(data),
+      });
     };
+    sensor.on(sensor.SensorId.ROTATION_VECTOR, onHeading);
+    this.watches.set(watchId, () => sensor.off(sensor.SensorId.ROTATION_VECTOR, onHeading));
+    return { watchId };
   }
 
-  async stopWatchHeading(_watchId: number): Promise<void> {
-    return;
+  async stopWatchHeading(watchId: number): Promise<void> {
+    this.removeWatch(watchId);
+  }
+
+  private removeWatch(watchId: number): void {
+    const remove = this.watches.get(watchId);
+    this.watches.delete(watchId);
+    remove?.();
   }
 
   private async getLocationPermissionResponse(): Promise<PermissionResponse> {
@@ -321,6 +363,13 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
     };
   }
 
+  private normalizeHeading(data: { x: number; y: number; z: number; w: number }): HeadingObject {
+    const { x, y, z, w } = data;
+    const magHeading = (Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) * 180 / Math.PI + 360) % 360;
+    // Rotation vectors do not provide magnetic declination or Expo's accuracy tier.
+    return { magHeading, trueHeading: null, accuracy: 0 };
+  }
+
   private async readHeadingSnapshot(): Promise<HeadingObject> {
     return new Promise((resolve) => {
       try {
@@ -347,14 +396,7 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
           const y = Number(data?.y ?? 0);
           const z = Number(data?.z ?? 0);
           const w = Number(data?.w ?? 1);
-          const sinyCosp = 2 * (w * z + x * y);
-          const cosyCosp = 1 - 2 * (y * y + z * z);
-          const magHeading = (Math.atan2(sinyCosp, cosyCosp) * 180 / Math.PI + 360) % 360;
-          resolve({
-            magHeading,
-            trueHeading: magHeading,
-            accuracy: 3,
-          });
+          resolve(this.normalizeHeading({ x, y, z, w }));
         });
       } catch (_error) {
         resolve({
@@ -404,11 +446,12 @@ export class ExpoHarmonyLocationTurboModule extends AnyThreadTurboModule {
 export function renderExpoLocationHarmonyAdapterShim(capability: CapabilityDefinition): string {
   return `'use strict';
 
-const { TurboModuleRegistry } = require('react-native');
+const { TurboModuleRegistry, DeviceEventEmitter } = require('react-native');
 const { CodedError } = require('expo-modules-core');
 
 const NATIVE_MODULE_NAME = 'ExpoHarmonyLocation';
 const NATIVE_MODULE = TurboModuleRegistry.get(NATIVE_MODULE_NAME);
+let nextWatchId = 1;
 
 function createError(code, message) {
   return new CodedError(code, message);
@@ -593,6 +636,33 @@ function createSubscription(remove) {
   };
 }
 
+async function watchNative(kind, args, callback, errorHandler) {
+  const watchId = nextWatchId++;
+  // Register before crossing the bridge so an immediate native fix is not lost.
+  const listener = DeviceEventEmitter.addListener('ExpoHarmonyLocationWatch', (event) => {
+    if (event.watchId !== watchId) return;
+    if (event.error !== undefined) {
+      if (typeof errorHandler === 'function') errorHandler(String(event.error));
+    } else if (kind === 'Position' && event.location) {
+      callback(normalizeLocationObject(event.location));
+    } else if (kind === 'Heading' && event.heading) {
+      callback(normalizeHeadingObject(event.heading));
+    }
+  });
+  try {
+    await invokeNative('startWatch' + kind, 'watch' + kind + 'Async', ...args, { watchId });
+  } catch (error) {
+    listener.remove();
+    if (typeof errorHandler === 'function') errorHandler(error.message);
+    throw error;
+  }
+  return createSubscription(() => {
+    listener.remove();
+    void invokeNative('stopWatch' + kind, 'LocationSubscription.remove', watchId)
+      .catch((error) => console.warn(error));
+  });
+}
+
 module.exports = {
   Accuracy: {
     Lowest: 1,
@@ -693,34 +763,7 @@ module.exports = {
       );
     }
 
-    try {
-      const watchResult = await invokeNative(
-        'startWatchPosition',
-        'watchPositionAsync',
-        options ?? {},
-        null,
-      );
-      const watchId =
-        typeof watchResult?.watchId === 'number' ? watchResult.watchId : Number(Date.now());
-
-      if (watchResult?.initialLocation) {
-        callback(normalizeLocationObject(watchResult.initialLocation));
-      }
-
-      return createSubscription(() => {
-        void invokeNative(
-          'stopWatchPosition',
-          'Location.watchPositionAsync.remove',
-          watchId,
-        ).catch(() => {});
-      });
-    } catch (error) {
-      if (typeof errorHandler === 'function') {
-        errorHandler(error);
-      }
-
-      throw error;
-    }
+    return watchNative('Position', [options ?? {}], callback, errorHandler);
   },
   async watchHeadingAsync(callback) {
     if (typeof callback !== 'function') {
@@ -730,25 +773,7 @@ module.exports = {
       );
     }
 
-    const watchResult = await invokeNative(
-      'startWatchHeading',
-      'watchHeadingAsync',
-      null,
-    );
-    const watchId =
-      typeof watchResult?.watchId === 'number' ? watchResult.watchId : Number(Date.now());
-
-    if (watchResult?.initialHeading) {
-      callback(normalizeHeadingObject(watchResult.initialHeading));
-    }
-
-    return createSubscription(() => {
-      void invokeNative(
-        'stopWatchHeading',
-        'Location.watchHeadingAsync.remove',
-        watchId,
-      ).catch(() => {});
-    });
+    return watchNative('Heading', [], callback);
   },
   async getHeadingAsync() {
     return normalizeHeadingObject(
@@ -836,4 +861,3 @@ module.exports = {
 };
 `;
 }
-

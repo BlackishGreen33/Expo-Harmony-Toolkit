@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { Link } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type ForegroundPermission = Awaited<ReturnType<typeof Location.getForegroundPermissionsAsync>>;
@@ -24,6 +24,16 @@ export default function LocationFunctionalScreen() {
   const [headingUpdates, setHeadingUpdates] = useState<HeadingPoint[]>([]);
   const watchRef = useRef<{ remove: () => void } | null>(null);
   const headingWatchRef = useRef<{ remove: () => void } | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      watchRef.current?.remove();
+      headingWatchRef.current?.remove();
+    };
+  }, []);
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -63,7 +73,7 @@ export default function LocationFunctionalScreen() {
     try {
       watchRef.current?.remove();
       setWatchUpdates([]);
-      watchRef.current = await Location.watchPositionAsync(
+      const subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Balanced,
           distanceInterval: 1,
@@ -72,6 +82,12 @@ export default function LocationFunctionalScreen() {
           setWatchUpdates((current) => [...current, update].slice(-6));
         },
       );
+      if (!mounted.current) {
+        subscription.remove();
+        return;
+      }
+      watchRef.current?.remove();
+      watchRef.current = subscription;
       setMessage('Start watch position OK.');
     } catch (error) {
       setMessage(formatError(error));
@@ -98,9 +114,15 @@ export default function LocationFunctionalScreen() {
     try {
       headingWatchRef.current?.remove();
       setHeadingUpdates([]);
-      headingWatchRef.current = await Location.watchHeadingAsync((heading) => {
+      const subscription = await Location.watchHeadingAsync((heading) => {
         setHeadingUpdates((current) => [...current, heading].slice(-6));
       });
+      if (!mounted.current) {
+        subscription.remove();
+        return;
+      }
+      headingWatchRef.current?.remove();
+      headingWatchRef.current = subscription;
       setMessage('Start heading watch OK.');
     } catch (error) {
       setMessage(formatError(error));

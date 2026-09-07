@@ -366,7 +366,7 @@ describe('init project', () => {
     expect(fileSystemNativeModule).toContain('this.assertValidBase64(contents);');
     expect(imagePickerShim).toContain('launchImageLibraryAsync');
     expect(imagePickerShim).toContain('getPendingResultAsync');
-    expect(locationShim).toContain('startWatchPosition');
+    expect(locationShim).toContain('ExpoHarmonyLocationWatch');
     expect(locationShim).toContain('getHeadingAsync');
     expect(cameraShim).toContain("requireNativeComponent('ExpoHarmonyCameraView')");
     expect(cameraShim).toContain("invokeNative('pausePreview', 'CameraView.pausePreview'");
