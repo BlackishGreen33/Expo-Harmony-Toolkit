@@ -258,6 +258,7 @@ async function buildManagedFiles(
   const hasExpoRouter = usesExpoRouter(loadedProject.packageJson);
   const doctorConfig = resolveExpoHarmonyDoctorConfig(loadedProject.expoConfig);
   const enabledCapabilities = doctorReport.capabilities;
+  const hasWebView = enabledCapabilities.some((capability) => capability.packageName === 'react-native-webview');
   const hasManagedExpoHarmonyPackage = enabledCapabilities.some(
     (capability) => capability.runtimeMode !== 'shim',
   );
@@ -294,7 +295,7 @@ async function buildManagedFiles(
       ].includes(relativePath) ? appIcon : await fs.readFile(templatePath);
       const contents = binary
         ? rawContents
-        : renderTemplate(rawContents.toString('utf8'), loadedProject, identifiers, hvigorPluginFilename);
+        : renderTemplate(rawContents.toString('utf8'), loadedProject, identifiers, hvigorPluginFilename, hasWebView);
 
       return {
         relativePath: path.join('harmony', relativePath),
@@ -493,6 +494,7 @@ function renderTemplate(
   loadedProject: LoadedProject,
   identifiers: HarmonyIdentifiers,
   hvigorPluginFilename: string,
+  hasWebView = false,
 ): string {
   const appDescription = `${identifiers.appName} official minimal Harmony sample`;
   const rawReplacements: Record<string, string> = {
@@ -506,6 +508,15 @@ function renderTemplate(
     RNOH_VERSION,
     RNOH_CLI_VERSION,
     RNOH_HVIGOR_PLUGIN_FILENAME: hvigorPluginFilename,
+    ARKWEB_IMPORT: hasWebView
+      ? "import { AbilityConstant, Want } from '@kit.AbilityKit';\nimport webview from '@ohos.web.webview';"
+      : '',
+    ARKWEB_ON_CREATE: hasWebView ? `  override onCreate(want: Want, launchParam?: AbilityConstant.LaunchParam): void {
+    // Initialize ArkWeb on the UI thread before RNOH starts its worker.
+    webview.WebviewController.initializeWebEngine();
+    super.onCreate(want, launchParam);
+  }
+` : '',
   };
   const replacements: Record<string, string> = {
     ...rawReplacements,

@@ -2,6 +2,8 @@ import fs from 'fs-extra';
 import JSON5 from 'json5';
 import os from 'os';
 import path from 'path';
+import ts from 'typescript';
+import { runInNewContext } from 'node:vm';
 import { TOOLKIT_VERSION } from '../src/core/constants';
 import { initProject, syncProjectTemplate } from '../src/core/template';
 import { readManifest, readToolkitConfig, writeBuildReport } from '../src/core/metadata';
@@ -63,6 +65,25 @@ async function writeLocalSigningConfig(projectRoot: string): Promise<void> {
 }
 
 describe('init project', () => {
+  it('initializes ArkWeb before the RNOH worker only for WebView projects', async () => {
+    for (const withWebView of [false, true]) {
+      const projectRoot = await (withWebView ? createTempCcnuboxLikeFixture() : createTempFixture());
+      await initProject(projectRoot, false);
+      const entry = await fs.readFile(path.join(projectRoot, 'harmony/entry/src/main/ets/entryability/EntryAbility.ets'), 'utf8');
+      const calls: string[] = [];
+      const exports: Record<string, any> = {};
+      runInNewContext(ts.transpileModule(entry, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
+      }).outputText, { exports, require: (name: string) => {
+        if (name === '@ohos.web.webview') return { WebviewController: { initializeWebEngine: () => calls.push('arkweb') } };
+        return { RNAbility: class { onCreate() { calls.push('worker'); } } };
+      } });
+      new exports.default().onCreate({}, {});
+      expect(calls).toEqual(withWebView ? ['arkweb', 'worker'] : ['worker']);
+      if (!withWebView) expect(entry).not.toContain('@ohos.web.webview');
+    }
+  });
+
   it('registers Expo schemes for implicit native deep links without changing the Expo config', async () => {
     const projectRoot = await createTempFixture();
     const configPath = path.join(projectRoot, 'app.json');
