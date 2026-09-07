@@ -43,6 +43,8 @@
 
 以下矩阵只验证 Expo／React Native 项目形态可进入 RNOH 0.82 sidecar 的 bundle／build 路径，不代表 runtime parity、真机或 release 验收。
 
+Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony Metro config 中對 `react` 及子路徑設定 alias。這與 RNOH 0.82.29 renderer 配對；表內 React／RN 是 iOS、Android 與 web 的原始版本，不會被降級。不能使用 React 19.2 專屬 API 作為 Harmony 的已驗證能力。
+
 | Matrix | Expo SDK | React | React Native | RNOH / CLI |
 | --- | --- | --- | --- | --- |
 | `expo55-rn083-rnoh082-preview` | `55` | `>=19.2.0 <20.0.0` | `>=0.83.0 <0.84.0` | `0.82.29` |
@@ -68,6 +70,7 @@
 - `expo-linking`
 - `expo-router`
 - `react`
+- `@harmony-js/react`
 - `react-dom`
 - `react-native`
 - `expo-status-bar`

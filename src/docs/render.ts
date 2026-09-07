@@ -146,6 +146,10 @@ export function renderSupportMatrixVerifiedMatrix(locale: DocsLocale): string {
     '',
     previewBoundary,
     '',
+    locale === 'zh'
+      ? 'Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony Metro config 中對 `react` 及子路徑設定 alias。這與 RNOH 0.82.29 renderer 配對；表內 React／RN 是 iOS、Android 與 web 的原始版本，不會被降級。不能使用 React 19.2 專屬 API 作為 Harmony 的已驗證能力。'
+      : 'Preview projects must install `@harmony-js/react: npm:react@19.1.1` and alias `react` plus its subpaths in the Harmony Metro config to match the RNOH 0.82.29 renderer. React/RN in the table remain the original iOS, Android and web versions; they are not downgraded. React 19.2-only APIs are not validated Harmony capabilities.',
+    '',
     '| Matrix | Expo SDK | React | React Native | RNOH / CLI |',
     '| --- | --- | --- | --- | --- |',
     ...previewMatrices.map((candidate) =>
