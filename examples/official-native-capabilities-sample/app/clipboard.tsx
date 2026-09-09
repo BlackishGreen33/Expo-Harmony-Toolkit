@@ -9,7 +9,7 @@ const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-clipboard';
 
 export default function ClipboardFoundationScreen() {
   const [message, setMessage] = useState(
-    'Validate expo-clipboard session shim strings, URL helpers, and hasStringAsync.',
+    'Validate system clipboard strings, URL helpers, and hasStringAsync.',
   );
   const [clipboardValue, setClipboardValue] = useState('No clipboard read yet.');
 
@@ -53,8 +53,8 @@ export default function ClipboardFoundationScreen() {
           <Text style={styles.title}>expo-clipboard foundation check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.9.0 clipboard session shim. Real system pasteboard behavior
-            stays pending until native adapter evidence is recorded.
+            This route uses the Harmony system pasteboard. Reads request permission when needed;
+            denied access and failed writes report errors.
           </Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>

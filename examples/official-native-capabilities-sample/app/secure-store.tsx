@@ -9,7 +9,7 @@ const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-secure-store';
 
 export default function SecureStoreFoundationScreen() {
   const [message, setMessage] = useState(
-    'Validate expo-secure-store session shim writes, reads, deletes, and availability.',
+    'Validate native SecureStore writes, reads, deletes, and availability.',
   );
   const [latestValue, setLatestValue] = useState<string | null>(null);
 
@@ -60,8 +60,8 @@ export default function SecureStoreFoundationScreen() {
           <Text style={styles.title}>expo-secure-store foundation check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.9.0 app-foundation shim. It keeps JS startup and bundle/debug
-            paths stable, but encrypted persistence still requires native device evidence.
+            This route uses Harmony Asset Store. Write a value, restart the app, then read it back.
+            Biometrics and access groups are not supported and reject explicitly.
           </Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>

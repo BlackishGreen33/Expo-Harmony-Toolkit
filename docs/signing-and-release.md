@@ -85,6 +85,8 @@ expo-harmony build-hap --mode release
 - DevEco / AppGallery Connect 的 release profile 已准备完成
 - release profile 覆盖了 HAP 中申请的 restricted permission；否则模拟器或设备可能在安装阶段报 `grant request permissions failed`
 
+`expo-clipboard` 的原生读取需要 `ohos.permission.READ_PASTEBOARD`：profile ACL 与运行时用户授权缺一不可。SDK 公共测试 profile 只可用于模拟器测试，不能替代正式 ACL 申请或生产签名。参考 [OpenHarmony 剪贴板权限说明](https://github.com/openharmony/docs/blob/master/en/application-dev/basic-services/pasteboard/get-pastedata-permission-guidelines.md)。
+
 ## v1.8.2 本地模拟器证据
 
 `v1.8.2` 已在 ccnubox 本地验证目标上记录：

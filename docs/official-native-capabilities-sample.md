@@ -68,6 +68,8 @@
 - system video capture
 - pending result 恢复
 - image / video asset metadata 展示
+- `allowsEditing`／`aspect` 使用 Image Kit 裁切對話框，支援移動、縮放、確認／取消與實際像素輸出；`quality` 重新編碼
+- SDK 57 模擬器已取得 4:3 裁切 PNG，亦驗證取消；相機成功產物仍需可用影像來源
 
 ### `/location`
 
@@ -89,23 +91,23 @@
 
 ### `/camera`
 
-当前实现与缺口（2026-09-08 复验）：
+目前接線與證據邊界（2026-09-09）：
 
-- camera / microphone permission bridge，以及系统 CameraPicker 拍照 / 录像入口。
-- 模拟器已验证相机授权及取消返回；没有取得成功拍摄的产物。
-- embedded `CameraView` 没有相机输入与预览输出连接；mount / pause / resume 明确返回 unsupported，不再用本地状态表伪装成功。
-- stop / toggle 没有连接正在录制的原生会话，明确返回 unsupported；系统 Picker 内的完成按钮不等于 App 可控制录制会话。
-- 上述是实现缺口，不是仅缺真机验证；`device=false`，不得提升支持层级。
+- camera／microphone permission bridge；`CameraView` 的 XComponent surface 接入 Camera Kit input、preview、photo／video session。
+- `onCameraReady` 等待原生第一幀；pause／resume 操作 preview output；卸載及背景切換釋放原生資源。
+- PhotoOutput 回呼寫入 JPEG；AVRecorder 提供 start／stop／pause／resume，完成後讀取實際影片 metadata，不以本機狀態或取消結果冒充拍攝成功。
+- 模擬器目前沒有成功拍攝產物，不能據此宣稱拍照／錄影驗收完成。已安裝的 6.0.2 模擬器需要本機攝影機；虛擬圖片輸入自 26.0.0 才提供，見[華為模擬器攝影機說明](https://developer.huawei.com/consumer/cn/doc/HarmonyOS-Guides/ide-emulator-more-features)。
+- 範圍是面向／模式、預覽與基本拍攝控制；鏡頭列舉、尺寸列舉、條碼掃描等完整 Expo Camera API 未涵蓋，`device=false`／`release=false` 不變。
 
 ### `/secure-store`
 
 `🟡 v1.9 app-foundation baseline`：
 
 - `isAvailableAsync`
-- session-scoped `setItemAsync`
-- session-scoped `getItemAsync`
+- Harmony Asset Store 加密儲存：`setItemAsync` / `getItemAsync`，重啟後可讀回
+- 同步 `setItem` / `getItem`，`keychainService` 隔離
 - `deleteItemAsync`
-- encrypted persistence、keychain / keystore 等真实 native 后端仍待 device / release evidence
+- 不支援的生物辨識、密碼保護及共享 access group 明確拒絕；真機及 release 驗收仍待補
 
 ### `/asset`
 
@@ -113,14 +115,15 @@
 
 - `Asset.fromURI`
 - `Asset.loadAsync`
-- deterministic metadata display
-- native resource resolution、asset cache parity 仍待 device / release evidence
+- Metro module metadata、打包 rawfile 資源解析與快取
+- HTTP / base64 data URI 實際寫入本機快取；失敗不標為 downloaded
+- `useAssets` 非同步完成；真機及 release 驗收仍待補
 
 ### `/device`
 
 `🟡 v1.9 app-foundation baseline`：
 
-- stable Harmony placeholder metadata
+- Harmony `deviceInfo` 與系統記憶體資料，識別 emulator
 - `getDeviceTypeAsync`
 - real device model/build/hardware metadata 仍待 device / release evidence
 
@@ -128,10 +131,10 @@
 
 `🟡 v1.9 app-foundation baseline`：
 
-- session-scoped string write/read
+- 系統 pasteboard 文字 / HTML 寫入與權限感知讀取
 - `hasStringAsync`
 - URL helper roundtrip
-- real system pasteboard behavior 仍待 Harmony adapter evidence
+- 圖片讀寫、尺寸與 change events；原生失敗不吞錯
 
 ### `/haptics`
 
@@ -140,7 +143,11 @@
 - `selectionAsync`
 - `impactAsync`
 - `notificationAsync`
-- 当前为 no-op-safe shim；真实物理反馈仍待 device evidence
+- 呼叫 Harmony vibrator，以不同 touch duration 對應樣式並傳回原生錯誤；物理回饋品質待真機驗證
+
+### `/foundation-check`
+
+單一離線檢查頁驗證 SecureStore 同步 / 非同步 / service 隔離、內建 SVG 與 PNG data URI 的實際快取內容、`useAssets`、系統剪貼簿文字 / HTML / URL / 圖片，以及 Device metadata。頁面顯示 RNOH 原生安全區及 frame，供旋轉與邊距檢查。此頁不連接正式 API，也不代替逐項真機驗收。
 
 ## 推荐命令
 

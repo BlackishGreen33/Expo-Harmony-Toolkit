@@ -5,6 +5,8 @@ import {
   renderExpoDevicePreviewShim,
   renderExpoHapticsPreviewShim,
   renderExpoSecureStorePreviewShim,
+  renderExpoHarmonySecureStoreTurboModule,
+  renderExpoHarmonyAppFoundationTurboModule,
 } from './renderers/appFoundation';
 import {
   renderExpoHarmonyCameraTurboModule,
@@ -28,6 +30,9 @@ import {
 } from './renderers/location';
 import { renderExpoMediaLibraryHarmonyAdapterShim } from './renderers/mediaLibrary';
 import { renderReactNativeSafeAreaContextHarmonyShim } from './runtimeShims';
+import { renderExpoHarmonyClipboardTurboModule } from './renderers/clipboard';
+import { renderExpoHarmonyImageEditor } from './renderers/imageEditor';
+import { renderExpoHarmonyCameraView } from './renderers/cameraView';
 
 type CapabilityShimRenderers = {
   adapter: (capability: CapabilityDefinition) => string;
@@ -88,6 +93,20 @@ const CAPABILITY_SHIM_RENDERERS: Record<string, CapabilityShimRenderers> = {
 
 export const MANAGED_EXPO_HARMONY_MODULE_RENDERERS: readonly ManagedExpoHarmonyModuleRenderer[] =
   [
+    { filename: 'ExpoHarmonyImageEditor.ets', render: renderExpoHarmonyImageEditor },
+    { filename: 'ExpoHarmonyCameraView.ets', render: renderExpoHarmonyCameraView },
+    {
+      filename: 'ExpoHarmonyClipboardTurboModule.ts',
+      render: renderExpoHarmonyClipboardTurboModule,
+    },
+    {
+      filename: 'ExpoHarmonySecureStoreTurboModule.ts',
+      render: renderExpoHarmonySecureStoreTurboModule,
+    },
+    {
+      filename: 'ExpoHarmonyAppFoundationTurboModule.ts',
+      render: renderExpoHarmonyAppFoundationTurboModule,
+    },
     {
       filename: 'ExpoHarmonyFileSystemTurboModule.ts',
       render: renderExpoHarmonyFileSystemTurboModule,

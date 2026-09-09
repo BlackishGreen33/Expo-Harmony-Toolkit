@@ -148,7 +148,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'expo-asset': {
     status: 'manual',
     supportTier: 'preview',
-    note: 'v1.9.0 app-foundation baseline keeps Asset API imports and load paths bundle-safe through the toolkit shim; native asset cache parity still needs device and release evidence.',
+    note: 'Toolkit-managed native asset loading resolves Metro resources, HTTP downloads and base64 data into cache files; device and release acceptance remain pending.',
   },
   'expo-build-properties': {
     status: 'manual',
@@ -179,7 +179,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'react-native-safe-area-context': {
     status: 'manual',
     supportTier: 'experimental',
-    note: 'v1.9.2 Wave A formalizes the toolkit-managed safe-area shim while real native inset measurement remains outside the verified matrix.',
+    note: 'Toolkit safe-area APIs use RNOH measured insets and native change events; device and release layout acceptance remain outside the verified matrix.',
     docsUrl: 'https://github.com/react-native-oh-library',
   },
   'react-native-screens': {
@@ -291,13 +291,12 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'expo-clipboard': {
     status: 'manual',
     supportTier: 'preview',
-    note: 'v1.9.0 app-foundation baseline provides a session clipboard shim and keeps the Harmony clipboard adapter as the native promotion path.',
-    replacement: '@react-native-oh-tpl/clipboard',
+    note: 'Toolkit-managed Harmony pasteboard supports awaited text, HTML, URL and image operations, permission-aware reads and change events.',
   },
   'expo-device': {
     status: 'manual',
     supportTier: 'preview',
-    note: 'v1.9.0 app-foundation baseline exposes stable Harmony placeholder device metadata while real hardware metadata remains promotion evidence.',
+    note: 'Device metadata comes from Harmony OS APIs, including emulator detection and system memory; physical-device acceptance remains pending.',
   },
   'expo-dev-client': {
     status: 'manual',
@@ -312,7 +311,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'expo-haptics': {
     status: 'manual',
     supportTier: 'preview',
-    note: 'v1.9.0 app-foundation baseline turns haptics calls into safe no-ops until a real Harmony device feedback path is validated.',
+    note: 'Toolkit-managed haptics invoke the Harmony vibrator and propagate errors; physical feedback requires device validation.',
   },
   'expo-image': {
     status: 'manual',
@@ -343,7 +342,7 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
   'expo-secure-store': {
     status: 'manual',
     supportTier: 'preview',
-    note: 'v1.9.0 app-foundation baseline provides a session secure-store shim; encrypted persistence still needs native device and release evidence.',
+    note: 'Harmony Asset Store backs async/sync secure storage with service isolation and device-local persistence; unsupported biometric protection rejects explicitly.',
   },
   'expo-splash-screen': {
     status: 'manual',

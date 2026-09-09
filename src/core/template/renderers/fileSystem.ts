@@ -251,6 +251,59 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
     return \`\${this.ctx.uiAbilityContext.filesDir}/expo-harmony/document\`;
   }
 
+  async loadAsset(uri: string, type: string, rawPath: string | null): Promise<string> {
+    if (!/^[a-zA-Z0-9-]{0,20}$/.test(type)) throw new Error('Invalid asset extension.');
+    const suffix = type ? '.' + type : '';
+    if (uri.startsWith('https://') || uri.startsWith('http://')) {
+      const key = await this.computeDigest(new util.TextEncoder().encodeInto(uri), 'SHA256');
+      const destination = this.cacheDirectoryPath + '/asset-' + key + suffix;
+      const cached = await this.getStatOrNull(destination);
+      if (cached?.isDirectory()) throw new Error('Asset cache target is not a file.');
+      if (!cached) await this.download(uri, destination);
+      return 'file://' + destination;
+    }
+    let bytes: Uint8Array;
+    if (rawPath != null) {
+      if (!rawPath.startsWith('assets/') || rawPath.split('/').some((part: string) => part === '..' || part === '.')) {
+        throw new Error('Invalid bundled asset path.');
+      }
+      bytes = await this.ctx.uiAbilityContext.resourceManager.getRawFileContent(rawPath);
+    } else if (uri.startsWith('data:')) {
+      const match = /^data:[^;,]+;base64,([A-Za-z0-9+/=\\s]*)$/.exec(uri);
+      if (!match) throw new Error('Asset data URI must use base64 encoding.');
+      if (match[1].length > MAX_IN_MEMORY_DOWNLOAD_BYTES * 4 / 3 + 4) throw new Error('Asset is too large.');
+      this.assertValidBase64(match[1]);
+      bytes = this.decodeBase64(match[1]);
+    } else if (uri.startsWith('file://')) {
+      const path = this.normalizeSandboxPath(uri.slice(7), true);
+      const stat = await this.getStatOrNull(path);
+      if (!stat || stat.isDirectory()) throw new Error('Asset file does not exist.');
+      return 'file://' + path;
+    } else {
+      throw new Error('Unsupported asset URI: ' + uri);
+    }
+    if (bytes.byteLength > MAX_IN_MEMORY_DOWNLOAD_BYTES) throw new Error('Asset is too large.');
+    const key = await this.computeDigest(bytes, 'SHA256');
+    const destination = this.cacheDirectoryPath + '/asset-' + key + suffix;
+    const cached = await this.getStatOrNull(destination);
+    if (cached?.isDirectory()) throw new Error('Asset cache target is not a file.');
+    if (!cached) {
+      const temporary = destination + '.' + util.generateRandomUUID();
+      try {
+        const file = await fs.open(temporary, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+        try {
+          const written = await fs.write(file.fd, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+          if (written !== bytes.byteLength) throw new Error('Incomplete asset cache write.');
+        } finally { await fs.close(file); }
+        await fs.rename(temporary, destination);
+      } catch (error) {
+        try { await fs.unlink(temporary); } catch (_) {}
+        throw error;
+      }
+    }
+    return 'file://' + destination;
+  }
+
   private get cacheDirectoryPath(): string {
     return \`\${this.ctx.uiAbilityContext.cacheDir}/expo-harmony/cache\`;
   }
@@ -458,8 +511,8 @@ export class ExpoHarmonyFileSystemTurboModule extends AnyThreadTurboModule {
     }
   }
 
-  private async computeDigest(bytes: Uint8Array): Promise<string> {
-    const md = cryptoFramework.createMd('MD5');
+  private async computeDigest(bytes: Uint8Array, algorithm: string = 'MD5'): Promise<string> {
+    const md = cryptoFramework.createMd(algorithm);
     await md.update({ data: bytes });
     const result = await md.digest();
     let digest = '';

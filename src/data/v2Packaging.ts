@@ -116,23 +116,20 @@ const COVERED_PACKAGE_NAMES: readonly string[] = uniqueSortedPackageNames([
   'expo-build-properties',
 ]).filter((packageName) => !EXCEPTION_PACKAGE_NAMES.has(packageName));
 
-const FOUNDATION_SHIM_PACKAGE_NAMES: readonly string[] = CAPABILITY_DEFINITIONS.filter(
-  (definition) =>
-    definition.runtimeMode === 'shim' &&
-    definition.packageName !== 'expo-notifications' &&
-    definition.packageName !== 'react-native-safe-area-context',
-).map((definition) => definition.packageName);
+const FOUNDATION_SHIM_PACKAGE_NAMES: readonly string[] = [
+  'expo-asset', 'expo-clipboard', 'expo-device', 'expo-haptics', 'expo-secure-store',
+];
 
 const COVERED_LIMITATIONS = [
   {
     id: 'foundation-shims',
     packageNames: FOUNDATION_SHIM_PACKAGE_NAMES,
-    note: 'Foundation shims keep packaging paths available but do not establish native persistence, asset resolution/cache, hardware metadata, clipboard, or haptics parity.',
+    note: 'Foundation APIs use native Asset Store, file cache, deviceInfo, pasteboard and vibrator bridges. Physical-device and signed-release acceptance remain pending; biometric secure storage is explicitly unsupported.',
   },
   {
     id: 'safe-area-shim',
     packageNames: ['react-native-safe-area-context'],
-    note: 'Safe-area remains covered through the toolkit shim; native inset measurement is still a documented limitation.',
+    note: 'Safe-area consumes RNOH native measurements and updates through the toolkit bridge. Physical-device and release layout acceptance remain pending.',
   },
 ] as const satisfies readonly V2PackagingLimitation[];
 

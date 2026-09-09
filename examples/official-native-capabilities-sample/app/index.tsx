@@ -3,20 +3,21 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const ROUTES = [
+  { href: '/foundation-check' as const, title: 'Native foundation regression', body: 'Check persisted storage, packaged asset bytes, system clipboard, device metadata and measured safe areas.' },
   {
     href: '/asset' as const,
     title: 'expo-asset',
-    body: 'Validate the v1.9 app-foundation Asset shim, fromURI metadata, and loadAsync bundle path.',
+    body: 'Validate packaged assets, file-backed downloads, metadata, and useAssets.',
   },
   {
     href: '/clipboard' as const,
     title: 'expo-clipboard',
-    body: 'Validate session clipboard string, URL helpers, and hasStringAsync without native pasteboard promotion.',
+    body: 'Validate system clipboard text, URL helpers, and content availability.',
   },
   {
     href: '/device' as const,
     title: 'expo-device',
-    body: 'Validate stable Harmony placeholder device metadata and getDeviceTypeAsync startup behavior.',
+    body: 'Validate native Harmony device metadata and getDeviceTypeAsync.',
   },
   {
     href: '/file-system' as const,
@@ -41,12 +42,12 @@ const ROUTES = [
   {
     href: '/haptics' as const,
     title: 'expo-haptics',
-    body: 'Validate no-op-safe selection, impact, and notification haptic calls for v1.9 bundle/debug coverage.',
+    body: 'Validate native vibration dispatch for selection, impact, and notification calls.',
   },
   {
     href: '/secure-store' as const,
     title: 'expo-secure-store',
-    body: 'Validate session secure-store writes, reads, deletes, and availability without claiming encrypted persistence.',
+    body: 'Validate encrypted Asset Store writes, reads, deletes, and restart persistence.',
   },
 ];
 

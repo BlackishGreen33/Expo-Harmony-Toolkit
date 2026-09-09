@@ -115,6 +115,7 @@ class JSI_EXPORT ExpoHarmonyFileSystemTurboModule : public ArkTSTurboModule {
     methodMap_["move"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(move)};
     methodMap_["download"] = MethodMetadata{
         3, ARK_ASYNC_METHOD_CALLER(download)};
+    methodMap_["loadAsset"] = MethodMetadata{3, ARK_ASYNC_METHOD_CALLER(loadAsset)};
   }
 };
 
@@ -218,6 +219,56 @@ class JSI_EXPORT ExpoHarmonyCameraTurboModule : public ArkTSTurboModule {
   }
 };
 
+static jsi::Value __hostFunction_ExpoHarmonyAppFoundation_getConstants(
+    jsi::Runtime& rt, react::TurboModule& module, const jsi::Value* args, size_t count) {
+  return static_cast<ArkTSTurboModule&>(module).call(rt, "getConstants", args, count);
+}
+
+static jsi::Value __hostFunction_ExpoHarmonySecureStore_getItemSync(
+    jsi::Runtime& rt, react::TurboModule& module, const jsi::Value* args, size_t count) {
+  return static_cast<ArkTSTurboModule&>(module).call(rt, "getItemSync", args, count);
+}
+
+static jsi::Value __hostFunction_ExpoHarmonySecureStore_setItemSync(
+    jsi::Runtime& rt, react::TurboModule& module, const jsi::Value* args, size_t count) {
+  return static_cast<ArkTSTurboModule&>(module).call(rt, "setItemSync", args, count);
+}
+
+class JSI_EXPORT ExpoHarmonySecureStoreTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonySecureStoreTurboModule(const ArkTSTurboModule::Context ctx, const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getItem"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(getItem)};
+    methodMap_["setItem"] = MethodMetadata{3, ARK_ASYNC_METHOD_CALLER(setItem)};
+    methodMap_["deleteItem"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(deleteItem)};
+    methodMap_["getItemSync"] = MethodMetadata{2, __hostFunction_ExpoHarmonySecureStore_getItemSync};
+    methodMap_["setItemSync"] = MethodMetadata{3, __hostFunction_ExpoHarmonySecureStore_setItemSync};
+  }
+};
+
+class JSI_EXPORT ExpoHarmonyAppFoundationTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyAppFoundationTurboModule(const ArkTSTurboModule::Context ctx, const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["getConstants"] = MethodMetadata{0, __hostFunction_ExpoHarmonyAppFoundation_getConstants};
+    methodMap_["triggerHaptic"] = MethodMetadata{1, ARK_ASYNC_METHOD_CALLER(triggerHaptic)};
+  }
+};
+
+class JSI_EXPORT ExpoHarmonyClipboardTurboModule : public ArkTSTurboModule {
+ public:
+  ExpoHarmonyClipboardTurboModule(const ArkTSTurboModule::Context ctx, const std::string name)
+      : ArkTSTurboModule(ctx, name) {
+    methodMap_["setString"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(setString)};
+    methodMap_["getString"] = MethodMetadata{1, ARK_ASYNC_METHOD_CALLER(getString)};
+    methodMap_["setUrl"] = MethodMetadata{1, ARK_ASYNC_METHOD_CALLER(setUrl)};
+    methodMap_["getUrl"] = MethodMetadata{0, ARK_ASYNC_METHOD_CALLER(getUrl)};
+    methodMap_["setImage"] = MethodMetadata{1, ARK_ASYNC_METHOD_CALLER(setImage)};
+    methodMap_["getImage"] = MethodMetadata{2, ARK_ASYNC_METHOD_CALLER(getImage)};
+    methodMap_["getContentTypes"] = MethodMetadata{0, ARK_ASYNC_METHOD_CALLER(getContentTypes)};
+  }
+};
+
 class ExpoHarmonyTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {
  public:
   SharedTurboModule createTurboModule(Context ctx, const std::string& name)
@@ -233,6 +284,15 @@ class ExpoHarmonyTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate 
     }
     if (name == "ExpoHarmonyCamera") {
       return std::make_shared<ExpoHarmonyCameraTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonySecureStore") {
+      return std::make_shared<ExpoHarmonySecureStoreTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonyAppFoundation") {
+      return std::make_shared<ExpoHarmonyAppFoundationTurboModule>(ctx, name);
+    }
+    if (name == "ExpoHarmonyClipboard") {
+      return std::make_shared<ExpoHarmonyClipboardTurboModule>(ctx, name);
     }
 
     return nullptr;
@@ -285,16 +345,31 @@ export function renderExpoHarmonyPackage(): string {
   AnyThreadTurboModuleContext,
   UITurboModule,
   UITurboModuleContext,
+  ComponentBuilderContext,
 } from '@rnoh/react-native-openharmony';
 import {
   RNOHPackage,
 } from '@rnoh/react-native-openharmony';
 import { ExpoHarmonyFileSystemTurboModule } from './ExpoHarmonyFileSystemTurboModule';
 import { ExpoHarmonyImagePickerTurboModule } from './ExpoHarmonyImagePickerTurboModule';
+import { selectCrop } from './ExpoHarmonyImageEditor';
 import { ExpoHarmonyLocationTurboModule } from './ExpoHarmonyLocationTurboModule';
 import { ExpoHarmonyCameraTurboModule } from './ExpoHarmonyCameraTurboModule';
+import { ExpoHarmonyCameraView } from './ExpoHarmonyCameraView';
+import { ExpoHarmonySecureStoreTurboModule } from './ExpoHarmonySecureStoreTurboModule';
+import { ExpoHarmonyAppFoundationTurboModule } from './ExpoHarmonyAppFoundationTurboModule';
+import { ExpoHarmonyClipboardTurboModule } from './ExpoHarmonyClipboardTurboModule';
+
+@Builder
+function buildCamera(ctx: ComponentBuilderContext) {
+  ExpoHarmonyCameraView({ ctx: ctx.rnComponentContext, tag: ctx.tag })
+}
 
 export class ExpoHarmonyPackage extends RNOHPackage {
+  override createWrappedCustomRNComponentBuilderByComponentNameMap(): Map<string, WrappedBuilder<[ComponentBuilderContext]>> {
+    return new Map<string, WrappedBuilder<[ComponentBuilderContext]>>().set('ExpoHarmonyCameraView', wrapBuilder(buildCamera));
+  }
+
   override getAnyThreadTurboModuleFactoryByNameMap(): Map<
     string,
     (ctx: AnyThreadTurboModuleContext) => AnyThreadTurboModule | null
@@ -307,6 +382,14 @@ export class ExpoHarmonyPackage extends RNOHPackage {
       .set(
         ExpoHarmonyLocationTurboModule.NAME,
         (ctx) => new ExpoHarmonyLocationTurboModule(ctx),
+      )
+      .set(
+        ExpoHarmonySecureStoreTurboModule.NAME,
+        (ctx) => new ExpoHarmonySecureStoreTurboModule(ctx),
+      )
+      .set(
+        ExpoHarmonyAppFoundationTurboModule.NAME,
+        (ctx) => new ExpoHarmonyAppFoundationTurboModule(ctx),
       );
   }
 
@@ -317,11 +400,15 @@ export class ExpoHarmonyPackage extends RNOHPackage {
     return new Map<string, (ctx: UITurboModuleContext) => UITurboModule | null>()
       .set(
         ExpoHarmonyImagePickerTurboModule.NAME,
-        (ctx) => new ExpoHarmonyImagePickerTurboModule(ctx),
+        (ctx) => new ExpoHarmonyImagePickerTurboModule(ctx, selectCrop),
       )
       .set(
         ExpoHarmonyCameraTurboModule.NAME,
         (ctx) => new ExpoHarmonyCameraTurboModule(ctx),
+      )
+      .set(
+        ExpoHarmonyClipboardTurboModule.NAME,
+        (ctx) => new ExpoHarmonyClipboardTurboModule(ctx),
       );
   }
 

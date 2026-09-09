@@ -477,7 +477,9 @@ describe('init project', () => {
     expect(secureStoreShim).toContain('getItemAsync');
     expect(assetShim).toContain('class Asset');
     expect(assetShim).toContain('loadAsync(moduleIds)');
-    expect(deviceShim).toContain('Harmony preview device');
+    expect(await fs.readFile(path.join(projectRoot, '.expo-harmony', 'shims', 'expo-file-system', 'legacy.js'), 'utf8')).toBe("module.exports = require('./index');\n");
+    expect(deviceShim).toContain('ExpoHarmonyAppFoundation');
+    expect(await fs.pathExists(path.join(projectRoot, 'harmony', 'entry', 'src', 'main', 'ets', 'expoHarmony', 'ExpoHarmonySecureStoreTurboModule.ts'))).toBe(true);
     expect(clipboardShim).toContain('setStringAsync');
     expect(clipboardShim).toContain('getUrlAsync');
     expect(hapticsShim).toContain('selectionAsync');
@@ -490,11 +492,14 @@ describe('init project', () => {
       'expo-secure-store',
     ]);
     expect(toolkitConfig?.capabilities.every((capability) => capability.supportTier === 'preview')).toBe(true);
-    expect(toolkitConfig?.capabilities.every((capability) => capability.runtimeMode === 'shim')).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) => capability.runtimeMode === 'adapter')).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.device === false)).toBe(true);
-    expect(toolkitConfig?.requestedHarmonyPermissions).toEqual([]);
+    expect(toolkitConfig?.requestedHarmonyPermissions).toEqual([
+      'ohos.permission.READ_PASTEBOARD',
+      'ohos.permission.VIBRATE',
+    ]);
   });
 
   it('persists doctor overrides into toolkit metadata for ccnubox-like sidecar intake fixtures', async () => {

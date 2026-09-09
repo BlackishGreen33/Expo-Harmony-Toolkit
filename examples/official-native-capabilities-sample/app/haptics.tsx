@@ -7,7 +7,7 @@ const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-haptics';
 
 export default function HapticsFoundationScreen() {
   const [message, setMessage] = useState(
-    'Validate expo-haptics no-op-safe selection, impact, and notification calls.',
+    'Validate native vibration dispatch for selection, impact, and notification calls.',
   );
 
   const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -46,8 +46,8 @@ export default function HapticsFoundationScreen() {
           <Text style={styles.title}>expo-haptics foundation check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.9.0 haptics shim. Calls resolve safely for bundle/debug
-            coverage, while physical feedback remains device-side promotion evidence.
+            This route dispatches native vibrator calls and reports platform failures.
+            Physical feedback quality can only be checked on a device.
           </Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>

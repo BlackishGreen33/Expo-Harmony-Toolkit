@@ -180,6 +180,11 @@ export default function ImagePickerPreviewScreen() {
           </View>
 
           <View style={styles.buttonGroup}>
+            <Pressable style={styles.button} onPress={() => {
+              void runLibraryFlow('Editable photo 4:3', { mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
+            }}>
+              <Text style={styles.buttonLabel}>Editable photo 4:3</Text>
+            </Pressable>
             <Pressable style={styles.button} onPress={requestMediaPermission}>
               <Text style={styles.buttonLabel}>Request media permission</Text>
             </Pressable>
@@ -256,6 +261,7 @@ export default function ImagePickerPreviewScreen() {
                 <Text style={styles.resultLine}>type: {String(firstAsset.type ?? 'n/a')}</Text>
                 <Text style={styles.resultLine}>mimeType: {String(firstAsset.mimeType ?? 'n/a')}</Text>
                 <Text style={styles.resultLine}>fileSize: {String(firstAsset.fileSize ?? 'n/a')}</Text>
+                <Text style={styles.resultLine}>size: {firstAsset.width} x {firstAsset.height}</Text>
                 <Text style={styles.resultLine}>duration: {String(firstAsset.duration ?? 'n/a')}</Text>
                 {firstAsset.type === 'image' ? (
                   <View style={styles.imageFrame}>

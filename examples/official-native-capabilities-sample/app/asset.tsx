@@ -42,8 +42,8 @@ export default function AssetFoundationScreen() {
           <Text style={styles.title}>expo-asset foundation check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.9.0 Asset shim. Native resource resolution and cache parity
-            remain promotion evidence, but app startup can keep importing expo-asset.
+            This route loads assets into the native file cache. Downloaded assets expose a file URI;
+            failures do not mark an asset as downloaded.
           </Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>

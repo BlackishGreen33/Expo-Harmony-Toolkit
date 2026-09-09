@@ -81,3 +81,61 @@ it('uses the native MD5 algorithm instead of returning a padded preview hash', a
   expect(await adapter.computeDigest(new TextEncoder().encode('abc'))).toBe('900150983cd24fb0d6963f7d28e17f72');
   expect(createMd).toHaveBeenCalledWith('MD5');
 });
+
+it('materializes bundled and data assets, caches remote files and rejects broken or unsafe sources', async () => {
+  const files = new Map<string, Uint8Array>();
+  const descriptors = new Map<number, string>();
+  let nextFd = 1;
+  const fileSystem = {
+    OpenMode: { WRITE_ONLY: 1, CREATE: 2, TRUNC: 4 }, accessSync: () => true,
+    stat: jest.fn(async (path: string) => {
+      if (!files.has(path)) throw { code: 13900002 };
+      return { isDirectory: (): boolean => false, size: files.get(path)!.byteLength };
+    }),
+    open: jest.fn(async (path: string) => { const fd = nextFd++; descriptors.set(fd, path); return { fd }; }),
+    write: jest.fn(async (fd: number, data: ArrayBuffer) => { files.set(descriptors.get(fd)!, new Uint8Array(data)); return data.byteLength; }),
+    mkdir: jest.fn(), close: jest.fn(), unlink: jest.fn(async (path: string) => { files.delete(path); }),
+    rename: jest.fn(async (from: string, to: string) => { files.set(to, files.get(from)!); files.delete(from); }),
+  };
+  const raw = jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]));
+  const httpRequest = jest.fn().mockResolvedValue({ responseCode: 200, result: new Uint8Array([4, 5, 6]).buffer, header: {} });
+  const modules: Record<string, unknown> = {
+    '@rnoh/react-native-openharmony/ts': { AnyThreadTurboModule: class { constructor(public ctx: unknown) {} } },
+    '@ohos.file.fs': fileSystem,
+    '@ohos.net.http': { createHttp: () => ({ request: httpRequest, destroy: jest.fn() }), HttpDataType: { ARRAY_BUFFER: 2 } },
+    '@ohos.util': { generateRandomUUID: () => 'test', TextEncoder: class { encodeInto(value: string) { return new TextEncoder().encode(value); } } },
+    '@ohos.security.cryptoFramework': { createMd: (algorithm: string) => {
+      const hash = createHash(algorithm.toLowerCase());
+      return { update: async ({ data }: { data: Uint8Array }) => { hash.update(data); }, digest: async () => ({ data: hash.digest() }) };
+    } },
+  };
+  const exports: Record<string, any> = {};
+  runInNewContext(ts.transpileModule(renderExpoHarmonyFileSystemTurboModule(), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
+  }).outputText, { exports, ArrayBuffer, Uint8Array, require: (name: string) => modules[name] ?? {} });
+  const native = new exports.ExpoHarmonyFileSystemTurboModule({ uiAbilityContext: { filesDir: '/files', cacheDir: '/cache', resourceManager: { getRawFileContent: raw } } });
+  const bundled = await native.loadAsset('asset:///icon.png', 'png', 'assets/icon.png');
+  expect(raw).toHaveBeenCalledWith('assets/icon.png');
+  expect(files.get(bundled.slice(7))).toEqual(new Uint8Array([1, 2, 3]));
+  expect(await native.loadAsset('data:image/png;base64,AQID', 'png', null)).toBe(bundled);
+  expect(fileSystem.write).toHaveBeenCalledTimes(1);
+  raw.mockResolvedValueOnce(new Uint8Array([7, 8, 9]));
+  expect(await native.loadAsset('asset:///icon.png', 'png', 'assets/icon.png')).not.toBe(bundled);
+  const remote = await native.loadAsset('https://example.test/icon.png', 'png', null);
+  expect(files.get(remote.slice(7))).toEqual(new Uint8Array([4, 5, 6]));
+  expect(await native.loadAsset('https://example.test/icon.png', 'png', null)).toBe(remote);
+  expect(httpRequest).toHaveBeenCalledTimes(1);
+  expect(await native.loadAsset(remote, 'png', null)).toBe(remote);
+  httpRequest.mockResolvedValueOnce({ responseCode: 404 });
+  await expect(native.loadAsset('https://example.test/missing.png', 'png', null)).rejects.toThrow('404');
+  await expect(native.loadAsset('file:///outside/icon.png', 'png', null)).rejects.toThrow();
+  await expect(native.loadAsset('file:///unused', 'png', 'assets/../private')).rejects.toThrow('path');
+  await expect(native.loadAsset('data:image/png;base64,?!', 'png', null)).rejects.toThrow('base64');
+  fileSystem.write.mockResolvedValueOnce(0);
+  await expect(native.loadAsset('data:image/png;base64,AA==', 'png', null)).rejects.toThrow('Incomplete');
+  expect([...files.keys()].some((path) => path.endsWith('.test'))).toBe(false);
+  fileSystem.stat.mockResolvedValueOnce({ isDirectory: () => true, size: 0 });
+  await expect(native.loadAsset('https://example.test/directory.png', 'png', null)).rejects.toThrow('not a file');
+  fileSystem.stat.mockResolvedValueOnce({ isDirectory: () => true, size: 0 });
+  await expect(native.loadAsset('data:image/png;base64,AQID', 'png', null)).rejects.toThrow('not a file');
+});

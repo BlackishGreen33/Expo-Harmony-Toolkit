@@ -144,7 +144,7 @@ describe('official native capabilities sample', () => {
     expect(routeSourceByPath.get('haptics') ?? '').toContain('expo-haptics foundation check');
     expect(bundleContents).toContain('setItemAsync');
     expect(bundleContents).toContain('Asset fromURI metadata OK.');
-    expect(bundleContents).toContain('Harmony preview device');
+    expect(bundleContents.includes('ExpoHarmonyAppFoundation')).toBe(true);
     expect(bundleContents).toContain('Clipboard setStringAsync OK.');
     expect(bundleContents).toContain('Haptics notificationAsync OK.');
   });

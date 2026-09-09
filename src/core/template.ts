@@ -388,6 +388,10 @@ async function buildManagedFiles(
         }) satisfies TemplateFileDefinition,
     ),
     {
+      relativePath: path.join(GENERATED_SHIMS_DIR, 'expo-file-system', 'legacy.js'),
+      contents: "module.exports = require('./index');\n",
+    },
+    {
       relativePath: HARMONY_RUNTIME_PRELUDE_RELATIVE_PATH,
       contents: renderHarmonyRuntimePrelude(),
     },

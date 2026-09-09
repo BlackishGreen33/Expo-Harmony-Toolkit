@@ -7,7 +7,7 @@ const ROUTE_MARKER = 'EXPO_HARMONY_V2_ROUTE:expo-device';
 
 export default function DeviceFoundationScreen() {
   const [message, setMessage] = useState(
-    'Validate expo-device placeholder metadata and getDeviceTypeAsync for v1.9 app-foundation.',
+    'Validate native device metadata and getDeviceTypeAsync.',
   );
   const [deviceType, setDeviceType] = useState<string>('not checked');
 
@@ -30,8 +30,8 @@ export default function DeviceFoundationScreen() {
           <Text style={styles.title}>expo-device foundation check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.9.0 device metadata shim. Real model, build, and hardware
-            metadata remain device-side promotion evidence.
+            This route reads Harmony deviceInfo and native memory information.
+            Hardware-specific behavior still requires device validation.
           </Text>
           <View style={styles.messageBox}>
             <Text style={styles.message}>{message}</Text>

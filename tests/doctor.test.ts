@@ -482,7 +482,7 @@ describe('doctor report', () => {
     );
   });
 
-  it('classifies v1.9 app foundation modules as preview shims with bundle/debug evidence', async () => {
+  it('classifies app foundation modules as preview native bridges without claiming device acceptance', async () => {
     const strictReport = await buildDoctorReport(appFoundationFixtureRoot);
     const report = await buildDoctorReport(appFoundationFixtureRoot, {
       targetTier: 'preview',
@@ -505,7 +505,7 @@ describe('doctor report', () => {
     for (const capabilityId of expectedCapabilityIds) {
       const capability = capabilityById.get(capabilityId);
       expect(capability?.supportTier).toBe('preview');
-      expect(capability?.runtimeMode).toBe('shim');
+      expect(capability?.runtimeMode).toBe('adapter');
       expect(capability?.evidence.bundle).toBe(true);
       expect(capability?.evidence.debugBuild).toBe(true);
       expect(capability?.evidence.device).toBe(false);
@@ -519,9 +519,8 @@ describe('doctor report', () => {
     expect(capabilityById.get('expo-secure-store')?.sampleRoute).toBe('/secure-store');
     expect(capabilityById.get('expo-asset')?.sampleRoute).toBe('/asset');
     expect(capabilityById.get('expo-device')?.sampleRoute).toBe('/device');
-    expect(capabilityById.get('expo-clipboard')?.nativePackageNames).toEqual([
-      '@react-native-oh-tpl/clipboard',
-    ]);
+    expect(capabilityById.get('expo-clipboard')?.nativePackageNames).toEqual([]);
+    expect(capabilityById.get('expo-clipboard')?.harmonyPermissions).toContain('ohos.permission.READ_PASTEBOARD');
     expect(capabilityById.get('expo-haptics')?.sampleRoute).toBe('/haptics');
   });
 
@@ -759,7 +758,7 @@ describe('doctor report', () => {
     expect(capabilityById.get('react-native-screens')?.nativePackageNames).toEqual([
       '@react-native-oh-tpl/react-native-screens',
     ]);
-    expect(capabilityById.get('react-native-safe-area-context')?.runtimeMode).toBe('shim');
+    expect(capabilityById.get('react-native-safe-area-context')?.runtimeMode).toBe('adapter');
     expect(capabilityById.get('react-native-safe-area-context')?.nativePackageNames).toEqual([]);
 
     for (const capability of experimentalReport.capabilities) {

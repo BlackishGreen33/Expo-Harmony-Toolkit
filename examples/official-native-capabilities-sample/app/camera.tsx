@@ -34,6 +34,7 @@ type CameraHandle = {
 
 export default function CameraFunctionalScreen() {
   const cameraRef = useRef<CameraHandle | null>(null);
+  const [mode, setMode] = useState<'picture' | 'video'>('picture');
   const [message, setMessage] = useState(
     'Validate embedded preview, pause/resume, still photo capture, microphone permission, and video recording controls.',
   );
@@ -168,7 +169,7 @@ export default function CameraFunctionalScreen() {
           <Text style={styles.title}>expo-camera functional check</Text>
           <Text>{ROUTE_MARKER}</Text>
           <Text style={styles.body}>
-            This route validates the v1.7.2 preview subset: embedded live preview, preview
+            This route checks the preview subset: embedded live preview, preview
             pause/resume, still capture, video recording controls, and microphone permission
             snapshots.
           </Text>
@@ -180,6 +181,7 @@ export default function CameraFunctionalScreen() {
             <CameraView
               ref={cameraRef}
               facing={CameraType.back}
+              mode={mode}
               style={styles.captureSurface}
               onCameraReady={() => setPreviewState('running')}
               onMountError={({ message }) => {
@@ -190,6 +192,12 @@ export default function CameraFunctionalScreen() {
           </View>
 
           <View style={styles.buttonGroup}>
+            <Pressable style={styles.button} onPress={mode === 'picture' ? takePicture : startRecording}>
+              <Text style={styles.buttonLabel}>{mode === 'picture' ? 'Take picture' : 'Start video recording'}</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={() => setMode(mode === 'picture' ? 'video' : 'picture')}>
+              <Text style={styles.buttonLabel}>{mode === 'picture' ? 'Use video mode' : 'Use photo mode'}</Text>
+            </Pressable>
             <Pressable style={styles.button} onPress={requestCameraPermission}>
               <Text style={styles.buttonLabel}>Request camera permission</Text>
             </Pressable>
@@ -204,12 +212,6 @@ export default function CameraFunctionalScreen() {
             </Pressable>
             <Pressable style={styles.button} onPress={resumePreview}>
               <Text style={styles.buttonLabel}>Resume preview</Text>
-            </Pressable>
-            <Pressable style={styles.button} onPress={takePicture}>
-              <Text style={styles.buttonLabel}>Take picture</Text>
-            </Pressable>
-            <Pressable style={styles.button} onPress={startRecording}>
-              <Text style={styles.buttonLabel}>Start video recording</Text>
             </Pressable>
             <Pressable style={styles.button} onPress={stopRecording}>
               <Text style={styles.buttonLabel}>Stop video recording</Text>
@@ -258,7 +260,8 @@ export default function CameraFunctionalScreen() {
 
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>Preview boundary</Text>
-            <Text style={styles.resultLine}>Embedded preview and recording controls are not implemented on Harmony. System CameraPicker capture is a separate flow.</Text>
+            <Text style={styles.resultLine}>Embedded preview uses Camera Kit; recording uses AVRecorder. Successful capture requires a real output file, not only a ready callback.</Text>
+            <Text style={styles.resultLine}>The emulator needs a supported camera source. Device and release validation are still pending.</Text>
             <Text style={styles.resultLine}>A permission grant or canceled picker is not successful capture evidence.</Text>
           </View>
 

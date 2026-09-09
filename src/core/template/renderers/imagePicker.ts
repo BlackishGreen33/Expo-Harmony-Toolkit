@@ -2,13 +2,16 @@ import { CapabilityDefinition } from '../../../types';
 
 
 export function renderExpoHarmonyImagePickerTurboModule(): string {
-  return `import type { Permissions } from '@ohos.abilityAccessCtrl';
-import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+  return `import abilityAccessCtrl, { type Permissions } from '@ohos.abilityAccessCtrl';
 import photoAccessHelper from '@ohos.file.photoAccessHelper';
+import camera from '@ohos.multimedia.camera';
+import cameraPicker from '@ohos.multimedia.cameraPicker';
+import media from '@ohos.multimedia.media';
 import image from '@ohos.multimedia.image';
 import fs from '@ohos.file.fs';
 import util from '@ohos.util';
 import { UITurboModuleContext, UITurboModule } from '@rnoh/react-native-openharmony/ts';
+import { UIContext } from '@ohos.arkui.UIContext';
 
 type PermissionResponse = {
   status: 'granted' | 'denied' | 'undetermined';
@@ -20,12 +23,18 @@ type PermissionResponse = {
 
 type LaunchImageLibraryOptions = {
   mediaTypes?: string | string[];
+  allowsEditing?: boolean;
+  aspect?: number[];
+  quality?: number;
   allowsMultipleSelection?: boolean;
   selectionLimit?: number;
 };
 
 type LaunchCameraOptions = {
   mediaTypes?: string | string[];
+  allowsEditing?: boolean;
+  aspect?: number[];
+  quality?: number;
   cameraType?: string;
 };
 
@@ -54,6 +63,10 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
   private readonly atManager = abilityAccessCtrl.createAtManager();
   private pendingResult: ImagePickerResult | null = null;
 
+  constructor(ctx: UITurboModuleContext, private readonly selectCrop: (context: UIContext, pixels: image.PixelMap, width: number, height: number, aspect: number[]) => Promise<image.Region | null>) {
+    super(ctx);
+  }
+
   getConstants(): Record<string, never> {
     return {};
   }
@@ -76,6 +89,7 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
   }
 
   async launchImageLibrary(options?: LaunchImageLibraryOptions): Promise<ImagePickerResult> {
+    this.pendingResult = null;
     const photoPicker = new photoAccessHelper.PhotoViewPicker();
     const selection = await photoPicker.select(this.createPhotoSelectOptions(options));
     const selectedUris = this.normalizeSelectedUris(selection?.photoUris);
@@ -84,11 +98,13 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
       return this.createCanceledResult();
     }
 
-    const assets = await Promise.all(
-      selectedUris.map((uri) =>
-        this.createImagePickerAsset(uri, uri, this.inferAssetTypeFromMediaTypes(options?.mediaTypes)),
-      ),
-    );
+    const assets: ImagePickerAsset[] = [];
+    for (const uri of selectedUris) {
+      const picked = await this.createImagePickerAsset(uri, uri, this.inferAssetTypeFromMediaTypes(options?.mediaTypes));
+      const asset = await this.preparePickedAsset(picked, options);
+      if (!asset) return this.createCanceledResult();
+      assets.push(asset);
+    }
 
     const result = {
       canceled: false,
@@ -99,34 +115,31 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
   }
 
   async launchCamera(options?: LaunchCameraOptions): Promise<ImagePickerResult> {
+    this.pendingResult = null;
+    this.createPhotoSelectOptions(options);
     const requestedAssetType = this.inferAssetTypeFromMediaTypes(options?.mediaTypes);
 
     await this.ensurePermissionGranted('ohos.permission.CAMERA', false);
-    if (requestedAssetType === 'video') {
+    const mediaTypes = this.normalizeMediaTypes(options?.mediaTypes);
+    if (mediaTypes.includes('video')) {
       await this.ensurePermissionGranted('ohos.permission.MICROPHONE', false);
     }
 
-    const cameraEntryPicker = new photoAccessHelper.PhotoViewPicker();
-    const selection = await cameraEntryPicker.select(
-      this.createPhotoSelectOptions(
-        {
-          mediaTypes: requestedAssetType === 'video' ? 'videos' : 'images',
-          allowsMultipleSelection: false,
-        },
-        true,
-      ),
-    );
-    const selectedUris = this.normalizeSelectedUris(selection?.photoUris);
-
-    if (selectedUris.length === 0) {
+    const selection = await cameraPicker.pick(this.ctx.uiAbilityContext,
+      mediaTypes.map((type: string) => type === 'video' ? cameraPicker.PickerMediaType.VIDEO : cameraPicker.PickerMediaType.PHOTO),
+      { cameraPosition: options?.cameraType === 'front' ? camera.CameraPosition.CAMERA_POSITION_FRONT : camera.CameraPosition.CAMERA_POSITION_BACK });
+    if (!selection?.resultUri) {
       return this.createCanceledResult();
     }
 
-    const assetUri = selectedUris[0];
+    const assetUri = selection.resultUri;
+    const picked = await this.createImagePickerAsset(assetUri, assetUri, selection.mediaType === cameraPicker.PickerMediaType.VIDEO ? 'video' : requestedAssetType ?? 'image');
+    const asset = await this.preparePickedAsset(picked, options?.allowsEditing ? { ...options, aspect: options.aspect ?? [1, 1] } : options);
+    if (!asset) return this.createCanceledResult();
 
     const result = {
       canceled: false,
-      assets: [await this.createImagePickerAsset(assetUri, selectedUris[0], requestedAssetType ?? 'image')],
+      assets: [asset],
     };
     this.pendingResult = result;
     return result;
@@ -234,6 +247,15 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
     options?: LaunchImageLibraryOptions,
     isPhotoTakingSupported: boolean = false,
   ): photoAccessHelper.PhotoSelectOptions {
+    if (options?.allowsEditing && options?.allowsMultipleSelection) {
+      throw new Error('allowsEditing and allowsMultipleSelection are mutually exclusive.');
+    }
+    if (options?.quality !== undefined && (!Number.isFinite(options.quality) || options.quality < 0 || options.quality > 1)) {
+      throw new Error('Image quality must be between 0 and 1.');
+    }
+    if (options?.aspect && (options.aspect.length !== 2 || options.aspect.some((value: number) => !Number.isFinite(value) || value <= 0))) {
+      throw new Error('Image aspect must contain two positive numbers.');
+    }
     const selectOptions = new photoAccessHelper.PhotoSelectOptions();
     selectOptions.MIMEType = this.resolvePhotoViewMimeType(options?.mediaTypes);
     selectOptions.maxSelectNumber =
@@ -242,6 +264,9 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
         : 1;
     selectOptions.isSearchSupported = true;
     selectOptions.isPhotoTakingSupported = isPhotoTakingSupported;
+    // System editing has no aspect constraint; use our Image Kit crop dialog for that case.
+    selectOptions.isEditSupported = options?.allowsEditing === true && !options.aspect;
+    selectOptions.isPreviewForSingleSelectionSupported = selectOptions.isEditSupported;
     return selectOptions;
   }
 
@@ -278,7 +303,7 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
       return 'video';
     }
 
-    if (normalized.includes('image')) {
+    if (normalized.includes('image') && !normalized.includes('video')) {
       return 'image';
     }
 
@@ -286,6 +311,7 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
   }
 
   private normalizeMediaTypes(rawMediaTypes?: string | string[]): string[] {
+    if (rawMediaTypes === 'All' || rawMediaTypes === 'all' || (Array.isArray(rawMediaTypes) && rawMediaTypes.some((value: string) => value === 'All' || value === 'all'))) return ['image', 'video'];
     if (Array.isArray(rawMediaTypes)) {
       return Array.from(
         new Set(
@@ -306,8 +332,6 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
     }
 
     switch (rawValue) {
-      case 'All':
-      case 'all':
       case 'images':
       case 'image':
       case 'livePhotos':
@@ -349,24 +373,62 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
       }
     }
     const inferredType = this.inferAssetTypeFromUri(assetUri, fallbackType);
-    const imageSize =
-      inferredType === 'image' ? await this.getImageSize(assetUri) : { width: 0, height: 0 };
+    const metadata = inferredType === 'video'
+      ? await this.getVideoMetadata(assetUri)
+      : { ...(await this.getImageSize(assetUri)), duration: null };
     const fileSize = await this.getFileSize(assetUri);
     const fileName = this.extractFileName(originalUri) ?? this.extractFileName(assetUri);
 
     return {
       uri: assetUri,
       assetId: originalUri,
-      width: imageSize.width,
-      height: imageSize.height,
+      width: metadata.width,
+      height: metadata.height,
       type: inferredType,
       fileName,
       fileSize,
       mimeType: this.inferMimeType(assetUri, inferredType),
-      duration: inferredType === 'video' ? await this.getVideoDuration(assetUri) : null,
+      duration: metadata.duration,
       exif: null,
       base64: null,
     };
+  }
+
+  private async preparePickedAsset(asset: ImagePickerAsset, options?: LaunchImageLibraryOptions): Promise<ImagePickerAsset | null> {
+    const crop = options?.allowsEditing === true && !!options.aspect;
+    if (asset.type !== 'image' || (!crop && options?.quality === undefined)) return asset;
+    const source = image.createImageSource(this.resolveFsTarget(asset.uri) ?? asset.uri);
+    let pixels: image.PixelMap | null = null;
+    let packer: image.ImagePacker | null = null;
+    try {
+      const info = await source.getImageInfo();
+      if (info.size.width * info.size.height > 32 * 1024 * 1024) throw new Error('Image is too large to edit in memory.');
+      pixels = await source.createPixelMap({ editable: true });
+      if (crop) {
+        const context = this.ctx.getUIContext();
+        if (!context) throw new Error('Image editor requires an active UI context.');
+        const region = await this.selectCrop(context, pixels, info.size.width, info.size.height, options!.aspect!);
+        if (!region) return null;
+        await pixels.crop(region);
+      }
+      const size = (await pixels.getImageInfo()).size;
+      const isPng = asset.mimeType === 'image/png';
+      const format = isPng ? 'image/png' : 'image/jpeg';
+      packer = image.createImagePacker();
+      const bytes = await packer.packing(pixels, { format, quality: Math.round((options?.quality ?? 1) * 100) });
+      const target = this.ctx.uiAbilityContext.cacheDir + '/image-picker-' + util.generateRandomUUID() + (isPng ? '.png' : '.jpg');
+      const file = await fs.open(target, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      try {
+        try {
+          if (await fs.write(file.fd, bytes) !== bytes.byteLength) throw new Error('Incomplete edited image write.');
+        } finally { await fs.close(file); }
+      } catch (error) { await fs.unlink(target); throw error; }
+      return { ...asset, uri: 'file://' + target, width: size.width, height: size.height, fileSize: bytes.byteLength, fileName: this.extractFileName(target), mimeType: format };
+    } finally {
+      if (packer) await packer.release();
+      if (pixels) await pixels.release();
+      await source.release();
+    }
   }
 
   private inferAssetTypeFromUri(
@@ -488,8 +550,18 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
     }
   }
 
-  private async getVideoDuration(_assetUri: string): Promise<number | null> {
-    return 0;
+  private async getVideoMetadata(assetUri: string): Promise<{ width: number; height: number; duration: number | null }> {
+    const file = await fs.open(this.resolveFsTarget(assetUri) ?? assetUri, fs.OpenMode.READ_ONLY);
+    let extractor: media.AVMetadataExtractor | null = null;
+    try {
+      extractor = await media.createAVMetadataExtractor();
+      extractor.fdSrc = { fd: file.fd, offset: 0, length: (await fs.stat(file.fd)).size };
+      const metadata = await extractor.fetchMetadata();
+      const duration = Number(metadata.duration);
+      return { width: Number(metadata.videoWidth ?? 0), height: Number(metadata.videoHeight ?? 0), duration: Number.isFinite(duration) ? duration : null };
+    } finally {
+      try { if (extractor) await extractor.release(); } finally { await fs.close(file); }
+    }
   }
 
   private resolveFsTarget(assetUri: string): string | null {

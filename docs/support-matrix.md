@@ -128,19 +128,19 @@ Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Scre
 | `expo-image-picker` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-image-picker, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/image-picker` |
 | `expo-location` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | @react-native-community/geolocation, react-native-permissions | ohos.permission.LOCATION、ohos.permission.APPROXIMATELY_LOCATION、ohos.permission.LOCATION_IN_BACKGROUND、ohos.permission.ACCELEROMETER | `/location` |
 | `expo-camera` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | react-native-camera-kit, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/camera` |
-| `expo-secure-store` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/secure-store` |
-| `expo-asset` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/asset` |
-| `expo-device` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/device` |
-| `expo-clipboard` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | @react-native-oh-tpl/clipboard | 无新增必需权限 | `/clipboard` |
-| `expo-haptics` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/haptics` |
+| `expo-secure-store` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/secure-store` |
+| `expo-asset` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/asset` |
+| `expo-device` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/device` |
+| `expo-clipboard` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | ohos.permission.READ_PASTEBOARD | `/clipboard` |
+| `expo-haptics` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | ohos.permission.VIBRATE | `/haptics` |
 <!-- GENERATED:support-matrix-preview-capabilities:end -->
 
 说明：
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - `adapter` 表示选择了原生接入路径，不代表每个接口已完成；`device=yes[manual-doc]` 不是当前模拟器自动验证。
-- `expo-camera` 的设备表仍未填写，且存在未连接原生会话的接口，因此回退为 `device=no[none]`；构建证据不能覆盖这些缺口。
-- `v1.9.0` 新增的 app foundation modules 当前是 `runtimeMode=shim`，`bundle/debugBuild=automated`，`device/release=none`
+- `expo-camera` 已接入 Camera Kit／AVRecorder，但成功拍攝與完整 API 驗收仍待補，保持 `device=no[none]`；構建證據不能代替影像產物。
+- app foundation modules 现通过原生 Asset Store、文件缓存、设备信息、剪贴板与振动能力接入，`runtimeMode=adapter`；`device/release=none` 不变
 - `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录与 `v1.11.2` 的 ccnubox_rn signed simulator app-shell gate 都只证明 app-shell 非实机链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
 - 历史 closeout 不代替当前源码复验；当前仍有下面列出的实现缺口，以及单 capability 真机 / release 验收。
@@ -151,7 +151,7 @@ Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Scre
 - `expo-location`
   - `🟡` 当前主路径是 foreground/background permission、current / watch、heading snapshot/watch、geocode / reverse-geocode
 - `expo-camera`
-  - 当前 capture 使用系统 CameraPicker；embedded preview、pause/resume、录制 stop/toggle 没有接入真实相机会话，仍需实现。模拟器授权 / 取消回调不等于拍摄成功。
+  - Camera Kit／AVRecorder 已接入 embedded preview、pause/resume、photo 與 recording stop/toggle；影像來源及成功產物仍須分別驗證，並非完整 Expo Camera API parity。
 
 ## Experimental 能力
 
@@ -162,7 +162,7 @@ Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Scre
 | `react-native-gesture-handler` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.0 formal acceptance slice tracks Gesture Handler through its Harmony adapter, but it remains experimental until device and release runtime evidence are closed. 依赖方向：@react-native-oh-tpl/react-native-gesture-handler。 |
 | `@react-native-async-storage/async-storage` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A tracks Async Storage through its Harmony adapter, but persistence behavior remains experimental until device and release evidence are closed. 依赖方向：@react-native-oh-tpl/async-storage。 |
 | `react-native-screens` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A tracks Screens through its Harmony adapter metadata, while managed autolinking and navigation-stack runtime behavior remain promotion gaps. 依赖方向：@react-native-oh-tpl/react-native-screens。 |
-| `react-native-safe-area-context` | `experimental` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.2 Wave A formalizes the existing toolkit safe-area shim so app-shell layouts keep bundling while native safe-area measurements stay outside verified. 依赖方向：toolkit-managed bridge。 |
+| `react-native-safe-area-context` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | The toolkit bridge consumes RNOH SafeAreaTurboModule measurements and inset-change events, measures provider frames and applies edge padding or margins. Device and release layout acceptance remain pending. 依赖方向：toolkit-managed bridge。 |
 | `react-native-webview` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox WebView surfaces through the Harmony adapter, but navigation, injected scripts, and release runtime stability remain promotion evidence. 依赖方向：@react-native-oh-tpl/react-native-webview。 |
 | `jpush-react-native` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B keeps ccnubox JPush runtime dependencies in formal telemetry; registrationId, arrival, click, and cold-start payloads still require signed runtime evidence. 依赖方向：jcore-react-native。 |
 | `expo-media-library` | `experimental` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | v1.9.3 Wave B tracks ccnubox media-library save flows through the camera-roll Harmony adapter while gallery write/read behavior remains runtime evidence. 依赖方向：@react-native-oh-tpl/camera-roll。 |
@@ -299,7 +299,7 @@ toolkit 受管的核心产物仍包括：
 ## 当前仍未进入正式公开承诺
 
 - bare Expo；当前只进入 intake / debug baseline
-- `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 当前仍只是 preview shim baseline
+- `expo-secure-store`、`expo-asset`、`expo-device`、`expo-clipboard`、`expo-haptics` 已接入原生能力，但仍保持 preview，不代表全部 Expo API 或实机／release 已验证
 - `@react-native-async-storage/async-storage`、`react-native-screens`、`react-native-safe-area-context` 当前仍只是 Wave A experimental onboarding
 - `react-native-webview`、JPush runtime、`expo-media-library`、`lottie-react-native`、`@shopify/react-native-skia` 当前仍只是 Wave B experimental onboarding
 - 多 Expo / RNOH 并行 verified 矩阵
