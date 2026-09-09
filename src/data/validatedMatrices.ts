@@ -97,7 +97,9 @@ function createDependencyRules(input: {
       version: '>=7.0.0 <8.0.0',
     },
     'expo-status-bar': {
-      version: '>=3.0.0 <4.0.0',
+      version: input.reactVersion === '19.1.1'
+        ? '>=3.0.0 <4.0.0'
+        : `${expoRange} || >=3.0.0 <4.0.0`,
     },
     ...Object.fromEntries(
       UI_STACK_VALIDATED_ADAPTERS.flatMap((entry) => [

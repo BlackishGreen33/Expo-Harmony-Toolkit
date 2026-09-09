@@ -42,6 +42,7 @@
     "build": "rm -rf build && tsc --project tsconfig.json",
     "clean": "rm -rf build coverage",
     "compat:check": "node ./scripts/version-compatibility-check.js",
+    "compat:check:native": "node ./scripts/version-compatibility-check.js --native",
     "docs:sync": "node ./scripts/update-generated-docs.js",
     "pack:check": "node ./scripts/pack.js --dry-run --json",
     "release:check": "node ./scripts/release-check.js",

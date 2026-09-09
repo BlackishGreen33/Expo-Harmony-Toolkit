@@ -102,7 +102,7 @@ describe('official native capabilities sample', () => {
     );
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
     expect(moduleConfig).toContain('ohos.permission.MICROPHONE');
-    expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
+    expect(moduleConfig).not.toContain('ohos.permission.READ_IMAGEVIDEO');
     expect(moduleConfig).toContain('ohos.permission.LOCATION');
     expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
     expect(moduleConfig).toContain('ohos.permission.LOCATION_IN_BACKGROUND');

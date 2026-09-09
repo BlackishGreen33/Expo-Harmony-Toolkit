@@ -35,8 +35,6 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
   public static readonly NAME = 'ExpoHarmonyCamera';
 
   private readonly atManager = abilityAccessCtrl.createAtManager();
-  private readonly previewStates = new Map<string, 'running' | 'paused'>();
-  private readonly activeRecordings = new Map<string, CameraRecordingResult>();
 
   getConstants(): Record<string, never> {
     return {};
@@ -58,48 +56,28 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
     return this.requestPermissionResponse('ohos.permission.MICROPHONE');
   }
 
-  async createPreview(options?: { viewId?: string }): Promise<{ viewId: string; state: 'running' }> {
-    const viewId = typeof options?.viewId === 'string' && options.viewId.length > 0
-      ? options.viewId
-      : 'expo-harmony-camera-preview';
-    this.previewStates.set(viewId, 'running');
-    return {
-      viewId,
-      state: 'running',
-    };
+  async createPreview(_options?: { viewId?: string }): Promise<void> {
+    throw new Error('ERR_EXPO_HARMONY_UNSUPPORTED: embedded camera preview is not implemented.');
   }
 
-  async disposePreview(options?: { viewId?: string }): Promise<void> {
-    if (typeof options?.viewId === 'string') {
-      this.previewStates.delete(options.viewId);
-      this.activeRecordings.delete(options.viewId);
-    }
+  async disposePreview(_options?: { viewId?: string }): Promise<void> {
+    // No native preview session exists to release yet.
   }
 
-  async pausePreview(options?: { viewId?: string }): Promise<{ paused: boolean }> {
-    if (typeof options?.viewId === 'string') {
-      this.previewStates.set(options.viewId, 'paused');
-    }
-    return {
-      paused: true,
-    };
+  async pausePreview(_options?: { viewId?: string }): Promise<void> {
+    throw new Error('ERR_EXPO_HARMONY_UNSUPPORTED: embedded camera preview is not implemented.');
   }
 
-  async resumePreview(options?: { viewId?: string }): Promise<{ paused: boolean }> {
-    if (typeof options?.viewId === 'string') {
-      this.previewStates.set(options.viewId, 'running');
-    }
-    return {
-      paused: false,
-    };
+  async resumePreview(_options?: { viewId?: string }): Promise<void> {
+    throw new Error('ERR_EXPO_HARMONY_UNSUPPORTED: embedded camera preview is not implemented.');
   }
 
   async takePicture(options?: { cameraType?: string; viewId?: string }): Promise<CameraCaptureResult> {
-    const profile = new cameraPicker.PickerProfile();
-    profile.cameraPosition =
-      options?.cameraType === 'front'
+    const profile: cameraPicker.PickerProfile = {
+      cameraPosition: options?.cameraType === 'front'
         ? camera.CameraPosition.CAMERA_POSITION_FRONT
-        : camera.CameraPosition.CAMERA_POSITION_BACK;
+        : camera.CameraPosition.CAMERA_POSITION_BACK,
+    };
 
     const result = await cameraPicker.pick(
       this.ctx.uiAbilityContext,
@@ -123,11 +101,11 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
 
   async startRecording(options?: { viewId?: string; cameraType?: string }): Promise<CameraRecordingResult> {
     await this.requestPermissionResponse('ohos.permission.MICROPHONE');
-    const profile = new cameraPicker.PickerProfile();
-    profile.cameraPosition =
-      options?.cameraType === 'front'
+    const profile: cameraPicker.PickerProfile = {
+      cameraPosition: options?.cameraType === 'front'
         ? camera.CameraPosition.CAMERA_POSITION_FRONT
-        : camera.CameraPosition.CAMERA_POSITION_BACK;
+        : camera.CameraPosition.CAMERA_POSITION_BACK,
+    };
 
     const result = await cameraPicker.pick(
       this.ctx.uiAbilityContext,
@@ -139,36 +117,21 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
       throw new Error('Camera recording was canceled.');
     }
 
-    const recording = {
+    return {
       uri: result.resultUri,
       duration: 0,
       fileSize: null,
       mimeType: 'video/mp4',
     };
 
-    if (typeof options?.viewId === 'string') {
-      this.activeRecordings.set(options.viewId, recording);
-    }
-
-    return recording;
   }
 
-  async stopRecording(options?: { viewId?: string }): Promise<CameraRecordingResult | null> {
-    if (typeof options?.viewId === 'string') {
-      const recording = this.activeRecordings.get(options.viewId) ?? null;
-      this.activeRecordings.delete(options.viewId);
-      return recording;
-    }
-
-    return null;
+  async stopRecording(_options?: { viewId?: string }): Promise<void> {
+    throw new Error('ERR_EXPO_HARMONY_UNSUPPORTED: stop recording in the system CameraPicker UI.');
   }
 
-  async toggleRecording(options?: { viewId?: string; cameraType?: string }): Promise<CameraRecordingResult | null> {
-    if (typeof options?.viewId === 'string' && this.activeRecordings.has(options.viewId)) {
-      return this.stopRecording(options);
-    }
-
-    return this.startRecording(options);
+  async toggleRecording(_options?: { viewId?: string; cameraType?: string }): Promise<void> {
+    throw new Error('ERR_EXPO_HARMONY_UNSUPPORTED: recording controls belong to the system CameraPicker UI.');
   }
 
   private async getPermissionResponse(permissionName: Permissions): Promise<PermissionResponse> {
@@ -342,7 +305,7 @@ const CameraView = React.forwardRef(function ExpoHarmonyCameraView(props, ref) {
       viewId,
       facing: normalizeCameraFacing(props.facing),
       mode: props.mode ?? 'picture',
-    }).catch(() => {});
+    }).catch((error) => props.onMountError?.({ message: error.message }));
 
     return () => {
       void invokeNative('disposePreview', 'CameraView.unmount', {

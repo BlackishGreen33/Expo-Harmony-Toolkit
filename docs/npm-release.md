@@ -43,6 +43,7 @@ pnpm release:check
 
 - `pnpm build`
 - `pnpm test`
+- `pnpm compat:check` 与 `pnpm compat:check:native`：Expo 55 / 56 / 57 的 minimal 和 native-capability doctor / init / bundle；设置 `EXPO_HARMONY_COMPAT_BUILD_HAP=1` 时另执行真实 HAP 构建
 - 单次实际 `npm pack` 与 tarball 文件清单检查
 - tarball 文件清单检查，不允许包含 `examples/`、`fixtures/`、`tests/`
 - 同一 tarball 的独立 consumer production dependency graph audit，要求 critical advisories 为 0

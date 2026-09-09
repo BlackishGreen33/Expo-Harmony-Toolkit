@@ -52,6 +52,10 @@ Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony M
 | `expo57-rn086-rnoh082-preview` | `57` | `>=19.2.0 <20.0.0` | `>=0.86.0 <0.87.0` | `0.82.29` |
 <!-- GENERATED:support-matrix-verified-matrix:end -->
 
+复验命令：`EXPO_HARMONY_COMPAT_BUILD_HAP=1 pnpm compat:check:native`；可加 `--sdk=55`（或 56 / 57）单独重跑。每条 lane 按该 SDK 的 `bundledNativeModules.json` 安装 Expo 模块，Harmony 单独配对 Screens / Gesture Handler / Reanimated 的 JS 与 adapter，不修改其他平台依赖。
+
+Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Screens 没有该接口时，仅 Harmony 使用 Router 自带的 standard-Stack fallback，不代表 experimental native API 已实现。
+
 ## Support Tiers
 
 | 层级 | 含义 | `doctor --strict` | `doctor --target-tier <tier>` |
@@ -121,9 +125,9 @@ Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony M
 | Expo 能力 | 当前层级 | runtimeMode | evidence | Harmony 依赖方向 | 受管权限 | 官方 sample route |
 | --- | --- | --- | --- | --- | --- | --- |
 | `expo-file-system` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-fs | 无新增必需权限 | `/file-system` |
-| `expo-image-picker` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-image-picker, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE、ohos.permission.READ_IMAGEVIDEO | `/image-picker` |
+| `expo-image-picker` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-image-picker, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/image-picker` |
 | `expo-location` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | @react-native-community/geolocation, react-native-permissions | ohos.permission.LOCATION、ohos.permission.APPROXIMATELY_LOCATION、ohos.permission.LOCATION_IN_BACKGROUND、ohos.permission.ACCELEROMETER | `/location` |
-| `expo-camera` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=yes[manual-doc], release=no[none]` | react-native-camera-kit, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/camera` |
+| `expo-camera` | `preview` | `adapter` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | react-native-camera-kit, react-native-permissions | ohos.permission.CAMERA、ohos.permission.MICROPHONE | `/camera` |
 | `expo-secure-store` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/secure-store` |
 | `expo-asset` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/asset` |
 | `expo-device` | `preview` | `shim` | `bundle=yes[automated], debugBuild=yes[automated], device=no[none], release=no[none]` | toolkit-managed bridge | 无新增必需权限 | `/device` |
@@ -134,12 +138,12 @@ Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony M
 说明：
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
-- 四项 preview capability 都已经进入 `adapter` 路径；`device=yes[manual-doc]` 只表示已有人工设备验收记录，仍不代表 verified 或 release-ready
-- 当前原生 adapter preview baseline 的默认 evidenceSource 固定为：`bundle/debugBuild=automated`、`device=manual-doc`、`release=none`
+- `adapter` 表示选择了原生接入路径，不代表每个接口已完成；`device=yes[manual-doc]` 不是当前模拟器自动验证。
+- `expo-camera` 的设备表仍未填写，且存在未连接原生会话的接口，因此回退为 `device=no[none]`；构建证据不能覆盖这些缺口。
 - `v1.9.0` 新增的 app foundation modules 当前是 `runtimeMode=shim`，`bundle/debugBuild=automated`，`device/release=none`
 - `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录与 `v1.11.2` 的 ccnubox_rn signed simulator app-shell gate 都只证明 app-shell 非实机链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
-- `v1.8.x` repo 内可完成的 closeout 已完成；剩余 carryover 只包括单 capability 真机 device record 与 release HAP runtime acceptance
+- 历史 closeout 不代替当前源码复验；当前仍有下面列出的实现缺口，以及单 capability 真机 / release 验收。
 - `expo-file-system`
   - `🟡` 当前主路径是 UTF-8/base64 sandbox I/O、append/partial read、`getInfoAsync({ md5: true })` 与 `downloadAsync`
 - `expo-image-picker`
@@ -147,7 +151,7 @@ Preview 專案需安裝 `@harmony-js/react: npm:react@19.1.1`，並在 Harmony M
 - `expo-location`
   - `🟡` 当前主路径是 foreground/background permission、current / watch、heading snapshot/watch、geocode / reverse-geocode
 - `expo-camera`
-  - `🟡` 当前主路径是 embedded preview、preview pause/resume、still capture、video recording 与 microphone permission
+  - 当前 capture 使用系统 CameraPicker；embedded preview、pause/resume、录制 stop/toggle 没有接入真实相机会话，仍需实现。模拟器授权 / 取消回调不等于拍摄成功。
 
 ## Experimental 能力
 

@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 function resolveExpoScopedModule(moduleName) {
   const expoPackagePath = require.resolve('expo/package.json');
@@ -8,7 +9,13 @@ function resolveExpoScopedModule(moduleName) {
 }
 
 module.exports = function babelConfig(api) {
-  api.cache(true);
+  const isHarmony = api.caller((caller) => caller?.platform === 'harmony');
+  if (isHarmony && fs.existsSync(path.join(__dirname, 'node_modules/@harmony-js/react-native-reanimated/package.json'))) {
+    return {
+      presets: [[resolveExpoScopedModule('babel-preset-expo'), { reanimated: false, worklets: false }]],
+      plugins: [require.resolve('@harmony-js/react-native-reanimated/plugin')],
+    };
+  }
 
   return {
     presets: [resolveExpoScopedModule('babel-preset-expo')],

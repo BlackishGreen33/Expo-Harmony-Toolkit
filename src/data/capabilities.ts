@@ -91,7 +91,6 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     harmonyPermissions: [
       'ohos.permission.CAMERA',
       'ohos.permission.MICROPHONE',
-      'ohos.permission.READ_IMAGEVIDEO',
     ],
     sampleRoute: '/image-picker',
     acceptanceChecklist: [
@@ -130,9 +129,9 @@ export const CAPABILITY_DEFINITIONS: readonly CapabilityDefinition[] = [
     status: 'manual',
     supportTier: 'preview',
     runtimeMode: 'adapter',
-    evidence: PREVIEW_BASELINE_EVIDENCE,
-    evidenceSource: PREVIEW_BASELINE_EVIDENCE_SOURCE,
-    note: 'Toolkit-managed Harmony adapters cover the v1.8.0 preview subset: embedded camera preview, still capture, preview pause/resume, microphone permission, and in-session video recording controls.',
+    evidence: { ...PREVIEW_BASELINE_EVIDENCE, device: false },
+    evidenceSource: { ...PREVIEW_BASELINE_EVIDENCE_SOURCE, device: 'none' },
+    note: 'Harmony uses the system camera picker for capture. Embedded preview and in-session pause/resume/recording controls are not wired to a native camera session; their state-map responses are not functional evidence. Device acceptance remains pending.',
     docsUrl: 'https://github.com/react-native-oh-library/usage-docs/blob/master/en/react-native-camera-kit.md',
     nativePackageNames: ['react-native-camera-kit', 'react-native-permissions'],
     harmonyPermissions: ['ohos.permission.CAMERA', 'ohos.permission.MICROPHONE'],

@@ -1,11 +1,15 @@
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { renderExpoHarmonyImagePickerTurboModule } from '../src/core/template/renderers/imagePicker';
+import { CAPABILITY_DEFINITIONS } from '../src/data/capabilities';
 
 it('uses the selected-file grant and treats picker cancellation as final', async () => {
   const select = jest.fn().mockResolvedValueOnce({ photoUris: [] }).mockResolvedValueOnce({ photoUris: ['file://media/Photo/1'] });
   const modules: Record<string, unknown> = {
-    '@ohos.abilityAccessCtrl': { createAtManager: () => ({}) },
+    '@ohos.abilityAccessCtrl': {
+      createAtManager: () => ({ getSelfPermissionStatus: () => 0 }),
+      PermissionStatus: { GRANTED: 0, DENIED: 1, RESTRICTED: 2, INVALID: 3 },
+    },
     '@rnoh/react-native-openharmony/ts': { UITurboModule: class {} },
     '@ohos.file.photoAccessHelper': {
       PhotoViewPicker: class { select = select; },
@@ -22,6 +26,9 @@ it('uses the selected-file grant and treats picker cancellation as final', async
   picker.launchLegacyPhotoPicker = jest.fn().mockResolvedValue([]);
   picker.requestAuthorizedUris = jest.fn(async (uris) => uris);
   picker.createImagePickerAsset = jest.fn(async (uri) => ({ uri }));
+  expect(await picker.getMediaLibraryPermissionStatus()).toMatchObject({ granted: true, accessPrivileges: 'limited' });
+  expect(await picker.requestMediaLibraryPermission()).toMatchObject({ granted: true, accessPrivileges: 'limited' });
+  expect(CAPABILITY_DEFINITIONS.find(item => item.packageName === 'expo-image-picker')?.harmonyPermissions).not.toContain('ohos.permission.READ_IMAGEVIDEO');
   expect(await picker.launchImageLibrary({ mediaTypes: ['images'] })).toEqual({ canceled: true, assets: null });
   expect(picker.ensurePermissionGranted).not.toHaveBeenCalled();
   expect(picker.launchLegacyPhotoPicker).not.toHaveBeenCalled();
@@ -29,6 +36,11 @@ it('uses the selected-file grant and treats picker cancellation as final', async
   expect(await picker.launchImageLibrary({ mediaTypes: ['images'] })).toEqual({ canceled: false, assets: [{ uri: 'file://media/Photo/1' }] });
   expect(picker.requestAuthorizedUris).not.toHaveBeenCalled();
   expect(select).toHaveBeenCalledTimes(2);
+  select.mockResolvedValueOnce({ photoUris: ['file://media/Photo/2'] });
+  await picker.launchCamera({ mediaTypes: ['images'] });
+  expect(picker.ensurePermissionGranted).toHaveBeenCalledTimes(1);
+  expect(picker.ensurePermissionGranted).toHaveBeenCalledWith('ohos.permission.CAMERA', false);
+  expect(picker.requestAuthorizedUris).not.toHaveBeenCalled();
 });
 
 it('copies a picker URI into the sandbox and closes its descriptor even if copying fails', async () => {

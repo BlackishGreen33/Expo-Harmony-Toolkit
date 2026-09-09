@@ -367,7 +367,7 @@ describe('init project', () => {
     const toolkitConfig = await readToolkitConfig(projectRoot);
 
     expect(moduleConfig).toContain('ohos.permission.CAMERA');
-    expect(moduleConfig).toContain('ohos.permission.READ_IMAGEVIDEO');
+    expect(moduleConfig).not.toContain('ohos.permission.READ_IMAGEVIDEO');
     expect(moduleConfig).toContain('ohos.permission.LOCATION');
     expect(moduleConfig).toContain('ohos.permission.APPROXIMATELY_LOCATION');
     expect(moduleConfig).toContain('ohos.permission.MICROPHONE');
@@ -404,7 +404,9 @@ describe('init project', () => {
     );
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
-    expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.device)).toBe(true);
+    expect(toolkitConfig?.capabilities.every((capability) =>
+      capability.evidence.device === (capability.id !== 'expo-camera'),
+    )).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidence.release === false)).toBe(
       true,
     );
@@ -414,9 +416,9 @@ describe('init project', () => {
     expect(
       toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.debugBuild === 'automated'),
     ).toBe(true);
-    expect(toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.device === 'manual-doc')).toBe(
-      true,
-    );
+    expect(toolkitConfig?.capabilities.every((capability) =>
+      capability.evidenceSource.device === (capability.id === 'expo-camera' ? 'none' : 'manual-doc'),
+    )).toBe(true);
     expect(toolkitConfig?.capabilities.every((capability) => capability.evidenceSource.release === 'none')).toBe(
       true,
     );
@@ -424,7 +426,6 @@ describe('init project', () => {
       expect.arrayContaining([
         'ohos.permission.CAMERA',
         'ohos.permission.MICROPHONE',
-        'ohos.permission.READ_IMAGEVIDEO',
         'ohos.permission.LOCATION',
         'ohos.permission.APPROXIMATELY_LOCATION',
         'ohos.permission.LOCATION_IN_BACKGROUND',

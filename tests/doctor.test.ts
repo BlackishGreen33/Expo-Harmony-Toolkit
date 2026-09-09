@@ -287,6 +287,17 @@ describe('doctor report', () => {
         expect(report.eligibility).toBe('eligible');
         expect(report.blockingIssues).toHaveLength(0);
 
+        packageJson.dependencies['expo-status-bar'] = `^${expoSdkVersion}.0.0`;
+        await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+        const sdkModules = await buildDoctorReport(tempRoot, { targetTier: 'preview' });
+        expect(sdkModules.eligibility).toBe('eligible');
+
+        packageJson.dependencies['expo-status-bar'] = `^${expoSdkVersion + 1}.0.0`;
+        await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+        const wrongSdk = await buildDoctorReport(tempRoot, { targetTier: 'preview' });
+        expect(wrongSdk.blockingIssues.some((issue) => issue.subject === 'expo-status-bar')).toBe(true);
+
+        packageJson.dependencies['expo-status-bar'] = `^${expoSdkVersion}.0.0`;
         delete packageJson.dependencies['@harmony-js/react'];
         await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
         const unpaired = await buildDoctorReport(tempRoot, { targetTier: 'preview' });
@@ -392,7 +403,8 @@ describe('doctor report', () => {
     expect(report.capabilities.every((capability) => capability.runtimeMode === 'adapter')).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidence.bundle)).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidence.debugBuild)).toBe(true);
-    expect(report.capabilities.every((capability) => capability.evidence.device)).toBe(true);
+    expect(report.capabilities.find((capability) => capability.id === 'expo-camera')?.evidence.device).toBe(false);
+    expect(report.capabilities.filter((capability) => capability.id !== 'expo-camera').every((capability) => capability.evidence.device)).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidence.release === false)).toBe(true);
     expect(report.capabilities.every((capability) => capability.evidenceSource.bundle === 'automated')).toBe(
       true,
@@ -400,7 +412,8 @@ describe('doctor report', () => {
     expect(report.capabilities.every((capability) => capability.evidenceSource.debugBuild === 'automated')).toBe(
       true,
     );
-    expect(report.capabilities.every((capability) => capability.evidenceSource.device === 'manual-doc')).toBe(
+    expect(report.capabilities.find((capability) => capability.id === 'expo-camera')?.evidenceSource.device).toBe('none');
+    expect(report.capabilities.filter((capability) => capability.id !== 'expo-camera').every((capability) => capability.evidenceSource.device === 'manual-doc')).toBe(
       true,
     );
     expect(report.capabilities.every((capability) => capability.evidenceSource.release === 'none')).toBe(
@@ -441,8 +454,10 @@ describe('doctor report', () => {
       expect.arrayContaining([
         'ohos.permission.CAMERA',
         'ohos.permission.MICROPHONE',
-        'ohos.permission.READ_IMAGEVIDEO',
       ]),
+    );
+    expect(capabilityById.get('expo-image-picker')?.harmonyPermissions).not.toContain(
+      'ohos.permission.READ_IMAGEVIDEO',
     );
     expect(capabilityById.get('expo-location')?.harmonyPermissions).toEqual(
       expect.arrayContaining([

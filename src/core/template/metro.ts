@@ -1,8 +1,26 @@
-import { CapabilityDefinition } from '../../types';
+import { HARMONY_NATIVE_ADAPTERS } from '../../data/uiStack';
+import { CapabilityDefinition, PackageJson } from '../../types';
 
 export function renderMetroConfig(
   enabledCapabilities: readonly CapabilityDefinition[],
+  packageJson: PackageJson = {},
 ): string {
+  const dependencies = {
+    ...packageJson.peerDependencies,
+    ...packageJson.devDependencies,
+    ...packageJson.dependencies,
+  };
+  const packageAliases: Record<string, { source: string; adapter: string }> = {};
+  for (const { canonicalPackageName, adapterPackageName } of HARMONY_NATIVE_ADAPTERS) {
+    const source = Object.keys(dependencies).find((name) =>
+      name !== canonicalPackageName &&
+      dependencies[name].startsWith(`npm:${canonicalPackageName}@`),
+    );
+    if (source && dependencies[adapterPackageName]) {
+      packageAliases[canonicalPackageName] = { source, adapter: adapterPackageName };
+    }
+  }
+  const hasPackageAliases = Object.keys(packageAliases).length > 0;
   const reactNativeGestureHandlerRootAlias = enabledCapabilities.some(
     (capability) => capability.packageName === 'react-native-gesture-handler',
   )
@@ -34,6 +52,9 @@ process.env.EXPO_ROUTER_APP_ROOT = process.env.EXPO_ROUTER_APP_ROOT ?? 'app';
 
 const { getDefaultConfig } = require('expo/metro-config');
 const { createHarmonyMetroConfig } = require('@react-native-oh/react-native-harmony/metro.config');
+${hasPackageAliases ? `const { createHarmonyPackageResolver } = require('expo-harmony-toolkit/metro');
+const resolveHarmonyPackage = createHarmonyPackageResolver(__dirname, ${JSON.stringify(packageAliases, null, 2)});
+` : ''}
 
 const defaultConfig = getDefaultConfig(__dirname);
 const harmonyConfig = createHarmonyMetroConfig({
@@ -164,7 +185,10 @@ const resolveReactNativeCompatibilityWrapper = (context, moduleName, platform) =
   return null;
 };
 const resolveExpoHarmonyShim = (context, moduleName, platform) => {
-  const uiStackModuleAliasResolution = resolveUiStackModuleAlias(context, moduleName, platform);
+${hasPackageAliases ? `  const packageResolution = resolveHarmonyPackage(context, moduleName, platform);
+  if (packageResolution) return packageResolution;
+
+` : ''}  const uiStackModuleAliasResolution = resolveUiStackModuleAlias(context, moduleName, platform);
 
   if (uiStackModuleAliasResolution) {
     return uiStackModuleAliasResolution;

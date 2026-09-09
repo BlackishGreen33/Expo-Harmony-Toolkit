@@ -370,7 +370,7 @@ async function buildManagedFiles(
     },
     {
       relativePath: 'metro.harmony.config.js',
-      contents: renderMetroConfig(enabledCapabilities),
+      contents: renderMetroConfig(enabledCapabilities, loadedProject.packageJson),
     },
     {
       relativePath: path.join(GENERATED_SHIMS_DIR, 'react-native-safe-area-context', 'index.js'),

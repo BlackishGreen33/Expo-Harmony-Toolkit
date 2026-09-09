@@ -394,6 +394,7 @@ describe('release gate orchestration', () => {
       releaseWorkflow.indexOf('- name: Resolve release channel'),
     );
     expect(releaseCheck).toContain('shell: false');
+    expect(releaseCheck).toContain("await runCommand('pnpm', ['compat:check:native'])");
     expect(releaseCheck).not.toContain('shell: true');
     expect(releaseChannel).toContain("args[0] === '--ci-gate'");
     expect(releaseChannel).not.toContain('--ci-next');

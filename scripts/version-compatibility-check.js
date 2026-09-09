@@ -6,7 +6,6 @@ const os = require('node:os');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
-const sampleRoot = path.join(repoRoot, 'examples', 'official-minimal-sample');
 const cliPath = path.join(repoRoot, 'bin', 'expo-harmony.js');
 const matrices = [
   {
@@ -57,7 +56,10 @@ function run(file, args, cwd) {
   return result.stdout;
 }
 
-async function materializeProject(tempRoot, matrix) {
+async function materializeProject(tempRoot, matrix, native = false) {
+  const sampleRoot = path.join(repoRoot, 'examples', native
+    ? 'official-native-capabilities-sample'
+    : 'official-minimal-sample');
   const projectRoot = path.join(tempRoot, `sdk-${matrix.sdk}`);
   await fs.copy(sampleRoot, projectRoot, {
     filter: (source) => path.basename(source) !== 'node_modules',
@@ -72,6 +74,15 @@ async function materializeProject(tempRoot, matrix) {
   packageJson.name = `expo-harmony-sdk-${matrix.sdk}-compat-smoke`;
   packageJson.packageManager = 'pnpm@10.32.1';
   packageJson.dependencies = {
+    ...(native ? packageJson.dependencies : {}),
+    ...(native ? {
+      'react-native-screens': '*',
+      'react-native-gesture-handler': '*',
+      'react-native-reanimated': '*',
+      '@react-native-oh-tpl/react-native-screens': '4.8.1-rc.3',
+      '@react-native-oh-tpl/react-native-gesture-handler': '2.14.17-rc.2',
+      '@react-native-oh-tpl/react-native-reanimated': '3.6.4-rc.5',
+    } : {}),
     '@babel/runtime': '^7.28.4',
     '@expo/metro-runtime': `^${matrix.sdk}.0.0`,
     '@harmony-js/react': 'npm:react@19.1.1',
@@ -85,30 +96,69 @@ async function materializeProject(tempRoot, matrix) {
     'react-native': matrix.reactNative,
   };
   packageJson.devDependencies = {
+    ...(native ? {
+      '@harmony-js/react-native-screens': 'npm:react-native-screens@4.8.0',
+      '@harmony-js/react-native-gesture-handler': 'npm:react-native-gesture-handler@2.14.1',
+      '@harmony-js/react-native-reanimated': 'npm:react-native-reanimated@3.6.0',
+      'expo-harmony-toolkit': `file:${repoRoot}`,
+    } : {}),
     '@react-native-community/cli': '^20.1.2',
     metro: '^0.83.1',
   };
   await fs.writeJson(path.join(projectRoot, 'package.json'), packageJson, { spaces: 2 });
 
+  if (native) {
+    const configPath = path.join(projectRoot, 'app.json');
+    const config = await fs.readJson(configPath);
+    const identifier = `com.blackishgreen.ehtsdk${matrix.sdk}native`;
+    config.expo.android.package = identifier;
+    config.expo.ios.bundleIdentifier = identifier;
+    config.expo.scheme = `ehtsdk${matrix.sdk}native`;
+    await fs.writeJson(configPath, config, { spaces: 2 });
+  }
+
   return projectRoot;
 }
 
+async function alignExpoDependencies(projectRoot) {
+  const packagePath = path.join(projectRoot, 'package.json');
+  const packageJson = await fs.readJson(packagePath);
+  const bundled = await fs.readJson(path.join(projectRoot, 'node_modules', 'expo', 'bundledNativeModules.json'));
+  for (const name of Object.keys(packageJson.dependencies)) {
+    if (bundled[name] && name !== 'react' && name !== 'react-native' && name !== 'react-dom') {
+      packageJson.dependencies[name] = bundled[name];
+    }
+  }
+  await fs.writeJson(packagePath, packageJson, { spaces: 2 });
+}
+
 async function main() {
+  const sdkArgument = process.argv.find((value) => value.startsWith('--sdk='));
+  const selectedMatrices = sdkArgument
+    ? matrices.filter((matrix) => matrix.sdk === Number(sdkArgument.slice(6)))
+    : matrices;
+  if (!selectedMatrices.length) throw new Error('Supported SDK lanes are 55, 56 and 57.');
   const tempBase = process.platform === 'darwin' ? '/tmp' : os.tmpdir();
   const tempRoot = await fs.mkdtemp(path.join(tempBase, 'eht-compat-'));
 
   try {
-    for (const matrix of matrices) {
-      const projectRoot = await materializeProject(tempRoot, matrix);
+    for (const matrix of selectedMatrices) {
+      const native = process.argv.includes('--native');
+      process.stdout.write(`Expo SDK ${matrix.sdk}: starting ${native ? 'native capabilities' : 'minimal'} lane.\n`);
+      const projectRoot = await materializeProject(tempRoot, matrix, native);
       run(
         'pnpm',
         ['install', '--ignore-scripts', '--no-frozen-lockfile', '--strict-peer-dependencies=false'],
         projectRoot,
       );
+      if (native) {
+        await alignExpoDependencies(projectRoot);
+        run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile', '--strict-peer-dependencies=false'], projectRoot);
+      }
       const report = JSON.parse(
         run(
           process.execPath,
-          [cliPath, 'doctor', '--project-root', '.', '--target-tier', 'preview', '--json'],
+          [cliPath, 'doctor', '--project-root', '.', '--target-tier', native ? 'experimental' : 'preview', '--json'],
           projectRoot,
         ).trim(),
       );
@@ -171,4 +221,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { main, matrices };
+module.exports = { main, matrices, materializeProject, alignExpoDependencies };

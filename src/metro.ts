@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import semver from 'semver';
 
@@ -32,9 +33,22 @@ export function createHarmonyPackageResolver(
       redirectInternalImports: adapterPackage.harmony?.redirectInternalImports === true,
     };
   });
+  const screens = entries.find((entry) => entry.name === 'react-native-screens');
+  const routerManifest = path.join(projectRoot, 'node_modules/expo-router/package.json');
+  const legacyScreensRouterRoot = screens &&
+    !existsSync(path.join(screens.sourceRoot, 'experimental')) && existsSync(routerManifest)
+    ? path.dirname(realpathSync(routerManifest)) : null;
 
   return (context: ResolverContext, moduleName: string, platform: string | null): unknown | null => {
     if (platform !== 'harmony') return null;
+
+    // Router 56+ eagerly imports its experimental stack. Reuse its standard-Stack
+    // fallback when the pinned Harmony Screens release has no experimental native API.
+    if (legacyScreensRouterRoot && moduleName === './layouts/experimental-stack' &&
+      context.originModulePath === path.join(legacyScreensRouterRoot, 'build/exports.js')) {
+      const fallback = path.join(legacyScreensRouterRoot, 'build/layouts/experimental-stack/index.web.js');
+      if (existsSync(fallback)) return context.resolveRequest(context, fallback, platform);
+    }
 
     for (const entry of entries) {
       let relativePath: string;

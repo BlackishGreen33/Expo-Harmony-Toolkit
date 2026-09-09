@@ -59,11 +59,12 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
   }
 
   async getMediaLibraryPermissionStatus(_writeOnly?: boolean): Promise<PermissionResponse> {
-    return this.getPermissionResponse('ohos.permission.READ_IMAGEVIDEO', true);
+    // PhotoViewPicker grants access only to user-selected URIs, without a gallery ACL.
+    return { status: 'granted', granted: true, canAskAgain: false, expires: 'never', accessPrivileges: 'limited' };
   }
 
   async requestMediaLibraryPermission(_writeOnly?: boolean): Promise<PermissionResponse> {
-    return this.requestPermissionResponse('ohos.permission.READ_IMAGEVIDEO', true);
+    return this.getMediaLibraryPermissionStatus();
   }
 
   async getCameraPermissionStatus(): Promise<PermissionResponse> {
@@ -101,7 +102,6 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
     const requestedAssetType = this.inferAssetTypeFromMediaTypes(options?.mediaTypes);
 
     await this.ensurePermissionGranted('ohos.permission.CAMERA', false);
-    await this.ensurePermissionGranted('ohos.permission.READ_IMAGEVIDEO', true);
     if (requestedAssetType === 'video') {
       await this.ensurePermissionGranted('ohos.permission.MICROPHONE', false);
     }
@@ -122,8 +122,7 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
       return this.createCanceledResult();
     }
 
-    const authorizedUris = await this.requestAuthorizedUris(selectedUris);
-    const assetUri = authorizedUris[0] ?? selectedUris[0];
+    const assetUri = selectedUris[0];
 
     const result = {
       canceled: false,
@@ -330,18 +329,6 @@ export class ExpoHarmonyImagePickerTurboModule extends UITurboModule {
     return photoUris.filter(
       (value): value is string => typeof value === 'string' && value.length > 0,
     );
-  }
-
-  private async requestAuthorizedUris(photoUris: string[]): Promise<string[]> {
-    const helper = photoAccessHelper.getPhotoAccessHelper(this.ctx.uiAbilityContext);
-
-    try {
-      const authorizedUris = await helper.requestPhotoUrisReadPermission(photoUris);
-      const normalizedAuthorizedUris = this.normalizeSelectedUris(authorizedUris);
-      return normalizedAuthorizedUris.length > 0 ? normalizedAuthorizedUris : photoUris;
-    } catch (_error) {
-      return photoUris;
-    }
   }
 
   private async createImagePickerAsset(

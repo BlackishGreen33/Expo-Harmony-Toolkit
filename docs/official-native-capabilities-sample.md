@@ -2,7 +2,7 @@
 
 路径：`examples/official-native-capabilities-sample`
 
-这个 sample 是官方 preview native-capability 与 `v1.9.0` app-foundation walkthrough。它的目标不是把 preview 能力包装成 `verified`，而是把当前真实可承诺的 `🟡` 子集和 foundation shim baseline 集中演示出来，并把 preview 边界收敛到真机 / release 证据，而不是接口缺口。
+这个 sample 是官方 preview native-capability 与 `v1.9.0` app-foundation walkthrough。构建、模拟器回调、尚未实现的接口和真机 / release 证据分别验收；打包成功不代表所有按钮都有原生实现。
 
 从 `v1.8.x` 开始，这个 sample 的角色会固定成两层：
 
@@ -89,14 +89,13 @@
 
 ### `/camera`
 
-`🟡 当前可用子集`：
+当前实现与缺口（2026-09-08 复验）：
 
-- embedded `CameraView` preview
-- `pausePreview` / `resumePreview`
-- still photo capture
-- video recording start / stop / toggle
-- microphone permission snapshot
-- denied / canceled / successful result 展示
+- camera / microphone permission bridge，以及系统 CameraPicker 拍照 / 录像入口。
+- 模拟器已验证相机授权及取消返回；没有取得成功拍摄的产物。
+- embedded `CameraView` 没有相机输入与预览输出连接；mount / pause / resume 明确返回 unsupported，不再用本地状态表伪装成功。
+- stop / toggle 没有连接正在录制的原生会话，明确返回 unsupported；系统 Picker 内的完成按钮不等于 App 可控制录制会话。
+- 上述是实现缺口，不是仅缺真机验证；`device=false`，不得提升支持层级。
 
 ### `/secure-store`
 

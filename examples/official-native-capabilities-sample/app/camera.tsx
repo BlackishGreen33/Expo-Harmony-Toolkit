@@ -39,7 +39,7 @@ export default function CameraFunctionalScreen() {
   );
   const [cameraPermission, setCameraPermission] = useState<CameraPermission | null>(null);
   const [microphonePermission, setMicrophonePermission] = useState<MicrophonePermission | null>(null);
-  const [previewState, setPreviewState] = useState<'running' | 'paused'>('running');
+  const [previewState, setPreviewState] = useState<'not started' | 'running' | 'paused' | 'unavailable'>('not started');
   const [lastPhoto, setLastPhoto] = useState<{ uri: string; width: number; height: number } | null>(null);
   const [lastVideo, setLastVideo] = useState<{
     uri: string;
@@ -177,7 +177,16 @@ export default function CameraFunctionalScreen() {
           </View>
 
           <View style={styles.captureFrame}>
-            <CameraView ref={cameraRef} facing={CameraType.back} style={styles.captureSurface} />
+            <CameraView
+              ref={cameraRef}
+              facing={CameraType.back}
+              style={styles.captureSurface}
+              onCameraReady={() => setPreviewState('running')}
+              onMountError={({ message }) => {
+                setPreviewState('unavailable');
+                setMessage(message);
+              }}
+            />
           </View>
 
           <View style={styles.buttonGroup}>
@@ -249,8 +258,8 @@ export default function CameraFunctionalScreen() {
 
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>Preview boundary</Text>
-            <Text style={styles.resultLine}>The current camera preview docs no longer keep orange gaps for preview, pause/resume, microphone, or video.</Text>
-            <Text style={styles.resultLine}>This route still stays preview until device and release evidence are promoted.</Text>
+            <Text style={styles.resultLine}>Embedded preview and recording controls are not implemented on Harmony. System CameraPicker capture is a separate flow.</Text>
+            <Text style={styles.resultLine}>A permission grant or canceled picker is not successful capture evidence.</Text>
           </View>
 
           <Link href="/" style={styles.link}>
