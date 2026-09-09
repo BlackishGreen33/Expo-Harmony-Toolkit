@@ -52,7 +52,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | Item | Status |
 | --- | --- |
-| Current version | `v2.0.0-next.2` |
+| Current version | `v2.0.0-next.3` |
 | Support model | `verified + preview + experimental` |
 | Public `verified` matrix | `expo55-rnoh082-ui-stack` |
 | Supported input | Expo SDK 55–57 Managed/CNG projects; bare and catalog-out intake classification |
