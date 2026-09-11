@@ -16,19 +16,19 @@
   "dependencies": {
     "@expo/metro-runtime": "55.0.9",
     "@babel/runtime": "^7.28.4",
-    "@react-native-oh/react-native-harmony": "0.82.29",
-    "@react-native-oh/react-native-harmony-cli": "0.82.29",
+    "@react-native-oh/react-native-harmony": "0.84.3",
+    "@react-native-oh/react-native-harmony-cli": "0.84.3",
     "expo": "^55.0.8",
     "expo-constants": "55.0.11",
     "expo-linking": "55.0.11",
     "expo-router": "55.0.10",
     "expo-status-bar": "~3.0.8",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "react-native": "0.82.1"
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-native": "0.87.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "^20.1.2",
-    "metro": "^0.83.1"
+    "metro": "^0.87.0"
   }
 }
