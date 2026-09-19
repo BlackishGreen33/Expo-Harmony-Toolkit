@@ -17,6 +17,7 @@ type RecordingResult = { uri: string; duration: number | null; fileSize: number;
 type Recording = {
   ready: Promise<void>;
   finish?: Promise<void>;
+  error?: Error;
   recorder?: media.AVRecorder;
   output?: camera.VideoOutput;
   file?: fs.File;
@@ -249,7 +250,7 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
       if (value === 'stopped' && !recording.finish) void this.finishRecording(state).catch(() => {});
     });
     recording.recorder.on('error', (error: Error): void => {
-      recording.reject(error);
+      recording.error = error;
       void this.finishRecording(state).catch(() => {});
     });
     await recording.recorder.prepare({
@@ -302,9 +303,15 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
         async (): Promise<void> => { if (recording.file) await fs.close(recording.file); },
       ]) { try { await release(); } catch (error) { failure = failure ?? error as Error; } }
       state.recording = undefined;
-      if (failure) { recording.reject(failure); throw failure; }
+      failure = recording.error ?? failure;
+      if (failure) {
+        if (recording.file) await fs.unlink(recording.path).catch(() => {});
+        recording.reject(failure);
+        throw failure;
+      }
       try {
         const fileSize = (await fs.stat(recording.path)).size;
+        if (fileSize <= 0) throw new Error('Camera recording is empty.');
         const file = await fs.open(recording.path, fs.OpenMode.READ_ONLY);
         let extractor: media.AVMetadataExtractor | undefined;
         let duration: number | null = null;
@@ -315,7 +322,11 @@ export class ExpoHarmonyCameraTurboModule extends UITurboModule {
           if (Number.isFinite(value)) duration = value;
         } finally { try { if (extractor) await extractor.release(); } finally { await fs.close(file); } }
         recording.resolve({ uri: 'file://' + recording.path, duration, fileSize, mimeType: 'video/mp4' });
-      } catch (error) { recording.reject(error as Error); throw error; }
+      } catch (error) {
+        if (recording.file) await fs.unlink(recording.path).catch(() => {});
+        recording.reject(error as Error);
+        throw error;
+      }
     })();
     return recording.finish;
   }
