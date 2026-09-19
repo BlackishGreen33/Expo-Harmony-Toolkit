@@ -52,7 +52,7 @@
 <!-- GENERATED:readme-current-status:start -->
 | 项目 | 说明 |
 | --- | --- |
-| 当前版本 | `v2.0.0-next.4` |
+| 当前版本 | `v2.0.0-next.5` |
 | 支持模型 | `verified + preview + experimental` |
 | 唯一 `verified` 公开矩阵 | `expo55-rnoh082-ui-stack` |
 | 输入范围 | Expo SDK 55–57 Managed/CNG 项目；bare 与 catalog 外项目 intake 分类 |
