@@ -139,7 +139,7 @@ Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Scre
 
 - 当前四项 preview capability 都已经完成 preview baseline 的 bundle / debug build / route walkthrough
 - `adapter` 表示选择了原生接入路径，不代表每个接口已完成；`device=yes[manual-doc]` 不是当前模拟器自动验证。
-- `expo-camera` 已接入 Camera Kit／AVRecorder，但成功拍攝與完整 API 驗收仍待補，保持 `device=no[none]`；構建證據不能代替影像產物。
+- `expo-camera` 已接入 Camera Kit／AVRecorder；2026-09-19 的 Expo 55／56／57 sample 已取得模擬器 JPEG 拍照產物。SDK 57 另有一次未穩定重現的恢復後拍照逾時，錄影與完整 API 驗收仍待補；詳見 [camera sample 證據](official-native-capabilities-sample.md#camera)，保持 `device=no[none]`。
 - app foundation modules 现通过原生 Asset Store、文件缓存、设备信息、剪贴板与振动能力接入，`runtimeMode=adapter`；`device/release=none` 不变
 - `v1.8.2` 的 ccnubox release HAP 模拟器安装/启动记录与 `v1.11.2` 的 ccnubox_rn signed simulator app-shell gate 都只证明 app-shell 非实机链路，不改变上述 per-capability `release=no[none]`
 - `v1.8.x` 开始，combined sample smoke 只负责总回归；每项 capability 还必须单独维护 device / release acceptance 记录，见 [acceptance/v1.8.x-capability-board.md](../acceptance/v1.8.x-capability-board.md)
@@ -151,7 +151,7 @@ Router 56 / 57 会导入新版 Screens 的 experimental stack；旧 Harmony Scre
 - `expo-location`
   - `🟡` 当前主路径是 foreground/background permission、current / watch、heading snapshot/watch、geocode / reverse-geocode
 - `expo-camera`
-  - Camera Kit／AVRecorder 已接入 embedded preview、pause/resume、photo 與 recording stop/toggle；影像來源及成功產物仍須分別驗證，並非完整 Expo Camera API parity。
+  - Camera Kit／AVRecorder 已接入 embedded preview、pause/resume、photo 與 recording stop/toggle；已有模擬器預覽／拍照證據，錄影、完整生命週期與真機／release 驗收未完成，並非完整 Expo Camera API parity。
 
 ## Experimental 能力
 

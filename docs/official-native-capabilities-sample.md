@@ -91,12 +91,14 @@
 
 ### `/camera`
 
-目前接線與證據邊界（2026-09-09）：
+目前接線與證據邊界（2026-09-19）：
 
 - camera／microphone permission bridge；`CameraView` 的 XComponent surface 接入 Camera Kit input、preview、photo／video session。
 - `onCameraReady` 等待原生第一幀；pause／resume 操作 preview output；卸載及背景切換釋放原生資源。
 - PhotoOutput 回呼寫入 JPEG；AVRecorder 提供 start／stop／pause／resume，完成後讀取實際影片 metadata，不以本機狀態或取消結果冒充拍攝成功。
-- 模擬器目前沒有成功拍攝產物，不能據此宣稱拍照／錄影驗收完成。已安裝的 6.0.2 模擬器需要本機攝影機；虛擬圖片輸入自 26.0.0 才提供，見[華為模擬器攝影機說明](https://developer.huawei.com/consumer/cn/doc/HarmonyOS-Guides/ide-emulator-more-features)。
+- `2.0.0-next.4` 的 Expo 55／56／57 native sample 在 HarmonyOS 6.0.2（API 22）模擬器使用 Mac 攝影機，均取得可解碼的 `720×1280` JPEG；首張照片依序為 `315820`、`314404`、`315553` bytes。這是既有測試簽名 HAP 的本日重測，沒有重新構建或發包；HAP 雜湊與操作結果見 [Camera acceptance 的模擬器紀錄](../acceptance/v1.8.x-expo-camera-device.md#2026-09-19-模擬器重測)。
+- 三個 SDK 均驗證背景後回到前景可再拍照，背景清理完成後 CameraService 的 active cameras／sessions 均為 `0`；SDK 56 另驗證返回 sample 首頁後釋放。SDK 57 暫停／恢復後取得新照片，但首次嘗試曾發生一次 `30s` 拍照逾時，後續相同操作未穩定重現，原因未定，不能宣稱生命週期驗收全部通過。
+- 錄影及完整權限／重試矩陣仍未驗證。6.0.2 模擬器使用本機攝影機；虛擬圖片輸入自 26.0.0 才提供，見[華為模擬器攝影機說明](https://developer.huawei.com/consumer/cn/doc/HarmonyOS-Guides/ide-emulator-more-features)。
 - 範圍是面向／模式、預覽與基本拍攝控制；鏡頭列舉、尺寸列舉、條碼掃描等完整 Expo Camera API 未涵蓋，`device=false`／`release=false` 不變。
 
 ### `/secure-store`
