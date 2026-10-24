@@ -2117,6 +2117,10 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
       'src/main/cpp/generated/react/renderer/components/react_native_svg/Props.h':
         'auto map = (butter::map<std::string, RawValue>)value;\n',
       'src/main/cpp/componentInstances/RNSVGPathComponentInstance.h': 'Float m_cacheScale;\n',
+      'src/main/cpp/componentInstances/RNSVGForeignObjectComponentInstance.cpp':
+        '#include "RNSVGForeignObjectComponentInstance.h"\nNativeNodeApi::getInstance();\n',
+      'src/main/cpp/componentInstances/RNSVGSvgViewComponentInstance.cpp':
+        '#include "RNSVGSvgViewComponentInstance.h"\nNativeNodeApi::getInstance();\n',
       'src/main/cpp/svgImage/RNSVGImageComponentDescriptor.h':
         'void adopt(ShadowNode::Unshared const &shadowNode) const override {\n'
         + '  ConcreteComponentDescriptor::adopt(shadowNode);\n'
@@ -2187,6 +2191,10 @@ export function createRNOHPackages(ctx: RNPackageContext): RNOHPackage[] {
           'RNSVGPathComponentInstance.h',
         );
         const rewrittenPathComponentInstance = await fs.readFile(svgPathComponentInstancePath, 'utf8');
+        for (const filename of ['RNSVGForeignObjectComponentInstance.cpp', 'RNSVGSvgViewComponentInstance.cpp']) {
+          const source = await fs.readFile(path.join(path.dirname(svgPathComponentInstancePath), filename), 'utf8');
+          expect(source.match(/#include "RNOH\/arkui\/NativeNodeApi.h"/g)).toHaveLength(1);
+        }
         expect(rewrittenPathComponentInstance).toContain('facebook::react::Float m_cacheScale;');
         expect(rewrittenPathComponentInstance).not.toMatch(/^\s*Float m_cacheScale;/m);
         const svgImageComponentDescriptorPath = path.join(
