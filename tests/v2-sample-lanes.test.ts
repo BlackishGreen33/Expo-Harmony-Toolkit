@@ -223,7 +223,7 @@ describe('v2 sample lane manifest', () => {
     expect(packageJsonByProject.get('official-ui-stack')?.dependencies).toEqual(
       expect.objectContaining({
         '@react-native-oh-tpl/react-native-reanimated': '3.6.4-rc.5',
-        '@react-native-oh-tpl/react-native-svg': '15.0.1-rc.11',
+        '@react-native-oh-tpl/react-native-svg': '15.0.1-8',
       }),
     );
     expect(packageJsonByProject.get('official-wave-a')?.dependencies).toEqual(
