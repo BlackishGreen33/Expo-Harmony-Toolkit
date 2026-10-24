@@ -302,6 +302,17 @@ export async function ensureNormalizedLocalHarCompatibilityShims(
     return;
   }
 
+  for (const filename of ['RNSVGForeignObjectComponentInstance.cpp', 'RNSVGSvgViewComponentInstance.cpp']) {
+    const filePath = path.join(directoryPath, 'src', 'main', 'cpp', 'componentInstances', filename);
+    if (await fs.pathExists(filePath)) {
+      const contents = await fs.readFile(filePath, 'utf8');
+      const include = '#include "RNOH/arkui/NativeNodeApi.h"';
+      if (contents.includes('NativeNodeApi::') && !contents.includes(include)) {
+        await fs.writeFile(filePath, `${include}\n${contents}`);
+      }
+    }
+  }
+
   const svgGeneratedPropsPath = path.join(
     directoryPath,
     'src',
