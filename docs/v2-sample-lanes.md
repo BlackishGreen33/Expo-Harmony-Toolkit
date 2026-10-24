@@ -36,4 +36,6 @@ v2 portable release gate 直接使用 `scripts/v2-sample-lanes.js`，固定覆�
 - safe-area 與 foundation shims 是 covered with limitations，不提升既有 support tier 或 public capability evidence。
 
 
-Wave A 的应用依赖使用 `react-native-gesture-handler@3.4.0`。当前 Harmony adapter `2.14.17-rc.2` 仍依赖 2.14.1 的内部 JavaScript 文件，因此 sample 显式安装 npm alias `react-native-gesture-handler-legacy`，生成的 Metro 配置仅把该 adapter 在 Harmony 上发起的内部导入指向 alias；其他来源继续使用应用的 canonical 版本。此边界仍为 experimental，不宣称 Harmony adapter 支持 Gesture Handler 3 的新 hooks；adapter 完成 3.x 支持后应移除 alias 与这条路由。
+Wave A 的应用依赖使用 `react-native-gesture-handler@3.0.2`。当前 Harmony adapter `2.14.17-rc.2` 仍依赖 2.14.1 的内部 JavaScript 文件，因此 sample 显式安装 npm alias `react-native-gesture-handler-legacy`，生成的 Metro 配置仅把该 adapter 在 Harmony 上发起的内部导入指向 alias；该例外不改变其他来源的既有解析流程；非 Harmony 仍使用应用的 canonical 3.0.2。此边界仍为 experimental，不宣称 Harmony adapter 支持 Gesture Handler 3 的新 hooks；adapter 完成 3.x 支持后应移除 alias 与这条路由。
+
+3.0.x 是 Gesture Handler 官方相容表明确支持 RN 0.82 的 3.x 版本线；3.1–3.4 不支持该 RN 基线，因此本 sample 选择最新 3.0.x 正式 patch 3.0.2，而不采用 Dependabot 的 3.4.0 候选。
