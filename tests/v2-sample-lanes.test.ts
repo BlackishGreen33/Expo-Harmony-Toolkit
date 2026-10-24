@@ -245,6 +245,7 @@ describe('v2 sample lane manifest', () => {
     ).toBe('2.14.17-rc.2');
 
     const rootPackageJson = await fs.readJson(path.join(repoRoot, 'package.json'));
+    expect(rootPackageJson.pnpm?.overrides['react-native-screens']).toBe(packageJsonByProject.get('official-wave-a')?.dependencies['react-native-screens']);
     expect(rootPackageJson.pnpm?.overrides).toEqual(
       expect.objectContaining({
         '@expo/dom-webview': '55.0.5',
