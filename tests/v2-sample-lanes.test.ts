@@ -255,6 +255,20 @@ describe('v2 sample lane manifest', () => {
     );
   });
 
+  it('aligns every sample with the published RNOH peer and renderer versions', async () => {
+    const runtimeRoot = path.join(repoRoot, 'examples/official-minimal-sample/node_modules/@react-native-oh/react-native-harmony');
+    const runtimePackage = await fs.readJson(path.join(runtimeRoot, 'package.json'));
+    const renderer = await fs.readFile(path.join(runtimeRoot, 'Libraries/Renderer/implementations/ReactFabric-dev.js'), 'utf8');
+    const rendererVersion = /reconcilerVersion: ["']([^"']+)/.exec(renderer)?.[1];
+    expect(rendererVersion).toBeDefined();
+    for (const project of V2_SAMPLE_PROJECTS) {
+      const { dependencies } = await fs.readJson(path.join(repoRoot, project.root, 'package.json'));
+      expect(dependencies['react-native']).toBe(runtimePackage.peerDependencies['react-native']);
+      expect(dependencies.react).toBe(rendererVersion);
+      expect(dependencies['react-dom']).toBe(rendererVersion);
+    }
+  });
+
   it('keeps all source samples free of generated toolkit outputs', async () => {
     for (const project of V2_SAMPLE_PROJECTS) {
       const projectRoot = path.join(repoRoot, project.root);

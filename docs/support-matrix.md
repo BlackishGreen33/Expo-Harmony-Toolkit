@@ -31,8 +31,8 @@
 | Expo SDK | `55` |
 | React | `19.1.1` |
 | React Native | `0.82.1` |
-| `@react-native-oh/react-native-harmony` | `0.82.29` |
-| `@react-native-oh/react-native-harmony-cli` | `0.82.29` |
+| `@react-native-oh/react-native-harmony` | `0.82.30` |
+| `@react-native-oh/react-native-harmony-cli` | `0.82.30` |
 | `@react-native-community/cli` | `20.x` |
 | `metro` | `0.83.x` |
 | App Shell 依赖 | `expo-router` `55.x`、`expo-linking` `55.x`、`expo-constants` `55.x`、`@expo/metro-runtime` `55.x`、`react-dom` `19.1.1` |
@@ -45,9 +45,9 @@
 
 | Matrix | Expo SDK | React | React Native | RNOH / CLI |
 | --- | --- | --- | --- | --- |
-| `expo55-rn083-rnoh082-preview` | `55` | `>=19.2.0 <20.0.0` | `>=0.83.0 <0.84.0` | `0.82.29` |
-| `expo56-rn085-rnoh082-preview` | `56` | `>=19.2.0 <20.0.0` | `>=0.85.0 <0.86.0` | `0.82.29` |
-| `expo57-rn086-rnoh082-preview` | `57` | `>=19.2.0 <20.0.0` | `>=0.86.0 <0.87.0` | `0.82.29` |
+| `expo55-rn083-rnoh082-preview` | `55` | `>=19.2.0 <20.0.0` | `>=0.83.0 <0.84.0` | `0.82.30` |
+| `expo56-rn085-rnoh082-preview` | `56` | `>=19.2.0 <20.0.0` | `>=0.85.0 <0.86.0` | `0.82.30` |
+| `expo57-rn086-rnoh082-preview` | `57` | `>=19.2.0 <20.0.0` | `>=0.86.0 <0.87.0` | `0.82.30` |
 <!-- GENERATED:support-matrix-verified-matrix:end -->
 
 ## Support Tiers

@@ -74,11 +74,11 @@ function createDependencyRules(input: {
     },
     '@react-native-oh/react-native-harmony': {
       required: true,
-      version: '0.82.29',
+      version: '0.82.30',
     },
     '@react-native-oh/react-native-harmony-cli': {
       required: true,
-      version: '0.82.29',
+      version: '0.82.30',
     },
     '@react-native-community/cli': {
       required: true,
