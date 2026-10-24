@@ -160,6 +160,17 @@ const resolveReactNativeCompatibilityWrapper = (context, moduleName, platform) =
   return null;
 };
 const resolveExpoHarmonyShim = (context, moduleName, platform) => {
+  // ponytail: the Harmony 2.14 adapter needs 2.x internals; remove when its adapter supports Gesture Handler 3.
+  const legacyGestureRoot = path.resolve(__dirname, 'node_modules/react-native-gesture-handler-legacy');
+  if (
+    platform === 'harmony' &&
+    context.originModulePath?.includes(path.sep + 'node_modules' + path.sep + '@react-native-oh-tpl' + path.sep + 'react-native-gesture-handler' + path.sep) &&
+    moduleName.startsWith('react-native-gesture-handler/') &&
+    fs.existsSync(legacyGestureRoot)
+  ) {
+    return context.resolveRequest(context, path.join(legacyGestureRoot, moduleName.slice('react-native-gesture-handler/'.length)), platform);
+  }
+
   const uiStackModuleAliasResolution = resolveUiStackModuleAlias(context, moduleName, platform);
 
   if (uiStackModuleAliasResolution) {

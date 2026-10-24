@@ -246,6 +246,12 @@ describe('v2 sample lane manifest', () => {
 
     const rootPackageJson = await fs.readJson(path.join(repoRoot, 'package.json'));
     expect(rootPackageJson.pnpm?.overrides['react-native-screens']).toBe(packageJsonByProject.get('official-wave-a')?.dependencies['react-native-screens']);
+    const gestureVersion = packageJsonByProject.get('official-wave-a')?.dependencies['react-native-gesture-handler'];
+    expect(rootPackageJson.pnpm?.overrides['react-native-gesture-handler']).toBe(gestureVersion);
+    const installedGesture = await fs.readJson(path.join(repoRoot, 'examples/official-wave-a-sample/node_modules/react-native-gesture-handler/package.json'));
+    expect(installedGesture.version).toBe(gestureVersion);
+    const legacyGesture = await fs.readJson(path.join(repoRoot, 'examples/official-wave-a-sample/node_modules/react-native-gesture-handler-legacy/package.json'));
+    expect(legacyGesture.version).toBe('2.14.1');
     expect(rootPackageJson.pnpm?.overrides).toEqual(
       expect.objectContaining({
         '@expo/dom-webview': '55.0.5',

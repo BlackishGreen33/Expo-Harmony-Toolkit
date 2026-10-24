@@ -1,3 +1,5 @@
+import vm from 'node:vm';
+import { renderMetroConfig } from '../src/core/template/metro';
 import fs from 'fs-extra';
 import JSON5 from 'json5';
 import os from 'os';
@@ -461,4 +463,36 @@ describe('init project', () => {
     expect(mediaLibraryShim).toContain('createAssetAsync');
     expect(mediaLibraryShim).not.toContain('ERR_EXPO_HARMONY_PREVIEW');
   });
+});
+
+
+it('routes only Harmony adapter deep imports to its pinned Gesture Handler internals', () => {
+  const projectRoot = path.resolve('/metro-fixture');
+  const legacyRoot = path.join(projectRoot, 'node_modules/react-native-gesture-handler-legacy');
+  const canonicalRoot = path.join(projectRoot, 'node_modules/react-native-gesture-handler');
+  const adapterOrigin = path.join(projectRoot, 'node_modules/@react-native-oh-tpl/react-native-gesture-handler/src/index.ts');
+  let legacyAvailable = true;
+  const module = { exports: {} as { resolver: { resolveRequest: Function } } };
+  vm.runInNewContext(renderMetroConfig([]), {
+    __dirname: projectRoot,
+    module,
+    process: { env: {} },
+    require: (name: string) => {
+      if (name === 'path') return path;
+      if (name === 'fs') return { existsSync: () => legacyAvailable };
+      if (name === 'expo/metro-config') return { getDefaultConfig: () => ({}) };
+      return { createHarmonyMetroConfig: () => ({}) };
+    },
+  });
+  const resolve = (originModulePath: string, moduleName: string, platform: string) =>
+    module.exports.resolver.resolveRequest({ originModulePath, resolveRequest: (_context: unknown, filePath: string) => ({ type: 'sourceFile', filePath }) }, moduleName, platform).filePath;
+  const deepImport = 'react-native-gesture-handler/src/EnableNewWebImplementation';
+  const canonicalPath = path.join(canonicalRoot, 'src/EnableNewWebImplementation');
+  expect(resolve(adapterOrigin, deepImport, 'harmony')).toBe(path.join(legacyRoot, 'src/EnableNewWebImplementation'));
+  expect(resolve(path.join(projectRoot, 'App.tsx'), deepImport, 'harmony')).toBe(canonicalPath);
+  expect(resolve(path.join(projectRoot, '@react-native-oh-tpl/react-native-gesture-handler/index.ts'), deepImport, 'harmony')).toBe(canonicalPath);
+  expect(resolve(adapterOrigin, deepImport, 'ios')).toBe(canonicalPath);
+  expect(resolve(adapterOrigin, 'react-native-gesture-handler', 'harmony')).toBe(canonicalRoot);
+  legacyAvailable = false;
+  expect(resolve(adapterOrigin, deepImport, 'harmony')).toBe(canonicalPath);
 });
