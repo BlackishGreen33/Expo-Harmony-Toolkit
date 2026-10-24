@@ -23,11 +23,11 @@ export const UI_STACK_VALIDATED_ADAPTERS = [
     canonicalPackageName: 'react-native-svg',
     canonicalVersion: '15.0.0',
     adapterPackageName: '@react-native-oh-tpl/react-native-svg',
-    adapterVersion: '15.0.1-rc.11',
+    adapterVersion: '15.0.1-8',
     adapterRepository: 'react-native-oh-library/react-native-harmony-svg',
     adapterPath: 'react-native-harmony-svg',
     adapterCommit: '97c31d2f72559931d62fa84a9c86e86d343753d3',
-    npmSpecifier: '15.0.1-rc.11',
+    npmSpecifier: '15.0.1-8',
     harmonyHarFileName: 'svg.har',
     supportsAutolinking: false,
     managedAutolinking: {

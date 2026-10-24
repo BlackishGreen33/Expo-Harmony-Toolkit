@@ -223,7 +223,7 @@ describe('v2 sample lane manifest', () => {
     expect(packageJsonByProject.get('official-ui-stack')?.dependencies).toEqual(
       expect.objectContaining({
         '@react-native-oh-tpl/react-native-reanimated': '3.6.4-rc.5',
-        '@react-native-oh-tpl/react-native-svg': '15.0.1-rc.11',
+        '@react-native-oh-tpl/react-native-svg': '15.0.1-8',
       }),
     );
     expect(packageJsonByProject.get('official-wave-a')?.dependencies).toEqual(
@@ -245,6 +245,13 @@ describe('v2 sample lane manifest', () => {
     ).toBe('2.14.17-rc.2');
 
     const rootPackageJson = await fs.readJson(path.join(repoRoot, 'package.json'));
+    expect(rootPackageJson.pnpm?.overrides['react-native-screens']).toBe(packageJsonByProject.get('official-wave-a')?.dependencies['react-native-screens']);
+    const gestureVersion = packageJsonByProject.get('official-wave-a')?.dependencies['react-native-gesture-handler'];
+    expect(rootPackageJson.pnpm?.overrides['react-native-gesture-handler']).toBe(gestureVersion);
+    const installedGesture = await fs.readJson(path.join(repoRoot, 'examples/official-wave-a-sample/node_modules/react-native-gesture-handler/package.json'));
+    expect(installedGesture.version).toBe(gestureVersion);
+    const legacyGesture = await fs.readJson(path.join(repoRoot, 'examples/official-wave-a-sample/node_modules/react-native-gesture-handler-legacy/package.json'));
+    expect(legacyGesture.version).toBe('2.14.1');
     expect(rootPackageJson.pnpm?.overrides).toEqual(
       expect.objectContaining({
         '@expo/dom-webview': '55.0.5',
@@ -253,6 +260,20 @@ describe('v2 sample lane manifest', () => {
         tar: '7.5.21',
       }),
     );
+  });
+
+  it('aligns every sample with the published RNOH peer and renderer versions', async () => {
+    const runtimeRoot = path.join(repoRoot, 'examples/official-minimal-sample/node_modules/@react-native-oh/react-native-harmony');
+    const runtimePackage = await fs.readJson(path.join(runtimeRoot, 'package.json'));
+    const renderer = await fs.readFile(path.join(runtimeRoot, 'Libraries/Renderer/implementations/ReactFabric-dev.js'), 'utf8');
+    const rendererVersion = /reconcilerVersion: ["']([^"']+)/.exec(renderer)?.[1];
+    expect(rendererVersion).toBeDefined();
+    for (const project of V2_SAMPLE_PROJECTS) {
+      const { dependencies } = await fs.readJson(path.join(repoRoot, project.root, 'package.json'));
+      expect(dependencies['react-native']).toBe(runtimePackage.peerDependencies['react-native']);
+      expect(dependencies.react).toBe(rendererVersion);
+      expect(dependencies['react-dom']).toBe(rendererVersion);
+    }
   });
 
   it('keeps all source samples free of generated toolkit outputs', async () => {

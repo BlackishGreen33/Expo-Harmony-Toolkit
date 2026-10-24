@@ -74,8 +74,8 @@ async function materializeProject(tempRoot, matrix) {
   packageJson.dependencies = {
     '@babel/runtime': '^7.28.4',
     '@expo/metro-runtime': `^${matrix.sdk}.0.0`,
-    '@react-native-oh/react-native-harmony': '0.82.29',
-    '@react-native-oh/react-native-harmony-cli': '0.82.29',
+    '@react-native-oh/react-native-harmony': '0.82.30',
+    '@react-native-oh/react-native-harmony-cli': '0.82.30',
     expo: matrix.expo,
     'expo-constants': `^${matrix.sdk}.0.0`,
     'expo-status-bar': '>=3.0.0 <4.0.0',

@@ -80,6 +80,11 @@ export const DEPENDENCY_CATALOG: Record<string, CompatibilityRecord> = {
     supportTier: 'verified',
     note: 'Metro runtime is part of the validated managed Expo routing/bundling chain and keeps Expo workspace peers aligned.',
   },
+  'react-native-gesture-handler-legacy': {
+    status: 'supported',
+    supportTier: 'experimental',
+    note: 'JavaScript 2.14.1 internals required by the experimental Harmony Gesture Handler adapter; the application keeps canonical Gesture Handler 3.',
+  },
   '@babel/runtime': {
     status: 'supported',
     supportTier: 'verified',

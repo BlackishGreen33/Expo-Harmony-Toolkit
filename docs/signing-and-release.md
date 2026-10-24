@@ -98,6 +98,8 @@ expo-harmony build-hap --mode release
 
 ## v1.8.3 矩阵 patch 说明
 
+当前维护版本固定到官方 `0.82-stable` dist-tag 对应的 runtime / CLI `0.82.30`，继续使用其精确 peer `react-native@0.82.1` 与 renderer `react@19.1.1` / `react-dom@19.1.1`。npm `latest=0.84.4` 同时属于 `0.84-rc`，不能作为已稳定发布的依据。Metro 保持 `0.83.x`，SVG 保持 adapter 要求的 `15.0.0`。
+
 `v1.8.3` 将 RNOH runtime 与 CLI 从 `0.82.18` 刷新到 `0.82.29`。npm 上当前仍没有可用的 RNOH `0.83.x` 包，因此公开矩阵继续要求 `react-native@0.82.1`；下游项目如需 Harmony build-chain，应按该矩阵锁定 React Native，而不是把模拟器构建证据扩写成 RN `0.83.x` verified。
 
 ## 关系说明
