@@ -196,6 +196,26 @@ describe('doctor report', () => {
     );
   });
 
+  it.each([
+    ['7.29.2', false],
+    ['8.0.5', false],
+    ['9.0.0', true],
+  ])('checks Babel runtime %s against the supported helper versions', async (version, blocking) => {
+    const tempRoot = await createDoctorFixtureFromSample();
+    try {
+      const packageJsonPath = path.join(tempRoot, 'package.json');
+      const packageJson = await fs.readJson(packageJsonPath);
+      packageJson.dependencies['@babel/runtime'] = version;
+      await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+      const report = await buildDoctorReport(tempRoot);
+      expect(report.blockingIssues.some((issue) =>
+        issue.code === 'dependency.version_mismatch' && issue.subject === '@babel/runtime',
+      )).toBe(blocking);
+    } finally {
+      await fs.remove(tempRoot);
+    }
+  });
+
   it('marks the official sample as eligible for the validated matrix', async () => {
     await cleanupGeneratedArtifacts(sampleRoot);
     const report = await buildDoctorReport(sampleRoot);
