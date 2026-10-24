@@ -89,7 +89,7 @@ function createDependencyRules(input: {
       version: '>=0.83.0 <0.84.0',
     },
     '@babel/runtime': {
-      version: '>=7.0.0 <8.0.0',
+      version: '>=7.0.0 <9.0.0',
     },
     'expo-status-bar': {
       version: '>=3.0.0 <4.0.0',
