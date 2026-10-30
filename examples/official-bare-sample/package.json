@@ -14,7 +14,7 @@
     "@react-native-oh/react-native-harmony": "0.82.30",
     "@react-native-oh/react-native-harmony-cli": "0.82.30",
     "expo": "^55.0.8",
-    "expo-build-properties": "~55.0.16",
+    "expo-build-properties": "~58.0.11",
     "expo-constants": "55.0.11",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.1",
