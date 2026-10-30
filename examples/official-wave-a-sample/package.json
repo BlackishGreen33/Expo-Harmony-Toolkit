@@ -12,8 +12,8 @@
   "dependencies": {
     "@babel/runtime": "^8.0.7",
     "@react-native-async-storage/async-storage": "2.1.2",
-    "@react-native-oh/react-native-harmony": "0.82.30",
-    "@react-native-oh/react-native-harmony-cli": "0.82.30",
+    "@react-native-oh/react-native-harmony": "0.84.4",
+    "@react-native-oh/react-native-harmony-cli": "0.84.4",
     "@react-native-oh-tpl/async-storage": "1.21.0-0.2.2",
     "@react-native-oh-tpl/react-native-gesture-handler": "2.14.17-rc.2",
     "@react-native-oh-tpl/react-native-reanimated": "3.6.4-rc.5",
@@ -21,17 +21,17 @@
     "expo": "^55.0.8",
     "expo-constants": "55.0.11",
     "expo-status-bar": "~3.0.8",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "react-native": "0.82.1",
-    "react-native-gesture-handler": "3.0.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-native": "0.88.0",
+    "react-native-gesture-handler": "3.4.0",
     "react-native-reanimated": "3.6.0",
     "react-native-safe-area-context": "5.10.1",
-    "react-native-screens": "4.8.0",
+    "react-native-screens": "4.30.0",
     "react-native-gesture-handler-legacy": "npm:react-native-gesture-handler@2.14.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "^20.1.2",
-    "metro": "^0.83.1"
+    "metro": "^0.87.2"
   }
 }
